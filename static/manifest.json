@@ -1,0 +1,23 @@
+{
+    "name": "Yoshlar Tizimi",
+    "short_name": "Yoshlar",
+    "description": "Yoshlar bilan ishlash tizimi",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#F9FAFB",
+    "theme_color": "#4F7FFF",
+    "icons": [
+        {
+            "src": "/static/img/logo.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/static/img/logo.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

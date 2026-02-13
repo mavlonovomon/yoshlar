@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-lg p-4" style="border-radius: 20px;">
+                <div class="text-center mb-4">
+                    <div class="p-3 bg-primary-soft text-primary rounded-circle d-inline-block mb-3">
+                        <i class="bi bi-person-plus fs-2"></i>
+                    </div>
+                    <h3 class="fw-bold">Otaliqqa olish</h3>
+                    <p class="text-muted">Yoshni mas'ul rahbarga biriktirish</p>
+                </div>
+
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase tracking-wider">Yoshni tanlang</label>
+                        {{ form.yosh }}
+                        <div class="form-text smaller">Umumiy yoshlar ro'yxatidan tanlang</div>
+                        {% if form.yosh.errors %}
+                        <div class="text-danger small mt-1">{{ form.yosh.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase tracking-wider">Toifasi</label>
+                        {{ form.category }}
+                        {% if form.category.errors %}
+                        <div class="text-danger small mt-1">{{ form.category.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase tracking-wider">Mas'ul rahbar
+                            (Biriktiriladigan)</label>
+                        {{ form.leader }}
+                        {% if form.leader.errors %}
+                        <div class="text-danger small mt-1">{{ form.leader.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary py-3 fw-bold rounded-pill">
+                            Saqlash va davom etish
+                        </button>
+                        <a href="{% url 'otaliq:list' %}" class="btn btn-light py-3 fw-bold rounded-pill">
+                            Bekor qilish
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Select2 support -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('.select2').select2({
+            theme: "classic",
+            width: '100%'
+        });
+    });
+</script>
+
+<style>
+    .bg-primary-soft {
+        background-color: rgba(79, 70, 229, 0.1);
+    }
+
+    .tracking-wider {
+        letter-spacing: 0.05em;
+    }
+
+    .select2-container--classic .select2-selection--single {
+        height: 45px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        display: flex;
+        align-items: center;
+    }
+</style>
+{% endblock %}

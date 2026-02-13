@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load core_extras %}
+
+{% block content %}
+<div class="container-fluid py-4" style="background-color: #f8fafc; min-height: 100vh;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0 text-dark" style="letter-spacing: -0.5px;">Otaliqdagi yoshlar tahlili (Mahallalar
+                kesimida)</h2>
+            <p class="text-muted small mb-0">Mahallalar bo'yicha otaliq ko'rsatkichlari</p>
+        </div>
+    </div>
+
+    <!-- Spreadsheet Table Header Title -->
+    <div class="card border-0 shadow-sm mb-4 p-4 text-center bg-white" style="border-radius: 15px;">
+        <h5 class="fw-bold text-dark px-lg-5 mb-0" style="line-height: 1.8; font-size: 1.25rem;">
+            Ҳазорасп туманидаги <span class="text-primary" style="border-bottom: 2px solid #0d6efd;">маҳаллалар
+                кесимида</span> Otaliqqa olingan yoshlar билан amalga oshirilgan ишлар таҳлили<br>
+            <span class="text-danger fw-black" style="font-size: 1.5rem; letter-spacing: 2px;">МАЪЛУМОТ</span>
+        </h5>
+    </div>
+
+    <!-- Main Table Container -->
+    <div class="card p-0 shadow-lg border-0 overflow-hidden" style="border-radius: 12px; border: 1px solid #e2e8f0;">
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle mb-0 professional-table">
+                <thead>
+                    <tr class="header-lvl-1">
+                        <th style="width: 45px;">№</th>
+                        <th style="min-width: 200px;">Маҳалла номи</th>
+                        <th class="v-text">Otaliqdagi yoshlar soni</th>
+                        <th class="v-text">Muammosi o'rganilgan yoshlar</th>
+                        <th class="v-text">Yordam ko'rsatilganlar</th>
+                        <th class="v-text">Hali yordam ko'rsatilmagan</th>
+                        <th class="v-text" style="min-width: 100px;">Ижро ҳолати (%)</th>
+                    </tr>
+                    <tr class="header-lvl-filter">
+                        <th class="filter-placeholder">-</th>
+                        <th class="filter-placeholder">x</th>
+                        <th class="filter-placeholder">x</th>
+                        <th class="filter-placeholder">x</th>
+                        <th class="filter-placeholder">x</th>
+                        <th class="filter-placeholder">x</th>
+                        <th class="filter-placeholder">x</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in statistics %}
+                    <tr class="data-row">
+                        <td class="text-center color-index fw-medium">{{ forloop.counter }}</td>
+                        <td class="fw-bold text-dark ps-3">{{ s.name }}</td>
+                        <td class="text-center fw-bold bg-light-subtle">{{ s.total_youth }}</td>
+                        <td class="text-center">{{ s.with_meeting }}</td>
+                        <td class="text-center fw-bold text-primary">{{ s.total_assisted }}</td>
+                        <td class="text-center text-danger">{{ s.total_youth|subtract:s.total_assisted|default:0 }}</td>
+                        <td class="text-center fw-bold status-cell" data-percent="{{ s.percent }}">
+                            {{ s.percent }}%
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted"> Ma'mulot topilmadi </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .professional-table {
+        border: 2px solid #94a3b8;
+        background-color: white;
+    }
+
+    .professional-table thead th {
+        background: #f1f5f9;
+        color: #1e293b;
+        font-weight: 700;
+        text-align: center;
+        vertical-align: middle !important;
+        font-size: 0.85rem;
+        padding: 12px 8px;
+        border: 1px solid #94a3b8;
+    }
+
+    .v-text {
+        max-width: 100px;
+        line-height: 1.2;
+    }
+
+    .professional-table tbody td {
+        border: 1px solid #cbd5e1;
+        font-size: 0.9rem;
+        padding: 10px;
+        vertical-align: middle;
+    }
+
+    .header-lvl-filter th {
+        background: #ffedd5 !important;
+        padding: 2px !important;
+        font-size: 0.7rem;
+        color: #9a3412;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const cells = document.querySelectorAll('.status-cell');
+        cells.forEach(cell => {
+            const val = parseFloat(cell.getAttribute('data-percent'));
+            if (val === 0) { cell.style.backgroundColor = '#fee2e2'; cell.style.color = '#991b1b'; }
+            else if (val < 50) { cell.style.backgroundColor = '#fef9c3'; cell.style.color = '#854d0e'; }
+            else if (val >= 50 && val < 100) { cell.style.backgroundColor = '#dcfce7'; cell.style.color = '#166534'; }
+            else if (val >= 100) { cell.style.backgroundColor = '#22c55e'; cell.style.color = 'white'; }
+        });
+    });
+</script>
+{% endblock %}

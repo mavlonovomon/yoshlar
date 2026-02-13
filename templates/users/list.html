@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold mb-0">Foydalanuvchilar ro'yxati</h4>
+        <span class="badge bg-primary-subtle text-primary">{{ users|length }} ta</span>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
+        <div class="card-body">
+            <form method="get" class="row g-2">
+                <div class="col-md-8">
+                    <input type="text" name="q" class="form-control"
+                        placeholder="F.I.Sh, login, PINFL, telefon yoki mahalla..." value="{{ q }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="role" class="form-select">
+                        <option value="">Barcha rollar</option>
+                        <option value="SUPER_ADMIN" {% if selected_role == 'SUPER_ADMIN' %}selected{% endif %}>Super Admin</option>
+                        <option value="RAHBAR" {% if selected_role == 'RAHBAR' %}selected{% endif %}>Rahbar</option>
+                        <option value="YETAKCHI" {% if selected_role == 'YETAKCHI' %}selected{% endif %}>Yetakchi</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100">OK</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>F.I.Sh</th>
+                        <th>Login</th>
+                        <th>Rol</th>
+                        <th>PINFL</th>
+                        <th>Telefon</th>
+                        <th>Mahalla</th>
+                        <th>Sektor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td class="fw-semibold">{{ u.full_name|default:"-" }}</td>
+                        <td>{{ u.username }}</td>
+                        <td>{{ u.get_role_display }}</td>
+                        <td>{{ u.pinfl|default:"-" }}</td>
+                        <td>{{ u.phone_number|default:"-" }}</td>
+                        <td>{{ u.mahalla.name|default:"-" }}</td>
+                        <td>{% if u.sector %}{{ u.sector }}-sektor{% else %}-{% endif %}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">Foydalanuvchilar topilmadi</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

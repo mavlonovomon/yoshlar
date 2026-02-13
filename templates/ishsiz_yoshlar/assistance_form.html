@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="card p-4 border-0 shadow-sm" style="border-radius: 24px;">
+                <div class="d-flex align-items-center mb-5 gap-3">
+                    <div class="p-3 rounded-4 bg-success-subtle text-success">
+                        <i class="bi bi-gift fs-3"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold text-dark mb-0">Yordam Ma'lumoti</h3>
+                        <p class="text-muted small mb-0">{{ youth.yosh.fullname }} uchun yordam holati</p>
+                    </div>
+                </div>
+
+                <form method="post" enctype="multipart/form-data" id="assistance-form"
+                    data-has-existing-assistance="{% if has_existing_assistance %}1{% else %}0{% endif %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="replace_confirmed" id="id_replace_confirmed" value="0">
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-warning py-2">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.provided.label }}</label>
+                        <div class="form-check form-switch">
+                            {{ form.provided }}
+                        </div>
+                        {% if form.provided.errors %}
+                        <div class="text-danger smaller mt-1 fw-bold">{{ form.provided.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div id="assistance-details" class="d-none">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.assistance_type.label }}</label>
+                            {{ form.assistance_type }}
+                            {% if form.assistance_type.errors %}
+                            <div class="text-danger smaller mt-1 fw-bold">{{ form.assistance_type.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.date_provided.label }}</label>
+                            {{ form.date_provided }}
+                            {% if form.date_provided.errors %}
+                            <div class="text-danger smaller mt-1 fw-bold">{{ form.date_provided.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.document.label }}</label>
+                            {{ form.document }}
+                            {% if form.document.errors %}
+                            <div class="text-danger smaller mt-1 fw-bold">{{ form.document.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-5 pt-3 border-top">
+                        <button type="submit" class="btn btn-success px-5 py-2 fw-bold shadow-sm">
+                            <i class="bi bi-check-lg me-1"></i> Saqlash
+                        </button>
+                        <a href="{% url 'ishsiz_yoshlar:detail' youth.pk %}" class="btn btn-light px-4 py-2">
+                            Bekor qilish
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const formElement = document.getElementById("assistance-form");
+        const providedInput = document.getElementById("{{ form.provided.id_for_label }}");
+        const details = document.getElementById("assistance-details");
+        const documentInput = document.getElementById("{{ form.document.id_for_label }}");
+        const replaceConfirmedInput = document.getElementById("id_replace_confirmed");
+        if (!formElement || !providedInput || !details || !replaceConfirmedInput) return;
+
+        const hasExistingAssistance = formElement.dataset.hasExistingAssistance === '1';
+
+        const toggle = () => {
+            if (providedInput.checked) {
+                details.classList.remove('d-none');
+                if (documentInput) {
+                    documentInput.required = true;
+                }
+            } else {
+                details.classList.add('d-none');
+                if (documentInput) {
+                    documentInput.required = false;
+                }
+            }
+        };
+
+        providedInput.addEventListener('change', toggle);
+        formElement.addEventListener('submit', function (event) {
+            const isProvidingNow = providedInput.checked;
+            if (hasExistingAssistance && isProvidingNow && replaceConfirmedInput.value !== '1') {
+                const confirmed = window.confirm(
+                    "Bu yosh uchun avvalgi yordam ma'lumoti mavjud. Tasdiqlasangiz, avvalgi ma'lumot to'liq o'chirilib, yangi yordam saqlanadi. Davom etasizmi?"
+                );
+                if (!confirmed) {
+                    event.preventDefault();
+                    return;
+                }
+                replaceConfirmedInput.value = '1';
+            }
+        });
+        toggle();
+    })();
+</script>
+{% endblock %}

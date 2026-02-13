@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% load bilim_tags %}
+
+{% block content %}
+<div class="test-list-container fade-in-up">
+    <div class="page-header text-center mb-5">
+        <h1 class="gradient-text display-4 fw-bold">Bilim Sinovlari</h1>
+        <p class="text-muted lead">O'z bilimingizni sinab ko'ring va yuksalib boring</p>
+    </div>
+
+    <div class="row g-4">
+        {% for test in tests %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 test-card border-0 shadow-sm hover-elevate">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <span class="badge bg-soft-primary text-primary rounded-pill px-3 py-2">
+                            {{ test.subject.name }}
+                        </span>
+                        {% if user_results|get_item:test.pk %}
+                        <span class="badge bg-success rounded-circle p-2" title="Topshirilgan">
+                            <i class="fas fa-check"></i>
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <h3 class="card-title fw-bold mb-3">{{ test.title }}</h3>
+
+                    <div class="test-meta mb-4 text-muted small">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="far fa-clock me-2"></i>
+                            <span>{{ test.duration_minutes }} daqiqa</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="far fa-question-circle me-2"></i>
+                            <span>{{ test.questions_count }} savol</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="far fa-calendar-alt me-2"></i>
+                            <span>{{ test.end_time|date:"d.m.Y H:i" }} gacha</span>
+                        </div>
+                        <div class="d-flex align-items-center mt-2">
+                            <i class="far fa-flag me-2"></i>
+                            <span>Urinish: {{ attempts_map|get_item:test.pk|default:0 }}/{{ test.max_attempts }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-auto">
+                        {% with attempts=attempts_map|get_item:test.pk %}
+                            {% if attempts and attempts >= test.max_attempts %}
+                            <a href="{% url 'bilim_sinovi:test_result' test.pk %}"
+                                class="btn btn-outline-success w-100 rounded-pill fw-semibold">
+                                Natijani ko'rish
+                            </a>
+                            {% else %}
+                            <form action="{% url 'bilim_sinovi:test_start' test.pk %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit"
+                                    class="btn btn-primary w-100 rounded-pill fw-semibold shadow-primary-sm">
+                                    {% if attempts %}Qayta topshirish{% else %}Sinovni Boshlash{% endif %}
+                                    <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </form>
+                            {% if user_results|get_item:test.pk %}
+                            <a href="{% url 'bilim_sinovi:test_result' test.pk %}"
+                                class="btn btn-sm btn-link w-100 mt-2 text-decoration-none">
+                                Oxirgi natijani ko'rish
+                            </a>
+                            {% endif %}
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <div class="empty-state">
+                <img src="/static/img/no-tests.svg" alt="Testlar yo'q" class="img-fluid mb-4"
+                    style="max-height: 200px; opacity: 0.6;">
+                <h3>Hozircha faol sinovlar mavjud emas</h3>
+                <p class="text-muted">Yangi testlar qo'shilganda bu yerda paydo bo'ladi.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .test-list-container {
+        padding: 2rem 0;
+    }
+
+    .test-card {
+        transition: all 0.3s ease;
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .hover-elevate:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .bg-soft-primary {
+        background-color: rgba(13, 110, 253, 0.1);
+    }
+
+    .shadow-primary-sm {
+        box-shadow: 0 4px 6px rgba(13, 110, 253, 0.25);
+    }
+
+    .gradient-text {
+        background: linear-gradient(45deg, #2c3e50, #3498db);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .test-meta i {
+        width: 20px;
+        text-align: center;
+        color: #3498db;
+    }
+</style>
+{% endblock %}

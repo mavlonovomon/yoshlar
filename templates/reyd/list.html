@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/list_premium.css' %}">
+
+<div class="container-fluid">
+    <div class="page-header">
+        <div class="page-title-group">
+            <h2>Reyd tadbirlari</h2>
+            <p>Jinoyatchilikka qarshi kurashish va ijtimoiy profilaktika tadbirlari</p>
+        </div>
+        <div class="d-flex gap-2">
+            {% if user.is_authenticated and user.role == 'YETAKCHI' %}
+            <a href="{% url 'reyd:create' %}" class="btn btn-primary shadow-sm">
+                <i class="bi bi-plus-circle me-1"></i> Yangi tadbir
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="filter-card">
+        <form method="get" class="filter-grid">
+            <div class="filter-item">
+                <label class="form-label text-muted small fw-bold">QIDIRISH</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" name="q" class="form-control border-start-0"
+                        placeholder="Tadbir nomi yoki izoh..." value="{{ request.GET.q }}">
+                </div>
+            </div>
+
+            <div class="filter-item">
+                <label class="form-label text-muted small fw-bold">MAHALLA</label>
+                <select name="mahalla" class="form-select border-start-0" onchange="this.form.submit()">
+                    <option value="">Barcha mahallalar</option>
+                    {% for m in mahallas %}
+                    <option value="{{ m.id }}" {% if selected_mahalla == m.id %}selected{% endif %}>{{ m.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <label class="form-label text-muted small fw-bold">REYD TURI</label>
+                <select name="event_type" class="form-select border-start-0" onchange="this.form.submit()">
+                    <option value="">Barchasi</option>
+                    {% for code, name in types %}
+                    <option value="{{ code }}" {% if selected_type == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-funnel-fill me-1"></i> Saralash
+                </button>
+                {% if request.GET.q or request.GET.mahalla or request.GET.event_type %}
+                <a href="{% url 'reyd:list' %}" class="btn btn-light ms-1" title="Tozalash">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <div class="premium-table-card">
+        <div class="table-responsive">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Tadbir nomi</th>
+                        <th>Mahalla</th>
+                        <th>Sana</th>
+                        <th>Turi</th>
+                        <th>Rasmlar</th>
+                        <th class="text-center" style="width: 160px;">Amallar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in events %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-dark">{{ event.title }}</div>
+                            <div class="text-muted smaller">{{ event.description|default:"-"|truncatechars:60 }}</div>
+                        </td>
+                        <td>{{ event.mahalla.name }}</td>
+                        <td>{{ event.event_date|date:"d.m.Y" }}</td>
+                        <td>
+                            {% if event.event_type == 'TIG' %}
+                            <span class="badge-premium bg-danger-subtle text-danger"><i class="bi bi-knife"></i> Tig' reydi</span>
+                            {% elif event.event_type == 'TUNGI' %}
+                            <span class="badge-premium bg-dark-subtle text-dark"><i class="bi bi-moon-stars"></i> Tungi reyd</span>
+                            {% else %}
+                            <span class="badge-premium bg-info-subtle text-info"><i class="bi bi-stars"></i> Boshqa</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="fw-bold">{{ event.photo_count }}</span> ta
+                        </td>
+                        <td class="text-center">
+                            <div class="action-btn-group">
+                                <a href="{% url 'reyd:detail' event.pk %}" class="action-btn action-btn-view"
+                                    title="Ko'rish">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if user.is_authenticated and user.role == 'YETAKCHI' %}
+                                <a href="{% url 'reyd:edit' event.pk %}" class="action-btn action-btn-meeting"
+                                    title="Tahrirlash">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="mb-3 text-muted">
+                                <i class="bi bi-database-exclamation display-4"></i>
+                            </div>
+                            <h5 class="text-muted">Ma'lumotlar topilmadi</h5>
+                            <p class="text-muted small">Qidiruv parametrlarini o'zgartirib ko'ring</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if is_paginated %}
+    <div class="pagination-premium">
+        {% if page_obj.has_previous %}
+        <a href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+            class="page-num" title="Birinchi">
+            <i class="bi bi-chevron-double-left"></i>
+        </a>
+        <a href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+            class="page-num">
+            <i class="bi bi-chevron-left"></i>
+        </a>
+        {% endif %}
+
+        <div class="page-num active">
+            {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+        </div>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+            class="page-num">
+            <i class="bi bi-chevron-right"></i>
+        </a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+            class="page-num" title="Oxirgi">
+            <i class="bi bi-chevron-double-right"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

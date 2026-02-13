@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">Intizomiy jazo kiritish</h5>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Xodim</label>
+                            {{ form.employee }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Jazo turi</label>
+                            {{ form.action_type }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Sana</label>
+                            {{ form.action_date }}
+                        </div>
+                        <div class="mb-3" id="endDateWrap">
+                            <label class="form-label small fw-bold">Tugash sanasi (Xayfsan uchun)</label>
+                            {{ form.end_date }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Joriy holat</label>
+                            {{ form.status }}
+                        </div>
+                        <div class="mb-3" id="resolvedDateWrap">
+                            <label class="form-label small fw-bold">Yechilgan sana</label>
+                            {{ form.resolved_date }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Izoh</label>
+                            {{ form.reason }}
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Saqlash</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">Intizomiy jazolar ro'yxati</h5>
+                        <span class="badge bg-primary-subtle text-primary">{{ items|length }} ta</span>
+                    </div>
+
+                    <form method="get" class="row g-2 mb-3">
+                        <div class="col-md-7">
+                            <input type="text" class="form-control" name="q"
+                                placeholder="F.I.Sh, login yoki PINFL..." value="{{ q }}">
+                        </div>
+                        <div class="col-md-4">
+                            <select name="action_type" class="form-select">
+                                <option value="">Barcha turlar</option>
+                                {% for code, label in action_choices %}
+                                <option value="{{ code }}" {% if action_type == code %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-light border w-100">OK</button>
+                        </div>
+                    </form>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Sana</th>
+                                    <th>Xodim</th>
+                                    <th>Jazo turi</th>
+                                    <th>Holat</th>
+                                    <th>Tugash</th>
+                                    <th>Yechilgan</th>
+                                    <th>Izoh</th>
+                                    <th>Kiritgan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                <tr>
+                                    <td>{{ item.action_date|date:"d.m.Y" }}</td>
+                                    <td>{{ item.employee.full_name|default:item.employee.username }}</td>
+                                    <td><span class="badge bg-warning-subtle text-warning">{{ item.get_action_type_display }}</span></td>
+                                    <td>
+                                        {% if item.status == 'YECHILGAN' %}
+                                        <span class="badge bg-success-subtle text-success">Yechilgan</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary-subtle text-secondary">Bor</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ item.end_date|date:"d.m.Y"|default:"-" }}</td>
+                                    <td>{{ item.resolved_date|date:"d.m.Y"|default:"-" }}</td>
+                                    <td>{{ item.reason|default:"-" }}</td>
+                                    <td>{{ item.created_by.full_name|default:item.created_by.username|default:"-" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">Ma'lumot topilmadi</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    (function() {
+        const actionType = document.getElementById('id_action_type');
+        const status = document.getElementById('id_status');
+        const endWrap = document.getElementById('endDateWrap');
+        const resolvedWrap = document.getElementById('resolvedDateWrap');
+
+        function syncFormVisibility() {
+            if (actionType && endWrap) {
+                endWrap.style.display = actionType.value === 'XAYFSAN' ? 'block' : 'none';
+            }
+            if (status && resolvedWrap) {
+                resolvedWrap.style.display = status.value === 'YECHILGAN' ? 'block' : 'none';
+            }
+        }
+
+        if (actionType) actionType.addEventListener('change', syncFormVisibility);
+        if (status) status.addEventListener('change', syncFormVisibility);
+        syncFormVisibility();
+    })();
+</script>
+{% endblock %}

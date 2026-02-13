@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .yosh-search-help {
+        font-size: 0.78rem;
+        color: #6c757d;
+        margin-top: 0.35rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-9">
+            <div class="card p-4 border-0 shadow-sm" style="border-radius: 24px;">
+                <div class="d-flex align-items-center mb-5 gap-3">
+                    <div class="p-3 rounded-4 bg-primary text-white shadow-sm">
+                        <i class="bi bi-person-plus fs-3"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold text-dark mb-0">{% if object %}Ma'lumotlarni tahrirlash{% else %}Yangi yosh qo'shish{% endif %}</h3>
+                        <p class="text-muted small mb-0">Tizimga ishsiz yosh haqida ma'lumot kiritish</p>
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-4">
+                        {% for field in form %}
+                        <div class="{% if field.name == 'description' or field.name == 'comment' %}col-12{% else %}col-md-6{% endif %}">
+                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                            <div class="form-text smaller text-muted opacity-75 mt-1">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% if field.errors %}
+                            <div class="text-danger smaller mt-1 fw-bold">{{ field.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex gap-2 mt-5 pt-3 border-top">
+                        <button type="submit" class="btn btn-primary px-5 py-2 fw-bold shadow-sm">
+                            <i class="bi bi-save me-1"></i> Saqlash
+                        </button>
+                        <a href="{% url 'ishsiz_yoshlar:list' %}" class="btn btn-light px-4 py-2">
+                            Bekor qilish
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const yoshSelect = document.getElementById('id_yosh');
+        if (!yoshSelect || !yoshSelect.classList.contains('js-yosh-autocomplete')) {
+            return;
+        }
+
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.className = 'form-control mb-2';
+        searchInput.placeholder = "Yoshni qidiring (F.I.Sh, pasport, JSHSHIR)...";
+
+        const help = document.createElement('div');
+        help.className = 'yosh-search-help';
+        help.textContent = "Kamida 2 ta belgi kiriting va ro'yxatdan tanlang.";
+
+        yoshSelect.parentNode.insertBefore(searchInput, yoshSelect);
+        yoshSelect.parentNode.insertBefore(help, yoshSelect.nextSibling);
+
+        const selectedOption = yoshSelect.options[yoshSelect.selectedIndex];
+        if (selectedOption && selectedOption.value) {
+            searchInput.value = selectedOption.text;
+        }
+
+        let debounceTimer = null;
+        const endpoint = "{% url 'ishsiz_yoshlar:yosh_autocomplete' %}";
+
+        function setOptions(items) {
+            const currentValue = yoshSelect.value;
+            yoshSelect.innerHTML = '<option value="">---------</option>';
+
+            items.forEach((item) => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = item.text;
+                yoshSelect.appendChild(option);
+            });
+
+            if (currentValue) {
+                const stillExists = Array.from(yoshSelect.options).some(opt => opt.value === currentValue);
+                if (stillExists) {
+                    yoshSelect.value = currentValue;
+                }
+            }
+        }
+
+        function fetchOptions(term) {
+            if (term.length < 2) {
+                setOptions([]);
+                return;
+            }
+            fetch(`${endpoint}?q=${encodeURIComponent(term)}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(resp => resp.json())
+                .then(data => setOptions(data.results || []))
+                .catch(() => setOptions([]));
+        }
+
+        searchInput.addEventListener('input', function () {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => fetchOptions(searchInput.value.trim()), 250);
+        });
+    });
+</script>
+{% endblock %}

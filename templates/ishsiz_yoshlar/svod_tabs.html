@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4" style="background-color: #f8fafc; min-height: 100vh;">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">Ishsiz Yoshlar Svodkasi</h2>
+            <p class="text-muted small mb-0">Mahalla, rahbar va professional kesimlar bir sahifada.</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'ishsiz_yoshlar:export_mahalla_svod' %}" class="btn btn-sm btn-success">
+                <i class="bi bi-file-earmark-excel me-1"></i> Mahalla Excel
+            </a>
+            <a href="{% url 'ishsiz_yoshlar:export_leader_svod' %}" class="btn btn-sm btn-success">
+                <i class="bi bi-file-earmark-excel me-1"></i> Rahbar Excel
+            </a>
+            <a href="{% url 'ishsiz_yoshlar:export_professional_svod' %}" class="btn btn-sm btn-success">
+                <i class="bi bi-file-earmark-excel me-1"></i> Professional Excel
+            </a>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header bg-white border-0 pt-3">
+            <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if active_tab == 'mahalla' %}active{% endif %}" data-bs-toggle="tab"
+                        data-bs-target="#mahalla-tab-pane" type="button" role="tab">
+                        Mahallalar kesimi
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if active_tab == 'leader' %}active{% endif %}" data-bs-toggle="tab"
+                        data-bs-target="#leader-tab-pane" type="button" role="tab">
+                        Rahbarlar kesimi
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if active_tab == 'professional' %}active{% endif %}" data-bs-toggle="tab"
+                        data-bs-target="#professional-tab-pane" type="button" role="tab">
+                        Professional kesim
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content">
+                <div class="tab-pane fade {% if active_tab == 'mahalla' %}show active{% endif %}" id="mahalla-tab-pane"
+                    role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Mahalla</th>
+                                    <th class="text-center">Ishsiz yoshlar</th>
+                                    <th class="text-center">Uchrashuv bo'lgan</th>
+                                    <th class="text-center">Jami bandlik</th>
+                                    <th class="text-center">Ish</th>
+                                    <th class="text-center">Kredit</th>
+                                    <th class="text-center">Migratsiya</th>
+                                    <th class="text-center">Yer</th>
+                                    <th class="text-center">Subsidiya</th>
+                                    <th class="text-center">Bandliksiz</th>
+                                    <th class="text-center">Foiz</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="table-success">
+                                    <td>-</td>
+                                    <td class="fw-semibold">Jami</td>
+                                    <td class="text-center fw-semibold">{{ totals.total_youth }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.with_meeting }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.total_assisted }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.ish }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.kredit }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.migratsiya }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.yer }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.subsidiya }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.not_assisted }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.percent }}%</td>
+                                </tr>
+                                {% for row in mahalla_statistics %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ row.name }}</td>
+                                    <td class="text-center">{{ row.total_youth }}</td>
+                                    <td class="text-center">{{ row.with_meeting }}</td>
+                                    <td class="text-center">{{ row.total_assisted }}</td>
+                                    <td class="text-center">{{ row.ish|default:0 }}</td>
+                                    <td class="text-center">{{ row.kredit|default:0 }}</td>
+                                    <td class="text-center">{{ row.migratsiya|default:0 }}</td>
+                                    <td class="text-center">{{ row.yer|default:0 }}</td>
+                                    <td class="text-center">{{ row.subsidiya|default:0 }}</td>
+                                    <td class="text-center">{{ row.not_assisted }}</td>
+                                    <td class="text-center fw-semibold">{{ row.percent }}%</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="12" class="text-center text-muted py-4">Ma'lumot topilmadi.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade {% if active_tab == 'leader' %}show active{% endif %}" id="leader-tab-pane"
+                    role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Mas'ul rahbar</th>
+                                    <th>Sohasi</th>
+                                    <th class="text-center">Ishsiz yoshlar</th>
+                                    <th class="text-center">Uchrashuv bo'lgan</th>
+                                    <th class="text-center">Jami bandlik</th>
+                                    <th class="text-center">Ish</th>
+                                    <th class="text-center">Kredit</th>
+                                    <th class="text-center">Migratsiya</th>
+                                    <th class="text-center">Yer</th>
+                                    <th class="text-center">Subsidiya</th>
+                                    <th class="text-center">Bandliksiz</th>
+                                    <th class="text-center">Foiz</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="table-success">
+                                    <td>-</td>
+                                    <td colspan="2" class="fw-semibold">Jami</td>
+                                    <td class="text-center fw-semibold">{{ totals.total_youth }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.with_meeting }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.total_assisted }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.ish }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.kredit }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.migratsiya }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.yer }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.subsidiya }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.not_assisted }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.percent }}%</td>
+                                </tr>
+                                {% for row in leader_statistics %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>
+                                        <div class="fw-semibold">{{ row.full_name }}</div>
+                                        <small class="text-muted">{{ row.position|default:"-" }}</small>
+                                    </td>
+                                    <td>{{ row.sector|default:"-" }}</td>
+                                    <td class="text-center">{{ row.total_youth }}</td>
+                                    <td class="text-center">{{ row.with_meeting }}</td>
+                                    <td class="text-center">{{ row.total_assisted }}</td>
+                                    <td class="text-center">{{ row.ish|default:0 }}</td>
+                                    <td class="text-center">{{ row.kredit|default:0 }}</td>
+                                    <td class="text-center">{{ row.migratsiya|default:0 }}</td>
+                                    <td class="text-center">{{ row.yer|default:0 }}</td>
+                                    <td class="text-center">{{ row.subsidiya|default:0 }}</td>
+                                    <td class="text-center">{{ row.not_assisted }}</td>
+                                    <td class="text-center fw-semibold">{{ row.percent }}%</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="13" class="text-center text-muted py-4">Ma'lumot topilmadi.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade {% if active_tab == 'professional' %}show active{% endif %}"
+                    id="professional-tab-pane" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Tuman</th>
+                                    <th>Mahalla</th>
+                                    <th>Mas'ul rahbar</th>
+                                    <th>Sohasi</th>
+                                    <th class="text-center">Ishsiz yoshlar</th>
+                                    <th class="text-center">Uchrashuv bo'lgan</th>
+                                    <th class="text-center">Jami bandlik</th>
+                                    <th class="text-center">Ish</th>
+                                    <th class="text-center">Kredit</th>
+                                    <th class="text-center">Migratsiya</th>
+                                    <th class="text-center">Yer</th>
+                                    <th class="text-center">Subsidiya</th>
+                                    <th class="text-center">Bandliksiz</th>
+                                    <th class="text-center">Foiz</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="table-success">
+                                    <td>-</td>
+                                    <td colspan="4" class="fw-semibold">Jami</td>
+                                    <td class="text-center fw-semibold">{{ totals.total_youth }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.with_meeting }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.total_assisted }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.ish }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.kredit }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.migratsiya }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.yer }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.subsidiya }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.not_assisted }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.percent }}%</td>
+                                </tr>
+                                {% for row in professional_statistics %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>Xazorasp tumani</td>
+                                    <td>{{ row.yosh__mahalla__name }}</td>
+                                    <td>
+                                        <div class="fw-semibold">{{ row.leader__full_name }}</div>
+                                        <small class="text-muted">{{ row.leader__position|default:"-" }}</small>
+                                    </td>
+                                    <td>{{ row.leader__sector|default:"-" }}</td>
+                                    <td class="text-center">{{ row.total_youth }}</td>
+                                    <td class="text-center">{{ row.with_meeting }}</td>
+                                    <td class="text-center">{{ row.total_assisted }}</td>
+                                    <td class="text-center">{{ row.ish|default:0 }}</td>
+                                    <td class="text-center">{{ row.kredit|default:0 }}</td>
+                                    <td class="text-center">{{ row.migratsiya|default:0 }}</td>
+                                    <td class="text-center">{{ row.yer|default:0 }}</td>
+                                    <td class="text-center">{{ row.subsidiya|default:0 }}</td>
+                                    <td class="text-center">{{ row.not_assisted }}</td>
+                                    <td class="text-center fw-semibold">{{ row.percent }}%</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="15" class="text-center text-muted py-4">Ma'lumot topilmadi.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

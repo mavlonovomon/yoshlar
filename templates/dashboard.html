@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="mb-5">
+        <h2 class="fw-bold mb-1 text-dark">Umumiy Dashboard</h2>
+        <p class="text-muted small">Tizimdagi barcha yoshlar va suhbatlar statistikasi</p>
+    </div>
+
+    <!-- Stats Row: Optimized for 4 items per row on PC -->
+    <div class="row g-4 mb-5 row-cols-1 row-cols-md-2 row-cols-lg-4">
+        <!-- Card 1: Jami Yoshlar -->
+        <div class="col">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden premium-card">
+                <div class="card-header-line bg-primary"></div>
+                <div class="card-body p-4 text-center">
+                    <div class="stats-icon-wrapper mb-3 text-primary">
+                        <i class="bi bi-people fs-4"></i>
+                    </div>
+                    <h2 class="fw-black mb-1 display-6">{{ total_yosh|intcomma }}</h2>
+                    <div class="stats-label">JAMI YOSHLAR</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: Suhbat O'tkazilgan -->
+        <div class="col">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden premium-card">
+                <div class="card-header-line bg-success"></div>
+                <div class="card-body p-4 text-center">
+                    <div class="stats-icon-wrapper mb-3 text-success">
+                        <i class="bi bi-check-circle fs-4"></i>
+                    </div>
+                    <h2 class="fw-black mb-1 display-6 text-success">{{ suhbat_bor|intcomma }}</h2>
+                    <div class="stats-label">SUHBAT O'TKAZILGAN</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: Kutilmoqda -->
+        <div class="col">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden premium-card">
+                <div class="card-header-line bg-danger"></div>
+                <div class="card-body p-4 text-center">
+                    <div class="stats-icon-wrapper mb-3 text-danger">
+                        <i class="bi bi-x-circle fs-4"></i>
+                    </div>
+                    <h2 class="fw-black mb-1 display-6 text-danger">{{ suhbat_yoq|intcomma }}</h2>
+                    <div class="stats-label">KUTILMOQDA</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 4: Jami Suhbatlar -->
+        <div class="col">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden premium-card">
+                <div class="card-header-line bg-info"></div>
+                <div class="card-body p-4 text-center">
+                    <div class="stats-icon-wrapper mb-3 text-info">
+                        <i class="bi bi-journal-text fs-4"></i>
+                    </div>
+                    <h2 class="fw-black mb-1 display-6 text-info">{{ total_meetings|intcomma }}</h2>
+                    <div class="stats-label">JAMI SUHBATLAR</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Meetings -->
+    <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 20px;">
+        <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0 text-dark">Oxirgi Suhbatlar</h5>
+            <a href="{% url 'yosh_list' %}" class="btn btn-primary-soft btn-sm rounded-pill px-4">Barcha yoshlar</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 py-3 border-0">Yoshlar Ma'lumotlari</th>
+                        <th class="py-3 border-0">Yetakchi</th>
+                        <th class="py-3 border-0">Sana va Vaqt</th>
+                        <th class="py-3 border-0">Qisqacha Mazmun</th>
+                        <th class="py-3 border-0 text-center">Harakat</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for meeting in latest_meetings %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark">{{ meeting.yosh.fullname }}</div>
+                            <div class="text-muted smaller">ID: #{{ meeting.yosh.pk }}</div>
+                        </td>
+                        <td>
+                            <div class="text-dark fw-medium small">{{ meeting.yetakchi.full_name }}</div>
+                            <div class="text-muted smaller">{{ meeting.yetakchi.mahalla.name|default:"Admin" }}</div>
+                        </td>
+                        <td>
+                            {% if meeting.meeting_date %}
+                            <div class="text-dark small">
+                                <i class="bi bi-calendar3 me-2 text-primary"></i>{{ meeting.meeting_date_str|default:"-" }}
+                            </div>
+                            <div class="text-muted smaller">
+                                <i class="bi bi-clock me-2"></i>{{ meeting.meeting_time_str|default:"-" }}
+                            </div>
+                            {% else %}
+                            <div class="text-muted small">-</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="text-muted small" style="max-width: 350px; line-height: 1.4;">
+                                <i class="bi bi-quote text-primary opacity-25 me-1"></i>
+                                {% if meeting.conversation_text %}
+                                    {{ meeting.conversation_text|truncatewords:12 }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <a href="{% url 'yosh_detail' meeting.yosh.pk %}"
+                                class="btn btn-outline-primary btn-sm px-4 rounded-pill">
+                                Ko'rish
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="py-5 text-center text-muted">Hozircha suhbatlar mavjud emas</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .premium-card {
+        border-radius: 20px !important;
+        transition: all 0.3s ease;
+        background: #fff;
+    }
+
+    .premium-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .card-header-line {
+        height: 8px;
+        width: 100%;
+        opacity: 0.8;
+    }
+
+    .stats-icon-wrapper {
+        width: 50px;
+        height: 50px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.03);
+        border-radius: 14px;
+    }
+
+    .fw-black {
+        font-weight: 900;
+    }
+
+    .stats-label {
+        font-weight: 800;
+        letter-spacing: 0.8px;
+        color: #64748b;
+        font-size: 0.75rem;
+    }
+
+    .btn-primary-soft {
+        background-color: rgba(13, 110, 253, 0.1);
+        color: #0d6efd;
+    }
+
+    .btn-primary-soft:hover {
+        background-color: #0d6efd;
+        color: #fff;
+    }
+
+    .smaller {
+        font-size: 0.75rem;
+    }
+
+    @media (max-width: 767.98px) {
+        .display-6 {
+            font-size: 1.75rem;
+        }
+    }
+</style>
+{% endblock %}

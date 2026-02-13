@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">
+                    {% if object %}
+                    Topshirigini tahrirlash
+                    {% else %}
+                    Yangi topshiriq yaratish
+                    {% endif %}
+                </h1>
+            </div>
+            <div class="col-sm-6">
+                <div class="float-right">
+                    <a href="{% url 'ishsiz_yoshlar:task_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Orqaga
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label">{{ form.title.label }}</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                            <div class="text-danger">{{ form.title.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.priority.label }}</label>
+                            {{ form.priority }}
+                            {% if form.priority.errors %}
+                            <div class="text-danger">{{ form.priority.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.description.label }}</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                        <div class="text-danger">{{ form.description.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    {% if not object %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mas'ullarni tanlash</label>
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.send_all_coordinators }}
+                                    <label class="form-check-label" for="{{ form.send_all_coordinators.id_for_label }}">{{ form.send_all_coordinators.label }}</label>
+                                </div>
+                                <div class="form-check">
+                                    {{ form.send_all_leaders }}
+                                    <label class="form-check-label" for="{{ form.send_all_leaders.id_for_label }}">{{ form.send_all_leaders.label }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.send_sector_1_coordinator }}
+                                    <label class="form-check-label" for="{{ form.send_sector_1_coordinator.id_for_label }}">{{ form.send_sector_1_coordinator.label }}</label>
+                                </div>
+                                <div class="form-check">
+                                    {{ form.send_sector_1_leaders }}
+                                    <label class="form-check-label" for="{{ form.send_sector_1_leaders.id_for_label }}">{{ form.send_sector_1_leaders.label }}</label>
+                                </div>
+                                <div class="form-check">
+                                    {{ form.send_sector_2_coordinator }}
+                                    <label class="form-check-label" for="{{ form.send_sector_2_coordinator.id_for_label }}">{{ form.send_sector_2_coordinator.label }}</label>
+                                </div>
+                                <div class="form-check">
+                                    {{ form.send_sector_2_leaders }}
+                                    <label class="form-check-label" for="{{ form.send_sector_2_leaders.id_for_label }}">{{ form.send_sector_2_leaders.label }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.send_sector_3_coordinator }}
+                                    <label class="form-check-label" for="{{ form.send_sector_3_coordinator.id_for_label }}">{{ form.send_sector_3_coordinator.label }}</label>
+                                </div>
+                                <div class="form-check">
+                                    {{ form.send_sector_3_leaders }}
+                                    <label class="form-check-label" for="{{ form.send_sector_3_leaders.id_for_label }}">{{ form.send_sector_3_leaders.label }}</label>
+                                </div>
+                                <div class="form-check">
+                                    {{ form.send_sector_4_coordinator }}
+                                    <label class="form-check-label" for="{{ form.send_sector_4_coordinator.id_for_label }}">{{ form.send_sector_4_coordinator.label }}</label>
+                                </div>
+                                <div class="form-check">
+                                    {{ form.send_sector_4_leaders }}
+                                    <label class="form-check-label" for="{{ form.send_sector_4_leaders.id_for_label }}">{{ form.send_sector_4_leaders.label }}</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ form.recipients.label }}</label>
+                        {% if form.recipients.errors %}
+                        <div class="text-danger mb-2">{{ form.recipients.errors }}</div>
+                        {% endif %}
+                        <div class="row g-2" id="recipient-list">
+                            {% for u in recipient_options %}
+                            <div class="col-md-6 col-lg-4">
+                                <label class="form-check small">
+                                    <input class="form-check-input recipient-item" type="checkbox" name="recipients" value="{{ u.id }}"
+                                        data-sector="{{ u.sector }}" data-coordinator="{% if u.is_coordinator %}1{% else %}0{% endif %}"
+                                        {% if u.id|stringformat:"s" in selected_recipient_ids %}checked{% endif %}>
+                                    <span class="form-check-label">
+                                        {{ u.name }}
+                                        {% if u.sector %}<span class="text-muted">({{ u.sector }}-sektor)</span>{% endif %}
+                                        {% if u.is_coordinator %}<span class="badge bg-warning-subtle text-warning border ms-1">Koordinator</span>{% endif %}
+                                    </span>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="row mb-3">
+                        {% if object %}
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.assigned_to.label }}</label>
+                            {{ form.assigned_to }}
+                            {% if form.assigned_to.errors %}
+                            <div class="text-danger">{{ form.assigned_to.errors }}</div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.due_date.label }}</label>
+                            {{ form.due_date }}
+                            {% if form.due_date.errors %}
+                            <div class="text-danger">{{ form.due_date.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.attachment.label }}</label>
+                        {{ form.attachment }}
+                        {% if form.attachment.errors %}
+                        <div class="text-danger">{{ form.attachment.errors }}</div>
+                        {% endif %}
+                        {% if object and object.attachment %}
+                        <div class="mt-2">
+                            <a href="{{ object.attachment.url }}" target="_blank" class="btn btn-sm btn-info">
+                                <i class="bi bi-file-earmark"></i> Mavjud faylni ko'rish
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Saqlash
+                        </button>
+                        <a href="{% url 'ishsiz_yoshlar:task_list' %}" class="btn btn-secondary">
+                            Bekor qilish
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const checkAll = (predicate, checked) => {
+            document.querySelectorAll('.recipient-item').forEach(cb => {
+                if (predicate(cb)) {
+                    cb.checked = checked;
+                }
+            });
+        };
+
+        const byId = (id) => document.getElementById(id);
+
+        const allCoordinators = byId("{{ form.send_all_coordinators.id_for_label }}");
+        const allLeaders = byId("{{ form.send_all_leaders.id_for_label }}");
+        const s1c = byId("{{ form.send_sector_1_coordinator.id_for_label }}");
+        const s1l = byId("{{ form.send_sector_1_leaders.id_for_label }}");
+        const s2c = byId("{{ form.send_sector_2_coordinator.id_for_label }}");
+        const s2l = byId("{{ form.send_sector_2_leaders.id_for_label }}");
+        const s3c = byId("{{ form.send_sector_3_coordinator.id_for_label }}");
+        const s3l = byId("{{ form.send_sector_3_leaders.id_for_label }}");
+        const s4c = byId("{{ form.send_sector_4_coordinator.id_for_label }}");
+        const s4l = byId("{{ form.send_sector_4_leaders.id_for_label }}");
+
+        if (allCoordinators) {
+            allCoordinators.addEventListener('change', (e) => {
+                checkAll(cb => cb.dataset.coordinator === '1', e.target.checked);
+            });
+        }
+        if (allLeaders) {
+            allLeaders.addEventListener('change', (e) => {
+                checkAll(() => true, e.target.checked);
+            });
+        }
+
+        const sectorToggle = (el, sector, coordinatorOnly) => {
+            if (!el) return;
+            el.addEventListener('change', (e) => {
+                checkAll(cb => cb.dataset.sector === String(sector) && cb.dataset.coordinator === (coordinatorOnly ? '1' : '0'), e.target.checked);
+            });
+        };
+
+        sectorToggle(s1c, 1, true);
+        sectorToggle(s1l, 1, false);
+        sectorToggle(s2c, 2, true);
+        sectorToggle(s2l, 2, false);
+        sectorToggle(s3c, 3, true);
+        sectorToggle(s3l, 3, false);
+        sectorToggle(s4c, 4, true);
+        sectorToggle(s4l, 4, false);
+    })();
+</script>
+{% endblock %}

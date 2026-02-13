@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/list_premium.css' %}">
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-title-group">
+            <h2>Yoshlar Ro'yxati</h2>
+            <p>Mahalladagi jami yoshlar haqida umumiy ma'lumotlar bazasi</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'yosh_create' %}" class="btn btn-primary shadow-sm">
+                <i class="bi bi-person-plus-fill me-1"></i> Yangi yosh qo'shish
+            </a>
+        </div>
+    </div>
+
+    <!-- Advanced Filters -->
+    <div class="filter-card">
+        <form method="get" class="filter-grid" id="filterForm">
+            <div class="filter-item">
+                <label class="form-label text-muted small fw-bold">QIDIRISH</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" name="q" class="form-control border-start-0"
+                        placeholder="F.I.Sh, tel, pasport, jshshir..." value="{{ request.GET.q }}">
+                </div>
+            </div>
+
+            {% if mahallas %}
+            <div class="filter-item">
+                <label class="form-label text-muted small fw-bold">MAHALLA</label>
+                <select name="mahalla" class="form-select" onchange="this.form.submit()">
+                    <option value="">Barcha mahallalar</option>
+                    {% for m in mahallas %}
+                    <option value="{{ m.id }}" {% if selected_mahalla == m.id %}selected{% endif %}>{{ m.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <div class="filter-item">
+                <label class="form-label text-muted small fw-bold">HOLAT</label>
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">Barchasi</option>
+                    <option value="bor" {% if selected_status == 'bor' %}selected{% endif %}>Suhbat o'tkazilgan</option>
+                    <option value="yoq" {% if selected_status == 'yoq' %}selected{% endif %}>Suhbat o'tkazilmagan</option>
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <label class="form-label text-muted small fw-bold">KO'RSATISH</label>
+                <select name="per_page" class="form-select" onchange="this.form.submit()">
+                    <option value="10" {% if per_page == '10' %}selected{% endif %}>10 tadan</option>
+                    <option value="20" {% if per_page == '20' %}selected{% endif %}>20 tadan</option>
+                    <option value="50" {% if per_page == '50' %}selected{% endif %}>50 tadan</option>
+                    <option value="100" {% if per_page == '100' %}selected{% endif %}>100 tadan</option>
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-funnel-fill me-1"></i> Saralash
+                </button>
+                {% if request.GET.q or request.GET.mahalla or request.GET.status or per_page != '20' %}
+                <a href="{% url 'yosh_list' %}" class="btn btn-light ms-1" title="Tozalash">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Data Table -->
+    <div class="premium-table-card">
+        <div class="table-responsive">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">T/r</th>
+                        {% if mahallas %}<th>Mahalla</th>{% endif %}
+                        <th>F.I.Sh va Kontakt</th>
+                        <th>Hujjat ma'lumotlari</th>
+                        <th>Suhbat holati</th>
+                        <th class="text-center" style="width: 180px;">Amallar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in page_obj %}
+                    <tr>
+                        <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
+                        {% if mahallas %}
+                        <td class="fw-medium">{{ item.mahalla.name }}</td>
+                        {% endif %}
+                        <td>
+                            <div class="user-cell">
+                                {% with leader=item.mahalla.leaders.all|first %}
+                                {% if item.photo %}
+                                <img src="{{ item.photo.url }}" class="user-avatar cursor-pointer"
+                                    onclick="openLeaderModal(this)"
+                                    data-name="{{ leader.full_name|default:'Biriktirilmagan' }}"
+                                    data-position="{% if leader %}Mahalla yetakchisi{% else %}Mas'ul rahbar{% endif %}"
+                                    data-phone="{{ leader.pinfl|default:'--' }}" data-org="{{ item.mahalla.name }}"
+                                    {% if leader and leader.profile_image %}data-image="{{ leader.profile_image.url }}"{% endif %}
+                                    onerror="this.onerror=null;this.src='{% static 'img/user_bust.png' %}';">
+                                {% else %}
+                                <img src="{% static 'img/user_bust.png' %}" class="user-avatar cursor-pointer"
+                                    alt="Default" onclick="openLeaderModal(this)"
+                                    data-name="{{ leader.full_name|default:'Biriktirilmagan' }}"
+                                    data-position="{% if leader %}Mahalla yetakchisi{% else %}Mas'ul rahbar{% endif %}"
+                                    data-phone="{{ leader.pinfl|default:'--' }}" data-org="{{ item.mahalla.name }}"
+                                    {% if leader and leader.profile_image %}data-image="{{ leader.profile_image.url }}"{% endif %}>
+                                {% endif %}
+                                {% endwith %}
+                                <div class="user-info-text">
+                                    <a href="{% url 'yosh_detail' item.pk %}" class="user-name text-decoration-none">
+                                        {{ item.fullname }}
+                                    </a>
+                                    <div class="user-meta">
+                                        <i class="bi bi-telephone me-1"></i> {{ item.phone_number }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ item.passport_number }}</div>
+                            <div class="text-muted smaller" style="font-size: 0.75rem;">JSHSHIR: {{ item.jshshir }}
+                            </div>
+                        </td>
+                        <td>
+                            {% if item.has_meeting %}
+                            <span class="badge-premium bg-success-subtle text-success">
+                                <i class="bi bi-check-circle-fill"></i> Suhbat bor ({{ item.meeting_count }})
+                            </span>
+                            {% else %}
+                            <span class="badge-premium bg-warning-subtle text-warning">
+                                <i class="bi bi-clock-history"></i> Suhbat yo'q
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="action-btn-group">
+                                <!-- 1. Anketa (View) -->
+                                <a href="{% url 'yosh_detail' item.pk %}?readonly=true"
+                                    class="action-btn action-btn-view" title="Anketani ko'rish">
+                                    <i class="bi bi-file-earmark-person"></i>
+                                </a>
+
+                                <!-- 2. Uchrashuv (Meeting) -->
+                                <a href="{% url 'yosh_detail' item.pk %}" class="action-btn action-btn-meeting pending"
+                                    title="Suhbat o'tkazish">
+                                    <i class="bi bi-chat-dots"></i>
+                                </a>
+
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if mahallas %}6{% else %}5{% endif %}" class="text-center py-5">
+                            <div class="mb-3 text-muted">
+                                <i class="bi bi-database-exclamation display-4"></i>
+                            </div>
+                            <h5 class="text-muted">Ma'lumotlar topilmadi</h5>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="pagination-premium">
+        {% if page_obj.has_previous %}
+        <a href="?page=1&q={{ request.GET.q }}&status={{ request.GET.status }}&per_page={{ per_page }}&mahalla={{ request.GET.mahalla|default:'' }}"
+            class="page-num" title="Birinchi">
+            <i class="bi bi-chevron-double-left"></i>
+        </a>
+        <a href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}&per_page={{ per_page }}&mahalla={{ request.GET.mahalla|default:'' }}"
+            class="page-num">
+            <i class="bi bi-chevron-left"></i>
+        </a>
+        {% endif %}
+
+        <div class="page-num active">
+            {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+        </div>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}&per_page={{ per_page }}&mahalla={{ request.GET.mahalla|default:'' }}"
+            class="page-num">
+            <i class="bi bi-chevron-right"></i>
+        </a>
+        <a href="?page={{ page_obj.paginator.num_pages }}&q={{ request.GET.q }}&status={{ request.GET.status }}&per_page={{ per_page }}&mahalla={{ request.GET.mahalla|default:'' }}"
+            class="page-num" title="Oxirgi">
+            <i class="bi bi-chevron-double-right"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

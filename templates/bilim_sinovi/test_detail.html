@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="test-detail-container">
+    <!-- Sticky Timer Header -->
+    <div
+        class="timer-header sticky-top bg-white shadow-sm py-3 mb-4 rounded-3 d-flex justify-content-between align-items-center px-4">
+        <div>
+            <h5 class="m-0 fw-bold">{{ test.title }}</h5>
+            <small class="text-muted">
+                {{ test.questions_count }} ta savol |
+                Urinish: {{ attempts_used|default:0 }}/{{ test.max_attempts }}
+            </small>
+        </div>
+        <div class="timer-display d-flex align-items-center text-danger fw-bold fs-4">
+            <i class="far fa-clock me-2"></i>
+            <span id="countdown">00:00</span>
+        </div>
+    </div>
+
+    <form method="post" id="testForm" class="mx-auto" style="max-width: 800px;">
+        {% csrf_token %}
+
+        {% for question in questions %}
+        <div class="card question-card border-0 shadow-sm mb-4 rounded-4 animate-in"
+            style="animation-delay: {{ forloop.counter0 }}00ms;">
+            <div class="card-body p-4">
+                <div class="question-header d-flex mb-3">
+                    <span
+                        class="question-number bg-light text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold me-3"
+                        style="width: 40px; height: 40px; min-width: 40px;">
+                        {{ forloop.counter }}
+                    </span>
+                    <h5 class="card-text mb-0 pt-2" style="line-height: 1.6;">{{ question.text }}</h5>
+                </div>
+
+                <div class="options-list ps-5 ms-2">
+                    <div class="option-item form-check mb-3 p-3 rounded-3 border option-wrapper">
+                        <input class="form-check-input mt-1" type="radio" name="question_{{ question.pk }}"
+                            id="q{{ question.pk }}_a" value="A" required>
+                        <label class="form-check-label w-100 ps-2" for="q{{ question.pk }}_a">
+                            <span class="fw-bold me-2">A)</span> {{ question.option_a }}
+                        </label>
+                    </div>
+
+                    <div class="option-item form-check mb-3 p-3 rounded-3 border option-wrapper">
+                        <input class="form-check-input mt-1" type="radio" name="question_{{ question.pk }}"
+                            id="q{{ question.pk }}_b" value="B" required>
+                        <label class="form-check-label w-100 ps-2" for="q{{ question.pk }}_b">
+                            <span class="fw-bold me-2">B)</span> {{ question.option_b }}
+                        </label>
+                    </div>
+
+                    {% if question.option_c %}
+                    <div class="option-item form-check mb-3 p-3 rounded-3 border option-wrapper">
+                        <input class="form-check-input mt-1" type="radio" name="question_{{ question.pk }}"
+                            id="q{{ question.pk }}_c" value="C" required>
+                        <label class="form-check-label w-100 ps-2" for="q{{ question.pk }}_c">
+                            <span class="fw-bold me-2">C)</span> {{ question.option_c }}
+                        </label>
+                    </div>
+                    {% endif %}
+
+                    {% if question.option_d %}
+                    <div class="option-item form-check mb-3 p-3 rounded-3 border option-wrapper">
+                        <input class="form-check-input mt-1" type="radio" name="question_{{ question.pk }}"
+                            id="q{{ question.pk }}_d" value="D" required>
+                        <label class="form-check-label w-100 ps-2" for="q{{ question.pk }}_d">
+                            <span class="fw-bold me-2">D)</span> {{ question.option_d }}
+                        </label>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="text-center py-4">
+            <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5 shadow-primary fw-bold hover-scale">
+                Testni Yakunlash <i class="fas fa-check-circle ms-2"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .option-wrapper {
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .option-wrapper:hover {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+    }
+
+    .form-check-input:checked~label {
+        color: #0d6efd;
+        font-weight: 500;
+    }
+
+    .option-wrapper:has(.form-check-input:checked) {
+        background-color: #e7f1ff;
+        border-color: #0d6efd !important;
+    }
+
+    .shadow-primary {
+        box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
+    }
+
+    .animate-in {
+        animation: fadeInUp 0.5s ease-out backwards;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .hover-scale {
+        transition: transform 0.2s;
+    }
+
+    .hover-scale:hover {
+        transform: scale(1.05);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Duration in minutes
+        const durationMinutes = {{ test.duration_minutes|default:0 }};
+        let timeRemaining = durationMinutes * 60;
+
+        const display = document.getElementById('countdown');
+        const form = document.getElementById('testForm');
+
+        // Prevent accidental navigation
+        window.onbeforeunload = function () {
+            return "Test hali tugamadi. Sahifadan chiqsangiz natijalar saqlanmaydi!";
+        };
+
+        form.onsubmit = function () {
+            window.onbeforeunload = null;
+        };
+
+        const timer = setInterval(function () {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+
+            display.textContent =
+                (minutes < 10 ? "0" : "") + minutes + ":" +
+                (seconds < 10 ? "0" : "") + seconds;
+
+            if (--timeRemaining < 0) {
+                clearInterval(timer);
+                alert("Vaqt tugadi! Javoblar avtomatik yuborilmoqda.");
+                window.onbeforeunload = null;
+                form.submit();
+            }
+
+            // Warning color
+            if (timeRemaining < 60) {
+                display.classList.add('text-danger', 'blink');
+            }
+        }, 1000);
+
+        // Make entire option wrapper clickable
+        document.querySelectorAll('.option-wrapper').forEach(wrapper => {
+            wrapper.addEventListener('click', function (e) {
+                if (e.target.tagName !== 'INPUT') {
+                    const input = this.querySelector('input[type="radio"]');
+                    input.checked = true;
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

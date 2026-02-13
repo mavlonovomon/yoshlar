@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/mega_projects.css' %}?v=20260205b">
+{% endblock %}
+
+{% block content %}
+<div class="mega-wrap">
+    <div class="mega-hero">
+        <div>
+            <div class="mega-title">Mega loyihalar</div>
+            <div class="mega-subtitle">
+                Har bir loyiha bo'yicha real vaqt statistikasi API orqali olinadi.
+                Hozircha maket tayyor, keyingi bosqichda integratsiya qilamiz.
+            </div>
+        </div>
+        <button class="mega-refresh">
+            <i class="bi bi-arrow-repeat"></i> Statistikani yangilash
+        </button>
+    </div>
+
+    <div class="mega-grid">
+        {% for item in projects %}
+        <div class="mega-card">
+            <div class="mega-card-top">
+                <div class="mega-logo" style="background: {{ item.accent }};">
+                    {% if item.logo_static %}
+                    <img src="{% static item.logo_static %}" alt="{{ item.name }}">
+                    {% elif item.logo %}
+                    <img src="{{ item.logo }}" alt="{{ item.name }}">
+                    {% else %}
+                    <i class="bi {{ item.icon }}"></i>
+                    {% endif %}
+                </div>
+                <div class="mega-badge">So'rov: tayyor</div>
+            </div>
+            <div class="mega-title-sm">{{ item.name }}</div>
+            <div class="mega-stat">
+                <div class="mega-stat-box">
+                    <span>Jami ishtirokchi</span>
+                    <strong>—</strong>
+                </div>
+                <div class="mega-stat-box">
+                    <span>Bugungi qo'shilganlar</span>
+                    <strong>—</strong>
+                </div>
+                <div class="mega-stat-box">
+                    <span>Faol foydalanuvchi</span>
+                    <strong>—</strong>
+                </div>
+                <div class="mega-stat-box">
+                    <span>So'ngi yangilanish</span>
+                    <strong>{{ item.updated }}</strong>
+                </div>
+            </div>
+            <div class="mega-actions">
+                <a class="mega-link" href="/mega-loyihalar/{{ item.key }}/">Batafsil ko'rish</a>
+                <span class="mega-status">{{ item.status }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

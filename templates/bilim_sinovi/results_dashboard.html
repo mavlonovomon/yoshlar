@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h3 class="fw-bold mb-1">Test Natijalari</h3>
+            <p class="text-muted mb-0">Urinishlar, yetakchi kesimi va test kesimidagi umumiy jadval.</p>
+        </div>
+        <a href="{% url 'bilim_sinovi:test_manage_list' %}" class="btn btn-outline-secondary">Tashkillashtirishga qaytish</a>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-lg-4 col-md-6">
+                    <label class="form-label mb-1 small fw-semibold">Qidiruv</label>
+                    <input type="text" class="form-control" name="q" value="{{ q }}"
+                        placeholder="F.I.Sh, login yoki test nomi">
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label mb-1 small fw-semibold">Test</label>
+                    <select name="test" class="form-select">
+                        <option value="">Barcha testlar</option>
+                        {% for test in tests %}
+                        <option value="{{ test.pk }}" {% if selected_test == test.pk %}selected{% endif %}>{{ test.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <label class="form-label mb-1 small fw-semibold">Dan</label>
+                    <input type="date" class="form-control" name="from" value="{{ from_date }}">
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <label class="form-label mb-1 small fw-semibold">Gacha</label>
+                    <input type="date" class="form-control" name="to" value="{{ to_date }}">
+                </div>
+                <div class="col-lg-1 col-md-12 d-grid">
+                    <button type="submit" class="btn btn-primary">OK</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <span class="badge bg-primary-subtle text-primary border">Urinishlar: {{ total_attempts }}</span>
+        <span class="badge bg-secondary-subtle text-secondary border">Ko'rsatilgan urinishlar: {{ shown_attempts }}</span>
+        <span class="badge bg-success-subtle text-success border">Yetakchilar: {{ leader_rows|length }}</span>
+        <span class="badge bg-warning-subtle text-dark border">Testlar: {{ test_rows|length }}</span>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 pt-3">
+            <ul class="nav nav-tabs card-header-tabs" id="resultsTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="attempts-tab" data-bs-toggle="tab" data-bs-target="#attempts-pane"
+                        type="button" role="tab" aria-controls="attempts-pane" aria-selected="true">
+                        Urinishlar jadvali
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="leaders-tab" data-bs-toggle="tab" data-bs-target="#leaders-pane"
+                        type="button" role="tab" aria-controls="leaders-pane" aria-selected="false">
+                        Yetakchi kesimi
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tests-tab" data-bs-toggle="tab" data-bs-target="#tests-pane"
+                        type="button" role="tab" aria-controls="tests-pane" aria-selected="false">
+                        Test kesimi
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="resultsTabsContent">
+                <div class="tab-pane fade show active" id="attempts-pane" role="tabpanel" aria-labelledby="attempts-tab"
+                    tabindex="0">
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Sana</th>
+                                    <th>Yetakchi</th>
+                                    <th>Mahalla/Sektor</th>
+                                    <th>Test</th>
+                                    <th class="text-center">Urinish</th>
+                                    <th class="text-center">To'g'ri/Jami</th>
+                                    <th class="text-center">Foiz</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in attempts_rows %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ row.finished_at|date:"d.m.Y H:i" }}</td>
+                                    <td>{{ row.user.full_name|default:row.user.username }}</td>
+                                    <td>
+                                        <div>{{ row.user.mahalla.name|default:"-" }}</div>
+                                        <small class="text-muted">{{ row.user.get_sector_display|default:"-" }}</small>
+                                    </td>
+                                    <td>{{ row.test_config.title }}</td>
+                                    <td class="text-center">{{ row.attempt_no }}/{{ row.test_config.max_attempts }}</td>
+                                    <td class="text-center">{{ row.correct_answers_count }}/{{ row.total_questions }}</td>
+                                    <td class="text-center fw-semibold">{{ row.percentage|floatformat:1 }}%</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4 text-muted">Natijalar topilmadi.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="leaders-pane" role="tabpanel" aria-labelledby="leaders-tab" tabindex="0">
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Reyting</th>
+                                    <th>Yetakchi</th>
+                                    <th>Mahalla</th>
+                                    <th>Sektor</th>
+                                    <th class="text-center">Urinish</th>
+                                    <th class="text-center">Testlar</th>
+                                    <th class="text-center">O'rtacha foiz</th>
+                                    <th class="text-center">Eng yaxshi foiz</th>
+                                    <th>Oxirgi topshirish</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in leader_rows %}
+                                <tr>
+                                    <td>{{ row.rank }}</td>
+                                    <td>{{ row.user.full_name|default:row.user.username }}</td>
+                                    <td>{{ row.mahalla_name }}</td>
+                                    <td>{{ row.sector }}</td>
+                                    <td class="text-center">{{ row.attempts_count }}</td>
+                                    <td class="text-center">{{ row.tests_count }}</td>
+                                    <td class="text-center fw-semibold">{{ row.avg_percentage|floatformat:1 }}%</td>
+                                    <td class="text-center">{{ row.best_percentage|floatformat:1 }}%</td>
+                                    <td>{{ row.last_finished_at|date:"d.m.Y H:i" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="9" class="text-center py-4 text-muted">Yetakchi kesimida ma'lumot topilmadi.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tests-pane" role="tabpanel" aria-labelledby="tests-tab" tabindex="0">
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Test</th>
+                                    <th class="text-center">Qatnashchilar</th>
+                                    <th class="text-center">Urinishlar</th>
+                                    <th class="text-center">O'rtacha foiz</th>
+                                    <th class="text-center">Eng yuqori</th>
+                                    <th class="text-center">Eng past</th>
+                                    <th>Oxirgi topshirish</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in test_rows %}
+                                <tr>
+                                    <td>{{ row.test.title }}</td>
+                                    <td class="text-center">{{ row.participants_count }}</td>
+                                    <td class="text-center">{{ row.attempts_count }}</td>
+                                    <td class="text-center fw-semibold">{{ row.avg_percentage|floatformat:1 }}%</td>
+                                    <td class="text-center">{{ row.best_percentage|floatformat:1 }}%</td>
+                                    <td class="text-center">{{ row.min_percentage|floatformat:1 }}%</td>
+                                    <td>{{ row.last_finished_at|date:"d.m.Y H:i" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4 text-muted">Test kesimida ma'lumot topilmadi.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

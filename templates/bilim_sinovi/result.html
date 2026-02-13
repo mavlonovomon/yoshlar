@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden text-center animate-pop"
+        style="max-width: 500px; width: 100%;">
+        <div class="card-header bg-white border-0 pt-5 pb-0">
+            {% if percentage >= 80 %}
+            <div class="success-icon mb-4">
+                <i class="fas fa-trophy text-warning fa-4x animate-bounce"></i>
+            </div>
+            <h2 class="fw-bold text-success mb-2">Tabriklaymiz!</h2>
+            <p class="text-muted">Siz ajoyib natija ko'rsatdingiz</p>
+            {% elif percentage >= 50 %}
+            <div class="success-icon mb-4">
+                <i class="fas fa-thumbs-up text-primary fa-4x"></i>
+            </div>
+            <h2 class="fw-bold text-primary mb-2">Yaxshi natija!</h2>
+            <p class="text-muted">Lekin ko'proq o'qishingiz mumkin</p>
+            {% else %}
+            <div class="success-icon mb-4">
+                <i class="fas fa-book-open text-danger fa-4x"></i>
+            </div>
+            <h2 class="fw-bold text-danger mb-2">Harakat qiling!</h2>
+            <p class="text-muted">Bilimingizni oshirish kerak</p>
+            {% endif %}
+        </div>
+
+        <div class="card-body p-5">
+            <div class="display-1 fw-bold mb-2 gradient-text">{{ result.correct_answers_count }}<span
+                    class="fs-4 text-muted">/{{ result.total_questions }}</span></div>
+            <div class="progress mb-4" style="height: 10px;">
+                <div class="progress-bar {% if percentage >= 80 %}bg-success{% elif percentage >= 50 %}bg-primary{% else %}bg-danger{% endif %}"
+                    role="progressbar" style="width: {{ percentage }}%" aria-valuenow="{{ percentage }}"
+                    aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+
+            <div class="row g-3 text-start mb-4">
+                <div class="col-6">
+                    <div class="p-3 bg-light rounded-3">
+                        <small class="d-block text-muted mb-1">Tugadi</small>
+                        <span class="fw-bold">{{ result.finished_at|date:"H:i" }}</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-3 bg-light rounded-3">
+                        <small class="d-block text-muted mb-1">Foiz</small>
+                        <span class="fw-bold">{{ percentage|floatformat:1 }}%</span>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="p-3 bg-light rounded-3">
+                        <small class="d-block text-muted mb-1">Urinish</small>
+                        <span class="fw-bold">{{ attempts_used }}/{{ max_attempts }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <a href="{% url 'bilim_sinovi:test_list' %}" class="btn btn-primary w-100 rounded-pill py-3 fw-bold">
+                <i class="fas fa-arrow-left me-2"></i> Testlar ro'yxatiga qaytish
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .animate-pop {
+        animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    @keyframes popIn {
+        0% {
+            transform: scale(0.8);
+            opacity: 0;
+        }
+
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .animate-bounce {
+        animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+
+        0%,
+        20%,
+        50%,
+        80%,
+        100% {
+            transform: translateY(0);
+        }
+
+        40% {
+            transform: translateY(-20px);
+        }
+
+        60% {
+            transform: translateY(-10px);
+        }
+    }
+
+    .gradient-text {
+        background: linear-gradient(45deg, #2c3e50, #3498db);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+</style>
+{% endblock %}

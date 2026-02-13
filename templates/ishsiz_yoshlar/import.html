@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h3 class="fw-bold text-primary mb-4">Excel orqali ma'lumotlarni import qilish</h3>
+                    <p class="text-muted small mb-4">Iltimos, formatga mos Excel faylni tanlang (.xlsx yoki .xls)</p>
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            {{ form.as_p }}
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary rounded-pill py-3 fw-bold">Importni boshlash</button>
+                            <a href="{% url 'ishsiz_yoshlar:list' %}" class="btn btn-light rounded-pill py-2">Bekor qilish</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

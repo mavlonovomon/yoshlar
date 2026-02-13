@@ -1,0 +1,406 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card mb-4 py-3 px-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <a href="{% url 'yoqlama:list' %}" class="btn btn-light shadow-sm">
+                <i class="bi bi-arrow-left me-1"></i> Ro'yxatga qaytish
+            </a>
+        </div>
+    </div>
+
+    <div class="card p-4 border-0 shadow-sm mb-4" style="border-radius: 20px;">
+        <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
+            <div>
+                <h4 class="fw-bold mb-1">{{ session.get_session_type_display }}</h4>
+                <div class="text-muted small">{{ session.session_date|date:"d.m.Y H:i" }}</div>
+            </div>
+            <div class="text-muted small">{{ session.reason|default:"Izoh yo'q" }}</div>
+        </div>
+    </div>
+
+    <div class="card p-3 border-0 shadow-sm mb-4" style="border-radius: 16px;">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <span class="text-muted small fw-bold me-2">QATNASHISH HOLATI:</span>
+            <a href="{% url 'yoqlama:detail' session.pk %}"
+                class="status-filter {% if not selected_status %}active{% endif %}">Barchasi</a>
+            <a href="{% url 'yoqlama:detail' session.pk %}?status=NONE"
+                class="status-filter {% if selected_status == 'NONE' %}active{% endif %}">Tanlanmagan</a>
+            {% for code, name in status_choices %}
+            <a href="{% url 'yoqlama:detail' session.pk %}?status={{ code }}"
+                class="status-filter {% if selected_status == code %}active{% endif %}">{{ name }}</a>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if user.is_site_admin %}
+    <form method="post" class="card border-0 shadow-sm yoqlama-edit-form edit-locked" id="yoqlamaEditForm"
+        style="border-radius: 20px;">
+        {% csrf_token %}
+        <input type="hidden" name="filter_status" value="{{ selected_status }}">
+        <div class="card-header bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between">
+            <h5 class="fw-bold mb-0">Yetakchilar yo'qlamasi</h5>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-primary btn-sm" id="toggleEditBtn">
+                    <i class="bi bi-pencil-square me-1"></i> Tahrirlash
+                </button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Yetakchi</th>
+                        <th>Holati</th>
+                        <th>Tahrirlash</th>
+                        <th>Sababi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    <tr class="status-row
+                        {% if record.status == 'ON_TIME' %}status-on-time
+                        {% elif record.status == 'LATE' %}status-late
+                        {% elif record.status == 'EXCUSED' %}status-excused
+                        {% elif record.status == 'UNEXCUSED' %}status-unexcused
+                        {% elif record.status == 'NA' %}status-na
+                        {% else %}status-none{% endif %}">
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark">{{ record.leader.full_name }}</div>
+                            <div class="text-muted smaller">{{ record.leader.username }}</div>
+                        </td>
+                        <td>
+                            <div class="status-pill
+                                {% if record.status == 'ON_TIME' %}pill-on-time
+                                {% elif record.status == 'LATE' %}pill-late
+                                {% elif record.status == 'EXCUSED' %}pill-excused
+                                {% elif record.status == 'UNEXCUSED' %}pill-unexcused
+                                {% elif record.status == 'NA' %}pill-na
+                                {% else %}pill-none{% endif %}">
+                                {% if record.status %}
+                                {{ record.get_status_display }}
+                                {% else %}
+                                Holat tanlanmagan
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <select name="status_{{ record.id }}" class="form-select edit-only">
+                                <option value="">Tanlang</option>
+                                {% for code, name in status_choices %}
+                                <option value="{{ code }}" {% if record.status == code %}selected{% endif %}>{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <div class="reason-label view-only
+                                {% if record.status == 'EXCUSED' %}reason-excused
+                                {% elif record.status == 'UNEXCUSED' %}reason-unexcused
+                                {% elif record.status == 'LATE' %}reason-late
+                                {% elif record.status == 'NA' %}reason-na
+                                {% endif %}
+                                {% if record.reason %}reason-filled{% endif %}">
+                                {{ record.reason|default:"-" }}
+                            </div>
+                            <input type="text" name="reason_{{ record.id }}"
+                                class="form-control reason-input edit-only
+                                {% if record.status == 'EXCUSED' %}reason-excused
+                                {% elif record.status == 'UNEXCUSED' %}reason-unexcused
+                                {% elif record.status == 'LATE' %}reason-late
+                                {% elif record.status == 'NA' %}reason-na
+                                {% endif %}
+                                {% if record.reason %}reason-filled{% endif %}"
+                                placeholder="Sababi (ixtiyoriy)" value="{{ record.reason|default:'' }}">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer bg-white border-0 py-3 px-4 d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary px-5 save-btn edit-only" id="saveYoqlamaBtn">
+                <i class="bi bi-save me-1"></i> Saqlash
+            </button>
+        </div>
+    </form>
+    {% else %}
+    <div class="card border-0 shadow-sm" style="border-radius: 20px;">
+        <div class="card-header bg-white border-0 py-3 px-4">
+            <h5 class="fw-bold mb-0">Yetakchilar yo'qlamasi</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Yetakchi</th>
+                        <th>Holati</th>
+                        <th>Sababi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    <tr class="status-row
+                        {% if record.status == 'ON_TIME' %}status-on-time
+                        {% elif record.status == 'LATE' %}status-late
+                        {% elif record.status == 'EXCUSED' %}status-excused
+                        {% elif record.status == 'UNEXCUSED' %}status-unexcused
+                        {% elif record.status == 'NA' %}status-na
+                        {% else %}status-none{% endif %}">
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark">{{ record.leader.full_name }}</div>
+                            <div class="text-muted smaller">{{ record.leader.username }}</div>
+                        </td>
+                        <td>
+                            <div class="status-pill
+                                {% if record.status == 'ON_TIME' %}pill-on-time
+                                {% elif record.status == 'LATE' %}pill-late
+                                {% elif record.status == 'EXCUSED' %}pill-excused
+                                {% elif record.status == 'UNEXCUSED' %}pill-unexcused
+                                {% elif record.status == 'NA' %}pill-na
+                                {% else %}pill-none{% endif %}">
+                                {% if record.status %}
+                                {{ record.get_status_display }}
+                                {% else %}
+                                Holat tanlanmagan
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="reason-label
+                                {% if record.status == 'EXCUSED' %}reason-excused
+                                {% elif record.status == 'UNEXCUSED' %}reason-unexcused
+                                {% elif record.status == 'LATE' %}reason-late
+                                {% elif record.status == 'NA' %}reason-na
+                                {% endif %}
+                                {% if record.reason %}reason-filled{% endif %}">
+                                {{ record.reason|default:"-" }}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    (function () {
+        const form = document.getElementById('yoqlamaEditForm');
+        const toggleBtn = document.getElementById('toggleEditBtn');
+        const saveBtn = document.getElementById('saveYoqlamaBtn');
+        if (!form || !toggleBtn) {
+            return;
+        }
+
+        const inputs = form.querySelectorAll('.edit-only select, .edit-only input, .edit-only textarea');
+
+        const setEditing = (editing) => {
+            form.classList.toggle('edit-open', editing);
+            form.classList.toggle('edit-locked', !editing);
+            if (saveBtn) {
+                saveBtn.disabled = !editing;
+            }
+            inputs.forEach((el) => {
+                el.disabled = !editing;
+            });
+            toggleBtn.innerHTML = editing
+                ? '<i class="bi bi-x-circle me-1"></i> Tahrirlashni yopish'
+                : '<i class="bi bi-pencil-square me-1"></i> Tahrirlash';
+        };
+
+        setEditing(false);
+
+        toggleBtn.addEventListener('click', () => {
+            const editing = !form.classList.contains('edit-open');
+            setEditing(editing);
+        });
+    })();
+</script>
+
+<style>
+    .smaller {
+        font-size: 0.75rem;
+    }
+
+    .status-row {
+        border-left: 4px solid transparent;
+        transition: background 0.2s ease;
+    }
+
+    .status-row.status-on-time {
+        background: rgba(16, 185, 129, 0.06);
+        border-left-color: #10b981;
+    }
+
+    .status-row.status-late {
+        background: rgba(245, 158, 11, 0.08);
+        border-left-color: #f59e0b;
+    }
+
+    .status-row.status-excused {
+        background: rgba(59, 130, 246, 0.08);
+        border-left-color: #3b82f6;
+    }
+
+    .status-row.status-unexcused {
+        background: rgba(239, 68, 68, 0.08);
+        border-left-color: #ef4444;
+    }
+
+    .status-row.status-na {
+        background: rgba(148, 163, 184, 0.08);
+        border-left-color: #94a3b8;
+    }
+
+    .status-row.status-none {
+        background: rgba(226, 232, 240, 0.4);
+        border-left-color: #e2e8f0;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        border: 1px solid transparent;
+    }
+
+    .pill-on-time {
+        background: #ecfdf5;
+        color: #065f46;
+        border-color: #a7f3d0;
+    }
+
+    .pill-late {
+        background: #fffbeb;
+        color: #92400e;
+        border-color: #fde68a;
+    }
+
+    .pill-excused {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-color: #bfdbfe;
+    }
+
+    .pill-unexcused {
+        background: #fef2f2;
+        color: #b91c1c;
+        border-color: #fecaca;
+    }
+
+    .pill-na {
+        background: #f1f5f9;
+        color: #475569;
+        border-color: #e2e8f0;
+    }
+
+    .pill-none {
+        background: #f8fafc;
+        color: #64748b;
+        border-color: #e2e8f0;
+    }
+
+    .reason-label {
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: #0f172a;
+        min-height: 38px;
+        display: flex;
+        align-items: center;
+    }
+
+    .reason-input.reason-excused {
+        border-color: #93c5fd;
+        background: #eff6ff;
+    }
+
+    .reason-input.reason-unexcused {
+        border-color: #fca5a5;
+        background: #fef2f2;
+    }
+
+    .reason-input.reason-late {
+        border-color: #fcd34d;
+        background: #fffbeb;
+    }
+
+    .reason-input.reason-na {
+        border-color: #cbd5f5;
+        background: #f8fafc;
+    }
+
+    .reason-input.reason-filled {
+        box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.05);
+    }
+
+    .reason-label.reason-excused {
+        border-color: #93c5fd;
+        background: #eff6ff;
+    }
+
+    .reason-label.reason-unexcused {
+        border-color: #fca5a5;
+        background: #fef2f2;
+    }
+
+    .reason-label.reason-late {
+        border-color: #fcd34d;
+        background: #fffbeb;
+    }
+
+    .reason-label.reason-na {
+        border-color: #cbd5f5;
+        background: #f8fafc;
+    }
+
+    .reason-label.reason-filled {
+        box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.05);
+    }
+
+    .status-filter {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #475569;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .status-filter:hover {
+        background: #eef2ff;
+        border-color: #c7d2fe;
+        color: #3730a3;
+    }
+
+    .status-filter.active {
+        background: #4f7fff;
+        border-color: #4f7fff;
+        color: white;
+        box-shadow: 0 6px 16px rgba(79, 127, 255, 0.25);
+    }
+
+    .yoqlama-edit-form.edit-locked .edit-only {
+        display: none;
+    }
+
+    .yoqlama-edit-form.edit-open .view-only {
+        display: none;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-primary mb-0">Professional Svodka (Rahbarlar kesimida)</h3>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-dark text-white">
+        <div class="row text-center">
+            <div class="col border-end border-secondary">
+                <small class="opacity-75 d-block">Jami</small>
+                <h4 class="fw-bold mb-0 text-info">{{ totals.total_youth }}</h4>
+            </div>
+            <div class="col border-end border-secondary">
+                <small class="opacity-75 d-block">Uchrashuv</small>
+                <h4 class="fw-bold mb-0 text-warning">{{ totals.with_meeting }}</h4>
+            </div>
+            <div class="col border-end border-secondary">
+                <small class="opacity-75 d-block">Yordam berildi</small>
+                <h4 class="fw-bold mb-0 text-success">{{ totals.total_assisted }}</h4>
+            </div>
+            <div class="col">
+                <small class="opacity-75 d-block">Foiz</small>
+                <h4 class="fw-bold mb-0">{{ totals.percent }}%</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered align-middle mb-0" style="font-size: 0.85rem;">
+                <thead class="bg-light text-center">
+                    <tr>
+                        <th rowspan="2">Mahalla</th>
+                        <th rowspan="2">Rahbar F.I.Sh</th>
+                        <th rowspan="2">Sektor</th>
+                        <th rowspan="2">Jami</th>
+                        <th rowspan="2">Uchrashuv</th>
+                        <th colspan="2">Natija</th>
+                        <th colspan="5">Yo'nalishlar</th>
+                    </tr>
+                    <tr>
+                        <th class="bg-success-subtle">Ha</th>
+                        <th class="bg-danger-subtle">Yo'q</th>
+                        <th>Ish</th>
+                        <th>Kredit</th>
+                        <th>Migr.</th>
+                        <th>Yer</th>
+                        <th>Subs.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in statistics %}
+                    <tr>
+                        <td class="ps-3">{{ s.yosh__mahalla__name }}</td>
+                        <td class="fw-bold">{{ s.leader__full_name }}</td>
+                        <td class="text-center">{{ s.leader__sector }}</td>
+                        <td class="text-center fw-bold">{{ s.total_youth }}</td>
+                        <td class="text-center">{{ s.with_meeting }}</td>
+                        <td class="text-center bg-success-subtle fw-bold">{{ s.total_assisted }}</td>
+                        <td class="text-center bg-danger-subtle">{{ s.not_assisted }}</td>
+                        <td class="text-center text-muted">{{ s.ish }}</td>
+                        <td class="text-center text-muted">{{ s.kredit }}</td>
+                        <td class="text-center text-muted">{{ s.migratsiya }}</td>
+                        <td class="text-center text-muted">{{ s.yer }}</td>
+                        <td class="text-center text-muted">{{ s.subsidiya }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

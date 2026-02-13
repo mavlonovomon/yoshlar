@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/list_premium.css' %}">
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-title-group">
+            <h2>Ishsiz Yoshlar</h2>
+            <p>Tizimdagi jami ishsiz yoshlar ro'yxati va monitoringi</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'ishsiz_yoshlar:import' %}" class="btn btn-light shadow-sm">
+                <i class="bi bi-file-earmark-excel me-1"></i> Excel Import
+            </a>
+            <a href="{% url 'ishsiz_yoshlar:create' %}" class="btn btn-primary shadow-sm">
+                <i class="bi bi-person-plus-fill me-1"></i> Yangi qo'shish
+            </a>
+        </div>
+    </div>
+
+    <!-- Advanced Filters -->
+    <div class="filter-card">
+        <form method="get" class="filter-grid">
+            <div class="filter-item">
+                <label class="form-label text-muted small fw-bold">QIDIRISH</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" name="q" class="form-control border-start-0"
+                        placeholder="Ism, pasport yoki JSHSHIR..." value="{{ request.GET.q }}">
+                </div>
+            </div>
+
+            <div class="filter-item">
+                <label class="form-label text-muted small fw-bold">MAHALLA</label>
+                <select name="mahalla" class="form-select border-start-0" onchange="this.form.submit()">
+                    <option value="">Barcha mahallalar</option>
+                    {% for m in mahallas %}
+                    <option value="{{ m.id }}" {% if selected_mahalla == m.id %}selected{% endif %}>{{ m.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <label class="form-label text-muted small fw-bold">TOIFA</label>
+                <select name="category" class="form-select border-start-0" onchange="this.form.submit()">
+                    <option value="">Barcha toifalar</option>
+                    {% for code, name in categories %}
+                    <option value="{{ code }}" {% if selected_category == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <label class="form-label text-muted small fw-bold">BIRIKTIRILGAN RAHBAR</label>
+                <select name="leader" class="form-select border-start-0" onchange="this.form.submit()">
+                    <option value="">Barcha rahbarlar</option>
+                    {% for l in leaders %}
+                    <option value="{{ l.id }}" {% if selected_leader == l.id %}selected{% endif %}>{{ l.full_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-funnel-fill me-1"></i> Saralash
+                </button>
+                {% if request.GET.q or request.GET.mahalla or request.GET.category or request.GET.leader %}
+                <a href="{% url 'ishsiz_yoshlar:list' %}" class="btn btn-light ms-1" title="Tozalash">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Data Table -->
+    <div class="premium-table-card">
+        <div class="table-responsive">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th style="width: 300px;">Yosh haqida ma'lumot</th>
+                        <th>Hujjatlar</th>
+                        <th>Hudud</th>
+                        <th>Toifasi</th>
+                        <th>Mas'ul Rahbar</th>
+                        <th class="text-center" style="width: 180px;">Amallar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for youth in youths %}
+                    <tr>
+                        <td>
+                            <div class="user-cell">
+                                {% if youth.yosh.photo %}
+                                <img src="{{ youth.yosh.photo.url }}" class="user-avatar cursor-pointer"
+                                    onclick="openLeaderModal(this)"
+                                    data-name="{{ youth.leader.full_name|default:'Biriktirilmagan' }}"
+                                    data-position="{{ youth.leader.position|default:'Mas\'ul rahbar' }}"
+                                    data-phone="{{ youth.leader.phone_number|default:'--' }}"
+                                    data-org="{{ youth.leader.organization|default:youth.yosh.mahalla.name }}"
+                                    data-sector="{{ youth.leader.sector|default:'' }}"
+                                    onerror="this.onerror=null;this.src='{% static 'img/user_bust.png' %}';">
+                                {% else %}
+                                <img src="{% static 'img/user_bust.png' %}" class="user-avatar cursor-pointer"
+                                    alt="Default" onclick="openLeaderModal(this)"
+                                    data-name="{{ youth.leader.full_name|default:'Biriktirilmagan' }}"
+                                    data-position="{{ youth.leader.position|default:'Mas\'ul rahbar' }}"
+                                    data-phone="{{ youth.leader.phone_number|default:'--' }}"
+                                    data-org="{{ youth.leader.organization|default:youth.yosh.mahalla.name }}"
+                                    data-sector="{{ youth.leader.sector|default:'' }}">
+                                {% endif %}
+                                <div class="user-info-text">
+                                    <a href="{% url 'ishsiz_yoshlar:detail' youth.pk %}"
+                                        class="user-name text-decoration-none">
+                                        {{ youth.yosh.fullname }}
+                                    </a>
+                                    <div class="user-meta">
+                                        <i class="bi bi-telephone me-1"></i> {{ youth.yosh.phone_number }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ youth.yosh.passport_number }}
+                            </div>
+                            <div class="text-muted smaller" style="font-size: 0.75rem;">JSHSHIR: {{ youth.yosh.jshshir }}</div>
+                        </td>
+                        <td>
+                            <div class="text-dark fw-medium">{{ youth.yosh.mahalla.name }}</div>
+                            <div class="text-muted smaller" style="font-size: 0.75rem;">Sektor: {{ youth.leader.sector|default:"-" }}</div>
+                        </td>
+                        <td>
+                            {% if youth.category == 'MIGRATSIYA' %}
+                            <span class="badge-premium bg-danger-subtle text-danger"><i class="bi bi-airplane"></i>
+                                Migratsiyadan qaytgan</span>
+                            {% elif youth.category == 'MAKTAB' %}
+                            <span class="badge-premium bg-info-subtle text-info"><i class="bi bi-book"></i>
+                                Maktab</span>
+                            {% elif youth.category == 'KASBIY' %}
+                            <span class="badge-premium bg-success-subtle text-success"><i class="bi bi-tools"></i>
+                                Kasbiy ta'lim</span>
+                            {% elif youth.category == 'OLIY' %}
+                            <span class="badge-premium bg-primary-subtle text-primary"><i class="bi bi-mortarboard"></i>
+                                Oliy ta'lim</span>
+                            {% elif youth.category == 'QOLGAN' %}
+                            <span class="badge-premium bg-warning-subtle text-warning"><i
+                                    class="bi bi-exclamation-triangle"></i> Qolgan ishsizlar</span>
+                            {% else %}
+                            <span class="badge-premium bg-secondary-subtle text-secondary">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if youth.leader %}
+                            <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ youth.leader.full_name }}
+                            </div>
+                            <div class="text-muted smaller" style="font-size: 0.75rem;">
+                                {% if youth.leader.level == 'TUMAN' %}
+                                Tuman darajasi
+                                {% elif youth.leader.level == 'VILOYAT' %}
+                                Viloyat darajasi
+                                {% elif youth.leader.level == 'RESPUBLIKA' %}
+                                Respublika darajasi
+                                {% elif youth.leader.level == 'OTM' %}
+                                OTM
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <span class="text-danger small"><i class="bi bi-x-circle me-1"></i>Biriktirilmagan</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="action-btn-group">
+                                <!-- 1. Anketa (View) -->
+                                <a href="{% url 'ishsiz_yoshlar:detail' youth.pk %}" class="action-btn action-btn-view"
+                                    title="Anketani ko'rish">
+                                    <i class="bi bi-file-earmark-person"></i>
+                                </a>
+                                <!-- 2. Uchrashuv (Meeting) -->
+                                <a href="{% url 'ishsiz_yoshlar:meeting_create' youth.pk %}"
+                                    class="action-btn action-btn-meeting {% if youth.meeting_count == 0 %}pending{% endif %}"
+                                    title="Uchrashuv qo'shish">
+                                    <i class="bi bi-chat-left-text"></i>
+                                    {% if youth.meeting_count > 0 %}
+                                    <span
+                                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success border border-white"
+                                        style="font-size: 0.6rem; padding: 0.25em 0.4em;">
+                                        {{ youth.meeting_count }}
+                                    </span>
+                                    {% endif %}
+                                </a>
+                                <!-- 3. Yordam (Assistance) -->
+                                <a href="{% url 'ishsiz_yoshlar:assistance_update' youth.pk %}"
+                                    class="action-btn action-btn-assistance {% if youth.assistance.provided %}provided{% endif %}"
+                                    title="Yordam kiritish">
+                                    <i class="bi bi-hand-thumbs-up"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="mb-3 text-muted">
+                                <i class="bi bi-database-exclamation display-4"></i>
+                            </div>
+                            <h5 class="text-muted">Ma'lumotlar topilmadi</h5>
+                            <p class="text-muted small">Qidiruv parametrlarini o'zgartirib ko'ring</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="pagination-premium">
+        {% if page_obj.has_previous %}
+        <a href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+            class="page-num" title="Birinchi">
+            <i class="bi bi-chevron-double-left"></i>
+        </a>
+        <a href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+            class="page-num">
+            <i class="bi bi-chevron-left"></i>
+        </a>
+        {% endif %}
+
+        <div class="page-num active">
+            {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+        </div>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+            class="page-num">
+            <i class="bi bi-chevron-right"></i>
+        </a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+            class="page-num" title="Oxirgi">
+            <i class="bi bi-chevron-double-right"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

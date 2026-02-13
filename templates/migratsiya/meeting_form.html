@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="card p-4 border-0 shadow-sm" style="border-radius: 24px;">
+                <div class="d-flex align-items-center mb-4 gap-3">
+                    <div class="p-3 rounded-4 bg-primary-subtle text-primary">
+                        <i class="bi bi-chat-left-text fs-3"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold text-dark mb-0">Suhbat Qo'shish</h3>
+                        <p class="text-muted small mb-0">{{ youth.yosh.fullname }} bilan o'tkazilgan suhbat</p>
+                    </div>
+                </div>
+
+                <form method="post" enctype="multipart/form-data" id="meetingForm">
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger rounded-4 px-4">{{ form.non_field_errors }}</div>
+                    {% endif %}
+
+                    <!-- Umumiy ma'lumotlar -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.meeting_date.label }}</label>
+                            {{ form.meeting_date }}
+                            {% if form.meeting_date.errors %}
+                            <div class="text-danger smaller mt-1 fw-bold">{{ form.meeting_date.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.return_date.label }}</label>
+                            {{ form.return_date }}
+                            {% if form.return_date.errors %}
+                            <div class="text-danger smaller mt-1 fw-bold">{{ form.return_date.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.photo.label }}</label>
+                            {{ form.photo }}
+                            <div class="form-text smaller text-muted">Suhbat jarayonidan rasm yoki skrinshot yuklang.
+                            </div>
+                            {% if form.photo.errors %}
+                            <div class="text-danger smaller mt-1 fw-bold">{{ form.photo.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-4 border bg-light d-flex align-items-center gap-3 cursor-pointer toggle-box"
+                                data-target="work_section">
+                                <div class="form-check m-0 h5">
+                                    {{ form.show_work }}
+                                </div>
+                                <label class="form-check-label fw-bold text-dark m-0"
+                                    for="{{ form.show_work.id_for_label }}">
+                                    <i class="bi bi-briefcase me-2 text-success"></i> Ish ma'lumotlari
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-4 border bg-light d-flex align-items-center gap-3 cursor-pointer toggle-box"
+                                data-target="education_section">
+                                <div class="form-check m-0 h5">
+                                    {{ form.show_education }}
+                                </div>
+                                <label class="form-check-label fw-bold text-dark m-0"
+                                    for="{{ form.show_education.id_for_label }}">
+                                    <i class="bi bi-mortarboard me-2 text-primary"></i> Ta'lim ma'lumotlari
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ish bo'limi -->
+                    <div id="work_section" class="section-collapse mb-4" style="display: none;">
+                        <div class="p-4 rounded-4 border-start border-4 border-success bg-success-subtle bg-opacity-10">
+                            <h6 class="fw-bold text-success mb-3"><i class="bi bi-briefcase me-2"></i>Ish ma'lumotlari
+                            </h6>
+                            <div class="row g-4">
+                                <div class="col-md-8">
+                                    <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.work_title.label }}</label>
+                                    {{ form.work_title }}
+                                    {% if form.work_title.errors %}
+                                    <div class="text-danger smaller mt-1 fw-bold">{{ form.work_title.errors|striptags }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.work_income.label }}</label>
+                                    {{ form.work_income }}
+                                    {% if form.work_income.errors %}
+                                    <div class="text-danger smaller mt-1 fw-bold">{{ form.work_income.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold text-dark small text-uppercase mb-2 d-block">Ish
+                                        sharoiti (1-10 yulduz)</label>
+                                    <div class="rating-stars d-flex gap-2 mb-2" id="ratingContainer">
+                                        {% for i in "1234567891" %}
+                                        <i class="bi bi-star star-btn fs-3 cursor-pointer text-muted"
+                                            data-value="{{ forloop.counter }}"></i>
+                                        {% endfor %}
+                                    </div>
+                                    {{ form.work_conditions_rating }}
+                                    <div class="progress mt-2"
+                                        style="height: 8px; border-radius: 4px; background-color: #e9ecef;">
+                                        <div id="ratingProgress" class="progress-bar bg-success" role="progressbar"
+                                            style="width: 0%; border-radius: 4px;"></div>
+                                    </div>
+                                    <div class="d-flex justify-content-between mt-1">
+                                        <small class="text-muted">Juda yomon</small>
+                                        <small class="text-dark fw-bold" id="ratingValueText">Baholanmagan</small>
+                                        <small class="text-muted">A'lo darajada</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ta'lim bo'limi -->
+                    <div id="education_section" class="section-collapse mb-4" style="display: none;">
+                        <div class="p-4 rounded-4 border-start border-4 border-primary bg-primary-subtle bg-opacity-10">
+                            <h6 class="fw-bold text-primary mb-3"><i class="bi bi-mortarboard me-2"></i>Ta'lim
+                                ma'lumotlari</h6>
+                            <div class="row g-4">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.education_institution.label }}</label>
+                                    {{ form.education_institution }}
+                                    {% if form.education_institution.errors %}
+                                    <div class="text-danger smaller mt-1 fw-bold">{{ form.education_institution.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.education_direction.label }}</label>
+                                    {{ form.education_direction }}
+                                    {% if form.education_direction.errors %}
+                                    <div class="text-danger smaller mt-1 fw-bold">{{ form.education_direction.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.education_course.label }}</label>
+                                    {{ form.education_course }}
+                                    {% if form.education_course.errors %}
+                                    <div class="text-danger smaller mt-1 fw-bold">{{ form.education_course.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Izoh bo'limi -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.description.label }}</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                        <div class="text-danger smaller mt-1 fw-bold">{{ form.description.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex gap-2 mt-5 pt-3 border-top">
+                        <button type="submit" class="btn btn-primary px-5 py-2 fw-bold shadow-sm rounded-3">
+                            <i class="bi bi-check-lg me-1"></i> Saqlash
+                        </button>
+                        <a href="{% url 'migratsiya:detail' youth.pk %}"
+                            class="btn btn-light px-4 py-2 rounded-3 text-muted fw-bold border">
+                            Bekor qilish
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const workCheckbox = document.getElementById('{{ form.show_work.id_for_label }}');
+        const eduCheckbox = document.getElementById('{{ form.show_education.id_for_label }}');
+        const workSection = document.getElementById('work_section');
+        const eduSection = document.getElementById('education_section');
+
+        function toggleSections() {
+            workSection.style.display = workCheckbox.checked ? 'block' : 'none';
+            eduSection.style.display = eduCheckbox.checked ? 'block' : 'none';
+        }
+
+        workCheckbox.addEventListener('change', toggleSections);
+        eduCheckbox.addEventListener('change', toggleSections);
+        toggleSections();
+
+        // Star Rating Logic
+        const stars = document.querySelectorAll('.star-btn');
+        const ratingInput = document.getElementById('id_work_conditions_rating'); // Standard Django naming
+        const ratingProgress = document.getElementById('ratingProgress');
+        const ratingValueText = document.getElementById('ratingValueText');
+
+        function updateRatingUI(val) {
+            stars.forEach(s => {
+                const sVal = parseInt(s.dataset.value);
+                if (sVal <= val) {
+                    s.classList.remove('text-muted', 'bi-star');
+                    s.classList.add('text-warning', 'bi-star-fill');
+                } else {
+                    s.classList.add('text-muted', 'bi-star');
+                    s.classList.remove('text-warning', 'bi-star-fill');
+                }
+            });
+            ratingProgress.style.width = (val * 10) + '%';
+            ratingValueText.innerText = val ? val + ' / 10' : 'Baholanmagan';
+        }
+
+        stars.forEach(star => {
+            star.addEventListener('click', function () {
+                const val = parseInt(this.dataset.value);
+                ratingInput.value = val;
+                updateRatingUI(val);
+            });
+
+            star.addEventListener('mouseenter', function () {
+                const val = parseInt(this.dataset.value);
+                updateRatingUI(val);
+            });
+        });
+
+        document.getElementById('ratingContainer').addEventListener('mouseleave', function () {
+            const currentVal = parseInt(ratingInput.value) || 0;
+            updateRatingUI(currentVal);
+        });
+
+        // Initial UI state
+        if (ratingInput.value) {
+            updateRatingUI(parseInt(ratingInput.value));
+        }
+
+        // Clickable toggle boxes
+        document.querySelectorAll('.toggle-box').forEach(box => {
+            box.addEventListener('click', function (e) {
+                if (e.target.tagName !== 'INPUT') {
+                    const checkbox = this.querySelector('input');
+                    checkbox.checked = !checkbox.checked;
+                    toggleSections();
+                }
+            });
+        });
+    });
+</script>
+
+<style>
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        border: 2px solid #f1f5f9;
+        background-color: #f8fafc;
+        transition: all 0.2s;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        background-color: #fff;
+        border-color: #0ea5e9;
+        box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+        outline: none;
+    }
+
+    .star-btn {
+        transition: transform 0.1s, color 0.1s;
+    }
+
+    .star-btn:hover {
+        transform: scale(1.2);
+    }
+
+    .progress-bar {
+        transition: width 0.3s ease;
+    }
+
+    .section-collapse {
+        transition: all 0.3s ease-in-out;
+    }
+
+    .toggle-box {
+        transition: background-color 0.2s, border-color 0.2s;
+    }
+
+    .toggle-box:hover {
+        background-color: #fff !important;
+        border-color: #0ea5e9;
+    }
+</style>
+{% endblock %}

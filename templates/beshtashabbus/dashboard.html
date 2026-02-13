@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Besh tashabbus tadbirlari</h2>
+            <p class="text-muted mb-0">Sport, kitobxonlik, san'at, intelektual o'yinlar va kibersport</p>
+        </div>
+        <div class="d-flex gap-2">
+            {% if user.is_authenticated and user.role == 'YETAKCHI' %}
+            <a href="{% url 'beshtashabbus:create' %}" class="btn btn-primary shadow-sm border-0 px-3">
+                <i class="bi bi-plus-circle me-2"></i>Yangi tadbir
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-primary-soft text-primary me-3">
+                            <i class="bi bi-award fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted small fw-bold text-uppercase mb-1">Jami tadbirlar</h6>
+                            <h2 class="fw-bold mb-0">{{ total_events|intcomma }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-progress progress" style="height: 4px;">
+                    <div class="progress-bar bg-primary" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-success-soft text-success me-3">
+                            <i class="bi bi-people fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted small fw-bold text-uppercase mb-1">Qamrov</h6>
+                            <h2 class="fw-bold mb-0">{{ total_coverage|intcomma }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-progress progress" style="height: 4px;">
+                    <div class="progress-bar bg-success" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-warning-soft text-warning me-3">
+                            <i class="bi bi-images fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted small fw-bold text-uppercase mb-1">Rasmlar</h6>
+                            <h2 class="fw-bold mb-0">{{ total_photos|intcomma }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-progress progress" style="height: 4px;">
+                    <div class="progress-bar bg-warning" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3 px-4">
+                    <h5 class="fw-bold mb-0">Yo'nalishlar bo'yicha</h5>
+                </div>
+                <div class="card-body p-4">
+                    <canvas id="directionChart" height="280"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3 px-4">
+                    <h5 class="fw-bold mb-0">Mahallalar kesimida</h5>
+                </div>
+                <div class="card-body p-4">
+                    <canvas id="mahallaChart" height="280"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ by_direction|json_script:"direction-data" }}
+{{ by_mahalla|json_script:"mahalla-data" }}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const directionData = JSON.parse(document.getElementById('direction-data').textContent);
+        const mahallaData = JSON.parse(document.getElementById('mahalla-data').textContent);
+
+        const colors = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#0ea5e9', '#6366f1'];
+
+        new Chart(document.getElementById('directionChart'), {
+            type: 'doughnut',
+            data: {
+                labels: directionData.map(d => d.label),
+                datasets: [{
+                    data: directionData.map(d => d.total),
+                    backgroundColor: colors,
+                    borderWidth: 0
+                }]
+            },
+            options: { plugins: { legend: { position: 'bottom' } } }
+        });
+
+        new Chart(document.getElementById('mahallaChart'), {
+            type: 'bar',
+            data: {
+                labels: mahallaData.map(d => d.mahalla__name),
+                datasets: [{
+                    label: 'Tadbirlar soni',
+                    data: mahallaData.map(d => d.total),
+                    backgroundColor: '#4f46e5',
+                    borderRadius: 6
+                }]
+            },
+            options: { plugins: { legend: { display: false } } }
+        });
+    });
+</script>
+
+<style>
+    .bg-primary-soft {
+        background-color: rgba(79, 70, 229, 0.1);
+    }
+
+    .bg-success-soft {
+        background-color: rgba(16, 185, 129, 0.1);
+    }
+
+    .bg-warning-soft {
+        background-color: rgba(245, 158, 11, 0.1);
+    }
+
+    .stats-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+</style>
+{% endblock %}

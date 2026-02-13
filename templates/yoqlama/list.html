@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/list_premium.css' %}">
+
+<div class="container-fluid">
+    <div class="page-header">
+        <div class="page-title-group">
+            <h2>Yo'qlamalar ro'yxati</h2>
+            <p>Majlislar va yig'ilishlar bo'yicha yetakchilar yo'qlamasi</p>
+        </div>
+        <div class="d-flex gap-2">
+            {% if user.is_site_admin %}
+            <a href="{% url 'yoqlama:create' %}" class="btn btn-primary shadow-sm">
+                <i class="bi bi-plus-circle me-1"></i> Yangi yo'qlama
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="filter-card">
+        <form method="get" class="filter-grid">
+            <div class="filter-item">
+                <label class="form-label text-muted small fw-bold">QIDIRISH</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" name="q" class="form-control border-start-0"
+                        placeholder="Sababi/izoh bo'yicha..." value="{{ request.GET.q }}">
+                </div>
+            </div>
+
+            <div class="filter-item">
+                <label class="form-label text-muted small fw-bold">YO'QLAMA TURI</label>
+                <select name="session_type" class="form-select border-start-0" onchange="this.form.submit()">
+                    <option value="">Barchasi</option>
+                    {% for code, name in types %}
+                    <option value="{{ code }}" {% if selected_type == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-funnel-fill me-1"></i> Saralash
+                </button>
+                {% if request.GET.q or request.GET.session_type %}
+                <a href="{% url 'yoqlama:list' %}" class="btn btn-light ms-1" title="Tozalash">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <div class="premium-table-card">
+        <div class="table-responsive">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Yo'qlama turi</th>
+                        <th>Sababi/Izoh</th>
+                        <th>Sana</th>
+                        <th class="text-center" style="width: 180px;">Amallar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in sessions %}
+                    <tr>
+                        <td>
+                            <span class="fw-bold text-dark">{{ session.get_session_type_display }}</span>
+                        </td>
+                        <td class="text-muted">{{ session.reason|default:"-" }}</td>
+                        <td>{{ session.session_date|date:"d.m.Y H:i" }}</td>
+                        <td class="text-center">
+                            <div class="action-btn-group">
+                                <a href="{% url 'yoqlama:detail' session.pk %}" class="action-btn action-btn-view"
+                                    title="Ko'rish">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if user.is_site_admin %}
+                                <a href="{% url 'yoqlama:edit' session.pk %}" class="action-btn action-btn-edit"
+                                    title="Tahrirlash">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5">
+                            <div class="mb-3 text-muted">
+                                <i class="bi bi-database-exclamation display-4"></i>
+                            </div>
+                            <h5 class="text-muted">Ma'lumotlar topilmadi</h5>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if is_paginated %}
+    <div class="pagination-premium">
+        {% if page_obj.has_previous %}
+        <a href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+            class="page-num" title="Birinchi">
+            <i class="bi bi-chevron-double-left"></i>
+        </a>
+        <a href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+            class="page-num">
+            <i class="bi bi-chevron-left"></i>
+        </a>
+        {% endif %}
+
+        <div class="page-num active">
+            {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+        </div>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+            class="page-num">
+            <i class="bi bi-chevron-right"></i>
+        </a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+            class="page-num" title="Oxirgi">
+            <i class="bi bi-chevron-double-right"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

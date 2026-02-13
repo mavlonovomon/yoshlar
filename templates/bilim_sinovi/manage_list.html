@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h3 class="fw-bold mb-1">Testlarni Tashkillashtirish</h3>
+            <p class="text-muted mb-0">Mavjud testlarni vaqt oralig'i, to'plam va tartib bo'yicha sozlang.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'bilim_sinovi:test_results_dashboard' %}" class="btn btn-outline-primary">
+                <i class="bi bi-table me-1"></i> Natijalar jadvali
+            </a>
+            <a href="{% url 'bilim_sinovi:test_manage_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> Yangi test
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nomi</th>
+                        <th>To'plamlar</th>
+                        <th>Vaqt oralig'i</th>
+                        <th class="text-center">Savol</th>
+                        <th class="text-center">Tartib</th>
+                        <th class="text-center">Urinish</th>
+                        <th class="text-center">Holat</th>
+                        <th class="text-end">Amal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for test in tests %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">{{ test.title }}</div>
+                            <small class="text-muted">Davomiylik: {{ test.duration_minutes }} daqiqa</small>
+                        </td>
+                        <td>
+                            {% if test.question_sets.exists %}
+                            {% for s in test.question_sets.all %}
+                            <span class="badge bg-secondary-subtle text-secondary border me-1 mb-1">{{ s.name }}</span>
+                            {% endfor %}
+                            {% elif test.subject %}
+                            <span class="badge bg-secondary-subtle text-secondary border">{{ test.subject.name }}</span>
+                            {% else %}
+                            <span class="text-muted">To'plam tanlanmagan</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div><strong>{{ test.start_time|date:"d.m.Y H:i" }}</strong></div>
+                            <div class="text-muted">dan</div>
+                            <div><strong>{{ test.end_time|date:"d.m.Y H:i" }}</strong></div>
+                        </td>
+                        <td class="text-center">{{ test.questions_count }}</td>
+                        <td class="text-center">{{ test.get_question_order_display }}</td>
+                        <td class="text-center">{{ test.max_attempts }}</td>
+                        <td class="text-center">
+                            {% if test.is_active and test.start_time <= now and test.end_time >= now %}
+                            <span class="badge bg-success">Faol</span>
+                            {% elif test.is_active %}
+                            <span class="badge bg-warning text-dark">Rejalashtirilgan/Yopiq</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Nofaol</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'bilim_sinovi:test_manage_edit' test.pk %}" class="btn btn-sm btn-outline-primary">
+                                Tahrirlash
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">Hali testlar yaratilmagan.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

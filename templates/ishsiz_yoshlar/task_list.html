@@ -1,0 +1,255 @@
+﻿{% extends 'base.html' %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Topshiriqlar</h1>
+            </div>
+            <div class="col-sm-6">
+                <div class="float-right">
+                    {% if user.is_superuser or user.is_staff %}
+                    <a href="{% url 'ishsiz_yoshlar:task_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Yangi topshiriq
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="card mb-3">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Holati</label>
+                        <select name="status" class="form-select">
+                            <option value="">Barchasi</option>
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Muhimlik</label>
+                        <select name="priority" class="form-select">
+                            <option value="">Barchasi</option>
+                            {% for value, label in priority_choices %}
+                            <option value="{{ value }}" {% if priority_filter == value %}selected{% endif %}>{{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% if user.is_superuser or user.is_staff %}
+                    <div class="col-md-3">
+                        <label class="form-label">Ijrochi</label>
+                        <select name="assigned_to" class="form-select">
+                            <option value="">Barchasi</option>
+                            {% for u in assignees %}
+                            <option value="{{ u.id }}" {% if assigned_to_filter == u.id|stringformat:"s" %}selected{% endif %}>
+                                {{ u.full_name }}
+                                {% if u.is_sector_coordinator %}(Koordinator){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    <div class="col-md-3">
+                        <label class="form-label">Topshiriq qidirish</label>
+                        <input type="text" class="form-control" name="task_q" value="{{ task_q }}" placeholder="Topshiriq nomi">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Ijrochi qidirish</label>
+                        <input type="text" class="form-control" name="user_q" value="{{ user_q }}" placeholder="F.I.Sh bo'yicha">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-funnel"></i> Filtr
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body p-0">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Topshiriq</th>
+                            <th>Ijrochilar</th>
+                            <th>Berilgan sana</th>
+                            <th>Oxirgi muddat</th>
+                            <th>Qolgan vaqt</th>
+                            <th>Muhimlik</th>
+                            <th>Bajarilish</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group in task_groups %}
+                        {% with task=group.representative %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <a href="{% url 'ishsiz_yoshlar:task_detail' task.pk %}">{{ task.title }}</a>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-secondary" type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#{{ group.dom_id }}">
+                                    {{ group.assignees_count }} ta ijrochi
+                                </button>
+                            </td>
+                            <td>{{ task.created_at|date:"d.m.Y H:i" }}</td>
+                            <td>{{ task.due_date|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                {% if task.due_date < now and task.status != 'YAKUNLANGAN' %}
+                                <span class="text-danger"><i class="bi bi-exclamation-triangle"></i> O‘tib ketgan</span>
+                                {% else %}
+                                {{ task.due_date|timeuntil:now }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if group.priority == 'LOW' %}
+                                <span class="badge bg-secondary">Past</span>
+                                {% elif group.priority == 'MEDIUM' %}
+                                <span class="badge bg-primary">O'rta</span>
+                                {% elif group.priority == 'HIGH' %}
+                                <span class="badge bg-warning">Yuqori</span>
+                                {% elif group.priority == 'URGENT' %}
+                                <span class="badge bg-danger">Shoshilinch</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Aralash</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ group.completed_percent }}%"></div>
+                                </div>
+                                <small class="text-muted">{{ group.completed_percent }}%</small>
+                            </td>
+                        </tr>
+                        <tr class="collapse" id="{{ group.dom_id }}">
+                            <td colspan="9" class="bg-light-subtle">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered mb-0 bg-white">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Ijrochi</th>
+                                                <th>Berilgan sana</th>
+                                                <th>Oxirgi muddat</th>
+                                                <th>Qolgan vaqt</th>
+                                                <th>Holati</th>
+                                                <th>Bajarilish</th>
+                                                <th>Amallar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for t in group.tasks %}
+                                            <tr>
+                                                <td>
+                                                    <a href="{% url 'ishsiz_yoshlar:task_detail' t.pk %}">
+                                                        {{ t.assigned_to.full_name }}
+                                                    </a>
+                                                    {% if t.assigned_to.is_sector_coordinator %}
+                                                    <span class="badge bg-warning-subtle text-warning border ms-1">Koordinator</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ t.created_at|date:"d.m.Y H:i" }}</td>
+                                                <td>{{ t.due_date|date:"d.m.Y H:i" }}</td>
+                                                <td>
+                                                    {% if t.due_date < now and t.status != 'YAKUNLANGAN' %}
+                                                    <span class="text-danger"><i class="bi bi-exclamation-triangle"></i> O‘tib ketgan</span>
+                                                    {% else %}
+                                                    {{ t.due_date|timeuntil:now }}
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if t.status == 'YANGI' %}
+                                                    <span class="badge bg-primary">Yangi</span>
+                                                    {% elif t.status == 'BAJARILMOQDA' %}
+                                                    <span class="badge bg-warning">Bajarilmoqda</span>
+                                                    {% elif t.status == 'TASDIQLANGAN' %}
+                                                    <span class="badge bg-info">Tekshirilmoqda</span>
+                                                    {% elif t.status == 'RAD_ETILGAN' %}
+                                                    <span class="badge bg-danger">Rad etilgan</span>
+                                                    {% elif t.status == 'YAKUNLANGAN' %}
+                                                    <span class="badge bg-success">Yakunlangan</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <div class="progress" style="height: 6px;">
+                                                        <div class="progress-bar" role="progressbar" style="width: {{ t.progress_percent }}%"></div>
+                                                    </div>
+                                                    <small class="text-muted">{{ t.progress_percent }}%</small>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <a href="{% url 'ishsiz_yoshlar:task_detail' t.pk %}" class="btn btn-info">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                        {% if user.is_superuser or user.is_staff %}
+                                                        <a href="{% url 'ishsiz_yoshlar:task_edit' t.pk %}" class="btn btn-warning">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </a>
+                                                        <a href="{% url 'ishsiz_yoshlar:task_delete' t.pk %}" class="btn btn-danger">
+                                                            <i class="bi bi-trash"></i>
+                                                        </a>
+                                                        {% endif %}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endwith %}
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-4">
+                                <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+                                <p class="mt-2 text-muted">Topshiriqlar topilmadi</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if is_paginated %}
+        <nav aria-label="Page navigation" class="mt-3">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if assigned_to_filter %}&assigned_to={{ assigned_to_filter }}{% endif %}{% if task_q %}&task_q={{ task_q }}{% endif %}{% if user_q %}&user_q={{ user_q }}{% endif %}">Oldingi</a>
+                </li>
+                {% endif %}
+
+                {% for num in paginator.page_range %}
+                {% if num == page_obj.number %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if assigned_to_filter %}&assigned_to={{ assigned_to_filter }}{% endif %}{% if task_q %}&task_q={{ task_q }}{% endif %}{% if user_q %}&user_q={{ user_q }}{% endif %}">Keyingi</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

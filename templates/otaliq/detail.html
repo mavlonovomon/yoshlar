@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="mb-4">
+        <a href="{% url 'otaliq:list' %}" class="btn btn-light btn-sm mb-3">
+            <i class="bi bi-arrow-left me-1"></i>Ro'yxatga qaytish
+        </a>
+        <div class="card border-0 shadow-sm p-4">
+            <div class="d-flex align-items-center flex-wrap gap-4">
+                <div class="profile-avatar bg-primary text-white fs-1 fw-bold rounded-circle d-flex align-items-center justify-content-center"
+                    style="width: 100px; height: 100px;">
+                    {{ item.yosh.fullname|first|upper }}
+                </div>
+                <div class="flex-grow-1">
+                    <h2 class="fw-bold mb-1">{{ item.yosh.fullname }}</h2>
+                    <p class="text-muted mb-2">
+                        <i class="bi bi-geo-alt me-2"></i>{{ item.yosh.mahalla.name }} |
+                        <i class="bi bi-calendar3 me-2 ms-2"></i>{{ item.yosh.birth_date|date:"d.m.Y" }}
+                    </p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <span class="badge bg-primary-soft text-primary px-3 py-2 rounded-pill">{{
+                            item.get_category_display }}</span>
+                        {% if item.leader %}
+                        <span class="badge bg-info-soft text-info px-3 py-2 rounded-pill">Mas'ul: {{
+                            item.leader.full_name }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="text-md-end">
+                    <div class="text-muted small mb-1">Status:</div>
+                    {% if item.assistance.provided %}
+                    <span class="badge bg-success text-white px-4 py-2 rounded-pill">Yordam ko'rsatilgan</span>
+                    {% else %}
+                    <span class="badge bg-warning text-dark px-4 py-2 rounded-pill">O'rganilmoqda</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left: Basic Info & Assistance -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="fw-bold mb-0">Asosiy ma'lumotlar</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between py-3">
+                            <span class="text-muted">Pasport:</span>
+                            <span class="fw-medium">{{ item.yosh.passport_number }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between py-3">
+                            <span class="text-muted">Telefon:</span>
+                            <span class="fw-medium">{{ item.yosh.phone_number|default:"-" }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between py-3">
+                            <span class="text-muted">Ta'limi:</span>
+                            <span class="fw-medium">{{ item.yosh.education|default:"-" }}</span>
+                        </li>
+                        <li class="list-group-item py-3">
+                            <div class="text-muted mb-2">Manzil:</div>
+                            <div class="fw-medium">{{ item.yosh.address|default:"-" }}</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Assistance Form -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="fw-bold mb-0">Yordam ko'rsatish holati</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="save_assistance" value="1">
+                        <div class="mb-3">
+                            <label class="form-check form-switch p-0 d-flex justify-content-between align-items-center">
+                                <span>Yordam ko'rsatilganmi?</span>
+                                {{ assistance_form.provided }}
+                            </label>
+                        </div>
+                        <div id="otaliq-assistance-details" class="d-none">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Yordam turi</label>
+                                {{ assistance_form.assistance_type }}
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Sana</label>
+                                {{ assistance_form.date_provided }}
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Tavsifi</label>
+                                {{ assistance_form.description }}
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Hujjat</label>
+                                {{ assistance_form.document }}
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 mt-2">Saqlash</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Meetings -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0">Uchrashuvlar xronologiyasi</h5>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#meetingModal">
+                        <i class="bi bi-plus-lg me-1"></i>Uchrashuv qo'shish
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if meetings %}
+                    <div class="timeline">
+                        {% for m in meetings %}
+                        <div class="timeline-item mb-4 pb-4 border-bottom last-child-0">
+                            <div class="d-flex gap-3">
+                                <div class="meeting-photo" style="width: 120px;">
+                                    {% if m.photo %}
+                                    <img src="{{ m.photo.url }}" class="img-fluid rounded cursor-pointer"
+                                        onclick="window.open(this.src)">
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold text-primary mb-1">{{ m.meeting_date|date:"d-F, Y | H:i" }}
+                                    </div>
+                                    <div class="text-dark small">{{ m.description }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-chat-dots fs-1 text-muted opacity-25"></i>
+                        <p class="text-muted mt-2">Hozircha uchrashuvlar mavjud emas</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Meeting Modal -->
+<div class="modal fade" id="meetingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="POST" enctype="multipart/form-data" class="modal-content">
+            {% csrf_token %}
+            <input type="hidden" name="add_meeting" value="1">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Yangi uchrashuv qo'shish</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Sana va vaqt</label>
+                    {{ meeting_form.meeting_date }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Foto (Majburiy)</label>
+                    {{ meeting_form.photo }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Bayon (Mazmuni)</label>
+                    {{ meeting_form.description }}
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Bekor qilish</button>
+                <button type="submit" class="btn btn-primary px-4">Saqlash</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .bg-primary-soft {
+        background-color: rgba(79, 70, 229, 0.1);
+    }
+
+    .bg-info-soft {
+        background-color: rgba(14, 165, 233, 0.1);
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .last-child-0:last-child {
+        border-bottom: none !important;
+        margin-bottom: 0 !important;
+    }
+</style>
+{% endblock %}
+
+<script>
+    (function () {
+        const providedInput = document.getElementById("{{ assistance_form.provided.id_for_label }}");
+        const details = document.getElementById("otaliq-assistance-details");
+        if (!providedInput || !details) return;
+
+        const toggle = () => {
+            if (providedInput.checked) {
+                details.classList.remove('d-none');
+            } else {
+                details.classList.add('d-none');
+            }
+        };
+
+        providedInput.addEventListener('change', toggle);
+        toggle();
+    })();
+</script>

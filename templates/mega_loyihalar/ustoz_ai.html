@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load core_extras %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/mega_projects.css' %}?v=20260205b">
+{% endblock %}
+
+{% block content %}
+<div class="mega-wrap">
+    <div class="mega-hero">
+        <div>
+            <div class="mega-title">Ustoz AI</div>
+        </div>
+    </div>
+
+    <div class="mega-panel">
+        <div class="mega-section">
+            <h4>Mahallalar bo'yicha statistika</h4>
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="mega-status">
+                    {% if snapshot %}
+                    So'ngi yangilanish: {{ snapshot.fetched_at|date:"d.m.Y H:i" }}
+                    {% else %}
+                    Hali ma'lumot yo'q
+                    {% endif %}
+                </div>
+                {% if can_refresh %}
+                <form method="post" action="{% url 'mega_ustoz_ai_refresh' %}">
+                    {% csrf_token %}
+                    <button class="mega-refresh" type="submit">
+                        <i class="bi bi-arrow-repeat"></i> Yangilash
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered bg-white mega-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            {% for col in table_columns %}
+                            {% if col == "mahalla_name" %}
+                            <th>Mahalla</th>
+                            {% elif col == "total_youth" %}
+                            <th>Jami yoshlar</th>
+                            {% elif col == "users_total" %}
+                            <th>Foydalanuvchilar</th>
+                            {% elif col == "users_ratio_percent" %}
+                            <th>Foydalanuvchi / yoshlar (%)</th>
+                            {% elif col == "video_views" %}
+                            <th>Video ko‘rishlar</th>
+                            {% elif col == "certificates_count" %}
+                            <th>Olingan sertifikatlar</th>
+                            {% else %}
+                            <th>{{ col|capfirst }}</th>
+                            {% endif %}
+                            {% empty %}
+                            <th>Mahalla</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if total_row %}
+                        <tr class="mega-total-row">
+                            <td>—</td>
+                            {% for col in table_columns %}
+                            <td>{{ total_row|get_item:col }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endif %}
+                        {% for row in table_rows %}
+                        <tr class="{{ row|get_item:'row_class' }}">
+                            <td>{{ forloop.counter }}</td>
+                            {% for col in table_columns %}
+                            {% if col == "users_ratio_percent" %}
+                            <td class="mega-ratio {{ row|get_item:'ratio_class' }}">
+                                {{ row|get_item:col }}
+                            </td>
+                            {% else %}
+                            <td>{{ row|get_item:col }}</td>
+                            {% endif %}
+                            {% empty %}
+                            <td colspan="1">Ma'lumot yo'q</td>
+                            {% endfor %}
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">Ma'lumot yo'q</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,593 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="kpi-page">
+    <section class="kpi-hero">
+        <div class="kpi-hero-left">
+            <p class="kpi-eyebrow">Tahliliy nazorat paneli</p>
+            <h2 class="kpi-title">Yetakchilar KPI reytingi</h2>
+            <p class="kpi-subtitle">
+                Yo'nalishlar kesimida chuqur hisoblangan ballar asosida avtomatik reyting.
+            </p>
+            <div class="kpi-meta">
+                <span><i class="bi bi-calendar3"></i> {{ period_label }}</span>
+                <span><i class="bi bi-clock-history"></i> {{ period_range }}</span>
+            </div>
+        </div>
+        <div class="kpi-hero-right">
+            <div class="kpi-orb kpi-orb-one"></div>
+            <div class="kpi-orb kpi-orb-two"></div>
+            <div class="kpi-orb kpi-orb-three"></div>
+        </div>
+    </section>
+
+    <section class="kpi-stats-grid">
+        <article class="kpi-stat-card">
+            <div class="kpi-stat-icon icon-1"><i class="bi bi-person-badge"></i></div>
+            <div>
+                <p class="kpi-stat-label">Top yetakchi</p>
+                <h3 class="kpi-stat-value">
+                    {% if top_row %}{{ top_row.leader.full_name|default:top_row.leader.username }}{% else %}-{% endif %}
+                </h3>
+                <p class="kpi-stat-note">
+                    {% if top_row %}
+                    {{ top_row.total_score|floatformat:1 }} ball
+                    {% else %}
+                    Ma'lumot yo'q
+                    {% endif %}
+                </p>
+            </div>
+        </article>
+        <article class="kpi-stat-card">
+            <div class="kpi-stat-icon icon-2"><i class="bi bi-speedometer2"></i></div>
+            <div>
+                <p class="kpi-stat-label">O'rtacha ball</p>
+                <h3 class="kpi-stat-value">{{ avg_total|floatformat:1 }}</h3>
+                <p class="kpi-stat-note">Umumiy reyting bo'yicha</p>
+            </div>
+        </article>
+        <article class="kpi-stat-card">
+            <div class="kpi-stat-icon icon-3"><i class="bi bi-award"></i></div>
+            <div>
+                <p class="kpi-stat-label">80+ ball olganlar</p>
+                <h3 class="kpi-stat-value">{{ high_result_count }}</h3>
+                <p class="kpi-stat-note">{{ leaders_count }} yetakchidan</p>
+            </div>
+        </article>
+        <article class="kpi-stat-card">
+            <div class="kpi-stat-icon icon-4"><i class="bi bi-bar-chart-line"></i></div>
+            <div>
+                <p class="kpi-stat-label">Eng faol yo'nalish</p>
+                <h3 class="kpi-stat-value">{{ best_direction }}</h3>
+                <p class="kpi-stat-note">{{ best_direction_score|floatformat:1 }} o'rtacha ball</p>
+            </div>
+        </article>
+    </section>
+
+    <section class="kpi-filters-card">
+        <form method="get" class="kpi-filters-form">
+            <div class="kpi-filter-item kpi-filter-wide">
+                <label for="kpi-q">Qidiruv</label>
+                <input id="kpi-q" type="text" name="q" value="{{ q }}" placeholder="F.I.Sh, mahalla yoki login..." class="form-control">
+            </div>
+            <div class="kpi-filter-item">
+                <label for="kpi-period">Davr</label>
+                <select id="kpi-period" name="period" class="form-select">
+                    <option value="month" {% if selected_period == 'month' %}selected{% endif %}>Joriy oy</option>
+                    <option value="quarter" {% if selected_period == 'quarter' %}selected{% endif %}>Joriy chorak</option>
+                    <option value="year" {% if selected_period == 'year' %}selected{% endif %}>Joriy yil</option>
+                    <option value="all" {% if selected_period == 'all' %}selected{% endif %}>Barcha davr</option>
+                </select>
+            </div>
+            <div class="kpi-filter-item">
+                <label for="kpi-sector">Sektor</label>
+                <select id="kpi-sector" name="sector" class="form-select">
+                    <option value="">Barcha sektor</option>
+                    <option value="1" {% if selected_sector == '1' %}selected{% endif %}>1-sektor</option>
+                    <option value="2" {% if selected_sector == '2' %}selected{% endif %}>2-sektor</option>
+                    <option value="3" {% if selected_sector == '3' %}selected{% endif %}>3-sektor</option>
+                    <option value="4" {% if selected_sector == '4' %}selected{% endif %}>4-sektor</option>
+                </select>
+            </div>
+            <div class="kpi-filter-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-funnel"></i> Filtrlash
+                </button>
+                <a href="{% url 'kpi_dashboard' %}" class="btn btn-light">
+                    <i class="bi bi-arrow-counterclockwise"></i> Tozalash
+                </a>
+            </div>
+        </form>
+    </section>
+
+    <section class="kpi-table-card">
+        <div class="kpi-table-head">
+            <h4>KPI liderbord</h4>
+            <span class="kpi-table-count">{{ leaders_count }} ta yetakchi</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table kpi-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="text-center">O'rin</th>
+                        <th>Yetakchi</th>
+                        <th class="text-center">Qamrov (25)</th>
+                        <th class="text-center">Bandlik (30)</th>
+                        <th class="text-center">Xavf (20)</th>
+                        <th class="text-center">Ijro (15)</th>
+                        <th class="text-center">Tadbir (10)</th>
+                        <th class="text-center">Umumiy ball</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        <td class="text-center">
+                            <span class="rank-badge {% if row.rank == 1 %}rank-gold{% elif row.rank == 2 %}rank-silver{% elif row.rank == 3 %}rank-bronze{% endif %}">
+                                {{ row.rank }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="leader-cell">
+                                {% if row.leader.profile_image %}
+                                <img src="{{ row.leader.profile_image.url }}" alt="{{ row.leader.full_name }}" class="leader-avatar">
+                                {% else %}
+                                <div class="leader-avatar-fallback">
+                                    {{ row.leader.full_name|default:row.leader.username|first|upper }}
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <div class="leader-name">{{ row.leader.full_name|default:row.leader.username }}</div>
+                                    <div class="leader-meta">
+                                        <span>{{ row.mahalla_name }}</span>
+                                        <span>•</span>
+                                        <span>{{ row.leader.get_sector_display|default:"Sektor yo'q" }}</span>
+                                        {% if row.discipline_count %}
+                                        <span>•</span>
+                                        <span class="text-danger">Faol jazo: {{ row.discipline_count }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="score-chip chip-blue">
+                                {% if row.coverage_score is not None %}{{ row.coverage_score|floatformat:1 }}{% else %}-{% endif %}
+                            </div>
+                            <div class="score-sub">{{ row.coverage_ratio|floatformat:1 }}%</div>
+                        </td>
+                        <td class="text-center">
+                            <div class="score-chip chip-green">
+                                {% if row.employment_score is not None %}{{ row.employment_score|floatformat:1 }}{% else %}-{% endif %}
+                            </div>
+                            <div class="score-sub">{{ row.employment_ratio|floatformat:1 }}%</div>
+                        </td>
+                        <td class="text-center">
+                            <div class="score-chip chip-cyan">
+                                {% if row.risk_score is not None %}{{ row.risk_score|floatformat:1 }}{% else %}-{% endif %}
+                            </div>
+                            <div class="score-sub">M: {{ row.migration_ratio|floatformat:0 }}% | O: {{ row.otaliq_ratio|floatformat:0 }}%</div>
+                        </td>
+                        <td class="text-center">
+                            <div class="score-chip chip-purple">
+                                {% if row.execution_score is not None %}{{ row.execution_score|floatformat:1 }}{% else %}-{% endif %}
+                            </div>
+                            <div class="score-sub">Task {{ row.task_ratio|floatformat:0 }}% / Yo'qlama {{ row.attendance_ratio|floatformat:0 }}%</div>
+                        </td>
+                        <td class="text-center">
+                            <div class="score-chip chip-orange">
+                                {% if row.initiative_score is not None %}{{ row.initiative_score|floatformat:1 }}{% else %}-{% endif %}
+                            </div>
+                            <div class="score-sub">Reyd + 5 tashabbus</div>
+                        </td>
+                        <td class="text-center total-score-cell">
+                            <div class="total-score">{{ row.total_score|floatformat:1 }}</div>
+                            <div class="total-progress">
+                                <span style="width: {{ row.total_score|floatformat:0 }}%"></span>
+                            </div>
+                            <div class="score-sub">Ishonchlilik: {{ row.available_weight|floatformat:0 }}%</div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">Tanlangan filtr bo'yicha yetakchilar topilmadi.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<style>
+    .kpi-page {
+        padding: 24px 10px 32px;
+        display: grid;
+        gap: 18px;
+    }
+
+    .kpi-hero {
+        position: relative;
+        border-radius: 26px;
+        padding: 28px;
+        background: linear-gradient(130deg, #0b1023 0%, #10214b 45%, #17377a 100%);
+        color: #eef4ff;
+        overflow: hidden;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .kpi-eyebrow {
+        text-transform: uppercase;
+        font-weight: 700;
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        color: rgba(205, 222, 255, 0.9);
+        margin-bottom: 6px;
+    }
+
+    .kpi-title {
+        font-size: clamp(1.45rem, 2vw, 2rem);
+        font-weight: 800;
+        margin: 0;
+    }
+
+    .kpi-subtitle {
+        color: rgba(229, 238, 255, 0.88);
+        margin-top: 10px;
+        margin-bottom: 14px;
+        max-width: 760px;
+    }
+
+    .kpi-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        font-size: 13px;
+        color: rgba(229, 238, 255, 0.9);
+    }
+
+    .kpi-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .kpi-hero-right {
+        min-width: 220px;
+        min-height: 130px;
+        position: relative;
+    }
+
+    .kpi-orb {
+        position: absolute;
+        border-radius: 999px;
+        filter: blur(2px);
+    }
+
+    .kpi-orb-one {
+        width: 130px;
+        height: 130px;
+        right: 0;
+        top: 0;
+        background: radial-gradient(circle at 30% 30%, #83c5ff 0%, rgba(131, 197, 255, 0.1) 70%);
+    }
+
+    .kpi-orb-two {
+        width: 96px;
+        height: 96px;
+        right: 85px;
+        top: 40px;
+        background: radial-gradient(circle at 30% 30%, #48ffd1 0%, rgba(72, 255, 209, 0.08) 72%);
+    }
+
+    .kpi-orb-three {
+        width: 65px;
+        height: 65px;
+        right: 25px;
+        top: 92px;
+        background: radial-gradient(circle at 30% 30%, #ffd477 0%, rgba(255, 212, 119, 0.12) 70%);
+    }
+
+    .kpi-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .kpi-stat-card {
+        border: 1px solid #e4e9f4;
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+        box-shadow: 0 10px 30px rgba(15, 40, 90, 0.06);
+        padding: 16px;
+        display: flex;
+        gap: 12px;
+        min-height: 98px;
+        align-items: flex-start;
+    }
+
+    .kpi-stat-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: #10214b;
+    }
+
+    .icon-1 { background: #dbe9ff; }
+    .icon-2 { background: #d8f7ea; }
+    .icon-3 { background: #ffeccd; }
+    .icon-4 { background: #e1f1ff; }
+
+    .kpi-stat-label {
+        margin: 0;
+        font-size: 12px;
+        color: #63728a;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .kpi-stat-value {
+        margin: 2px 0 0;
+        font-size: 1.08rem;
+        font-weight: 800;
+        color: #12213f;
+        line-height: 1.3;
+    }
+
+    .kpi-stat-note {
+        margin: 4px 0 0;
+        color: #6f809c;
+        font-size: 12px;
+    }
+
+    .kpi-filters-card,
+    .kpi-table-card {
+        border: 1px solid #e2e8f3;
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 14px 28px rgba(16, 33, 75, 0.06);
+    }
+
+    .kpi-filters-card {
+        padding: 16px;
+    }
+
+    .kpi-filters-form {
+        display: grid;
+        grid-template-columns: 2.1fr 1fr 1fr auto;
+        gap: 12px;
+        align-items: end;
+    }
+
+    .kpi-filter-item label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #64748b;
+        letter-spacing: 0.04em;
+    }
+
+    .kpi-filter-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .kpi-table-card {
+        padding: 14px;
+    }
+
+    .kpi-table-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding: 2px 6px;
+    }
+
+    .kpi-table-head h4 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #0f1e3d;
+    }
+
+    .kpi-table-count {
+        background: #eef3ff;
+        color: #2951a3;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .kpi-table thead th {
+        font-size: 12px;
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 800;
+        color: #304462;
+        background: #f5f8fe;
+        border-bottom: 1px solid #dde6f5;
+        white-space: nowrap;
+    }
+
+    .kpi-table tbody td {
+        border-bottom: 1px solid #eef3fb;
+        vertical-align: middle;
+    }
+
+    .rank-badge {
+        min-width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: #eef2fa;
+        color: #4a5d7b;
+        font-weight: 800;
+        font-size: 14px;
+    }
+
+    .rank-gold { background: #ffe7a8; color: #9a6505; }
+    .rank-silver { background: #e8edf8; color: #4f6282; }
+    .rank-bronze { background: #f8e2d1; color: #8f4e1f; }
+
+    .leader-cell {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        min-width: 260px;
+    }
+
+    .leader-avatar,
+    .leader-avatar-fallback {
+        width: 40px;
+        height: 40px;
+        border-radius: 11px;
+        object-fit: cover;
+        flex: 0 0 40px;
+    }
+
+    .leader-avatar-fallback {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        color: #fff;
+        background: linear-gradient(145deg, #2f66e1, #0f9ad4);
+    }
+
+    .leader-name {
+        font-weight: 800;
+        color: #15284c;
+        font-size: 14px;
+        line-height: 1.2;
+    }
+
+    .leader-meta {
+        margin-top: 3px;
+        color: #6f809b;
+        font-size: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .score-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 62px;
+        height: 32px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 800;
+        border: 1px solid transparent;
+    }
+
+    .chip-blue { background: #e8efff; color: #2956c4; border-color: #d4e1ff; }
+    .chip-green { background: #e2f8ea; color: #198754; border-color: #ccefd9; }
+    .chip-cyan { background: #e2f7fb; color: #0c8297; border-color: #ceecf4; }
+    .chip-purple { background: #ece9ff; color: #5a43c0; border-color: #ddd4ff; }
+    .chip-orange { background: #fff0dc; color: #be6a0d; border-color: #ffe3be; }
+
+    .score-sub {
+        margin-top: 4px;
+        color: #7b8ba4;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+
+    .total-score-cell {
+        min-width: 142px;
+    }
+
+    .total-score {
+        font-size: 1.2rem;
+        font-weight: 900;
+        color: #10214b;
+        line-height: 1.1;
+    }
+
+    .total-progress {
+        margin: 6px auto 0;
+        width: 108px;
+        height: 7px;
+        background: #edf2fb;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .total-progress span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #2062f0 0%, #0ea5e9 100%);
+    }
+
+    @media (max-width: 1200px) {
+        .kpi-stats-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .kpi-filters-form {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .kpi-filter-wide {
+            grid-column: span 2;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .kpi-page {
+            padding: 8px 2px 20px;
+        }
+
+        .kpi-hero {
+            padding: 20px;
+        }
+
+        .kpi-hero-right {
+            display: none;
+        }
+
+        .kpi-stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .kpi-filters-form {
+            grid-template-columns: 1fr;
+        }
+
+        .kpi-filter-wide {
+            grid-column: span 1;
+        }
+
+        .kpi-filter-actions {
+            flex-direction: column;
+        }
+
+        .kpi-filter-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="card p-4 border-0 shadow-sm" style="border-radius: 24px;">
+                <div class="d-flex align-items-center mb-4 gap-3">
+                    <div class="p-3 rounded-4 bg-primary text-white shadow-sm">
+                        <i class="bi bi-award fs-3"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold text-dark mb-0">
+                            {% if object %}Tadbirni tahrirlash{% else %}Yangi tadbir{% endif %}
+                        </h3>
+                        <p class="text-muted small mb-0">Besh tashabbus yo'nalishlari bo'yicha tadbir</p>
+                    </div>
+                </div>
+
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                    {% endif %}
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.direction.label }}</label>
+                            {{ form.direction }}
+                            {% if form.direction.errors %}
+                            <div class="text-danger smaller mt-1 fw-bold">{{ form.direction.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.title.label }}</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                            <div class="text-danger smaller mt-1 fw-bold">{{ form.title.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.event_date.label }}</label>
+                            {{ form.event_date }}
+                            {% if form.event_date.errors %}
+                            <div class="text-danger smaller mt-1 fw-bold">{{ form.event_date.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.mahalla.label }}</label>
+                            {{ form.mahalla }}
+                            {% if form.mahalla.errors %}
+                            <div class="text-danger smaller mt-1 fw-bold">{{ form.mahalla.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.coverage.label }}</label>
+                            {{ form.coverage }}
+                            {% if form.coverage.errors %}
+                            <div class="text-danger smaller mt-1 fw-bold">{{ form.coverage.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.description.label }}</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                            <div class="text-danger smaller mt-1 fw-bold">{{ form.description.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+                    <h6 class="fw-bold text-dark mb-3"><i class="bi bi-images me-2 text-primary"></i>Rasmlar (3 tagacha)</h6>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">{{ form.photos.label }}</label>
+                            {{ form.photos }}
+                            <div class="form-text">Bitta maydondan 1-3 ta rasm tanlang (JPG/JPEG/PNG).</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-5 pt-3 border-top">
+                        <button type="submit" class="btn btn-primary px-5 py-2 fw-bold shadow-sm">
+                            <i class="bi bi-save me-1"></i> Saqlash
+                        </button>
+                        <a href="{% url 'beshtashabbus:list' %}" class="btn btn-light px-4 py-2">
+                            Bekor qilish
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Select2 support -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('.select2').select2({
+            theme: "classic",
+            width: '100%'
+        });
+
+        const directionSelect = document.getElementById('id_direction');
+        const titleSelect = document.getElementById('id_title');
+        const titleOptionsByDirection = {{ title_options_json|safe }};
+
+        function refillTitles() {
+            if (!directionSelect || !titleSelect) return;
+
+            const selectedDirection = directionSelect.value;
+            const previousValue = titleSelect.value;
+            const options = titleOptionsByDirection[selectedDirection] || [];
+
+            titleSelect.innerHTML = '';
+
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = "Tadbir nomini tanlang";
+            titleSelect.appendChild(placeholder);
+
+            options.forEach((name) => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                if (name === previousValue) {
+                    option.selected = true;
+                }
+                titleSelect.appendChild(option);
+            });
+        }
+
+        if (directionSelect && titleSelect) {
+            directionSelect.addEventListener('change', function () {
+                titleSelect.value = '';
+                refillTitles();
+            });
+            refillTitles();
+        }
+    });
+</script>
+
+<style>
+    .form-control,
+    .form-select {
+        border-width: 2px;
+        background: #fcfcfc;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        background: white;
+    }
+
+    .select2-container--classic .select2-selection--single {
+        height: 45px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        display: flex;
+        align-items: center;
+    }
+</style>
+{% endblock %}

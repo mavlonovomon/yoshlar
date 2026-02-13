@@ -1,0 +1,329 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card mb-4 py-3 px-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <a href="{% url 'migratsiya:list' %}" class="btn btn-light shadow-sm">
+                <i class="bi bi-arrow-left me-1"></i> Ro'yxatga qaytish
+            </a>
+            <div class="d-flex gap-2">
+                <a href="{% url 'migratsiya:meeting_create' youth.pk %}" class="btn btn-primary shadow-sm">
+                    <i class="bi bi-chat-left-text me-1"></i> Suhbat qo'shish
+                </a>
+                {% if user.is_authenticated and user.role == 'YETAKCHI' %}
+                <a href="{% url 'migratsiya:edit' youth.pk %}" class="btn btn-outline-primary shadow-sm">
+                    <i class="bi bi-pencil me-1"></i> Tahrirlash
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-0 overflow-hidden mb-4 border-0 shadow-sm" style="border-radius: 24px;">
+        <div style="background: linear-gradient(135deg, #0ea5e9 0%, #22c55e 100%); height: 140px;"></div>
+        <div class="px-4 pb-4">
+            <div class="text-center" style="margin-top: -70px;">
+                {% with leader=youth.yosh.mahalla.leaders.all|first %}
+                {% if youth.yosh.photo %}
+                <img src="{{ youth.yosh.photo.url }}"
+                    class="rounded-circle shadow-lg border border-4 border-white cursor-pointer"
+                    style="width: 140px; height: 140px; object-fit: cover;" onclick="openLeaderModal(this)"
+                    data-name="{{ leader.full_name|default:'Biriktirilmagan' }}"
+                    data-position="{% if leader %}Mahalla yetakchisi{% else %}Mas'ul rahbar{% endif %}"
+                    data-phone="{{ leader.pinfl|default:'--' }}" data-org="{{ youth.yosh.mahalla.name }}"
+                    {% if leader and leader.profile_image %}data-image="{{ leader.profile_image.url }}"{% endif %}>
+                {% else %}
+                <img src="{% static 'img/user_bust.png' %}"
+                    class="rounded-circle shadow-lg border border-4 border-white bg-light cursor-pointer"
+                    style="width: 140px; height: 140px; object-fit: cover;" onclick="openLeaderModal(this)"
+                    data-name="{{ leader.full_name|default:'Biriktirilmagan' }}"
+                    data-position="{% if leader %}Mahalla yetakchisi{% else %}Mas'ul rahbar{% endif %}"
+                    data-phone="{{ leader.pinfl|default:'--' }}" data-org="{{ youth.yosh.mahalla.name }}"
+                    {% if leader and leader.profile_image %}data-image="{{ leader.profile_image.url }}"{% endif %}>
+                {% endif %}
+                {% endwith %}
+                <h2 class="fw-bold mt-3 mb-1 text-dark">{{ youth.yosh.fullname }}</h2>
+                <p class="text-primary fw-medium"><i class="bi bi-telephone me-2"></i>{{ youth.yosh.phone_number|default:"-" }}</p>
+            </div>
+
+            <div class="row g-3 mt-2">
+                <div class="col-md-2 col-6">
+                    <div class="p-3 bg-light rounded-4 text-center">
+                        <small class="text-muted d-block text-uppercase smaller fw-bold mb-1">SABAB</small>
+                        <span class="fw-bold text-primary">{{ youth.get_reason_display }}</span>
+                    </div>
+                </div>
+                <div class="col-md-2 col-6">
+                    <div class="p-3 bg-light rounded-4 text-center">
+                        <small class="text-muted d-block text-uppercase smaller fw-bold mb-1">CHIQIB KETGAN</small>
+                        <span class="fw-bold text-dark">{{ youth.departure_date|date:"d.m.Y" }}</span>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="p-3 bg-light rounded-4 text-center">
+                        <small class="text-muted d-block text-uppercase smaller fw-bold mb-1">DAVLAT</small>
+                        <span class="fw-bold text-dark">{{ youth.destination_country }}</span>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="p-3 bg-light rounded-4 text-center">
+                        <small class="text-muted d-block text-uppercase smaller fw-bold mb-1">PROVINSIYA</small>
+                        <span class="fw-bold text-dark">{{ youth.destination_province|default:"-" }}</span>
+                    </div>
+                </div>
+                <div class="col-md-2 col-12">
+                    {% with leader=youth.yosh.mahalla.leaders.all|first %}
+                    <div class="p-3 bg-light rounded-4 text-center cursor-pointer" onclick="openLeaderModal(this)"
+                        data-name="{{ leader.full_name|default:'Biriktirilmagan' }}"
+                        data-position="{% if leader %}Mahalla yetakchisi{% else %}Mas'ul rahbar{% endif %}"
+                        data-phone="{{ leader.pinfl|default:'--' }}" data-org="{{ youth.yosh.mahalla.name }}"
+                        {% if leader and leader.profile_image %}data-image="{{ leader.profile_image.url }}"{% endif %}>
+                        <small class="text-muted d-block text-uppercase smaller fw-bold mb-1">MAHALLA</small>
+                        <span class="fw-bold text-dark">{{ youth.yosh.mahalla.name }}</span>
+                    </div>
+                    {% endwith %}
+                </div>
+                <div class="col-12">
+                    <div class="p-3 bg-light rounded-4">
+                        <small class="text-muted d-block text-uppercase smaller fw-bold mb-1">MANZIL</small>
+                        <span class="fw-bold text-dark">{{ youth.destination_address|default:"-" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-4 border-0 shadow-sm mt-4" style="border-radius: 24px;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-calendar-event me-2 text-primary"></i>Suhbatlar Tarixi
+            </h5>
+            <span class="badge bg-primary-subtle text-primary" style="border-radius: 10px; padding: 6px 14px;">{{ meetings.count }} ta</span>
+        </div>
+
+        {% if meetings %}
+        <div class="timeline-list">
+            {% for m in meetings %}
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-card">
+                    <div class="timeline-meta">
+                        <div class="meta-left">
+                            <span class="badge-date">
+                                <i class="bi bi-calendar-event"></i>
+                                {{ m.meeting_date|date:"d.m.Y • H:i" }}
+                            </span>
+                            <span class="badge-status">
+                                <i class="bi bi-clock-history"></i>
+                                {{ m.created_at|timesince }} oldin
+                            </span>
+                        </div>
+                    </div>
+                    <div class="timeline-body">
+                        {% if m.photo %}
+                        <div class="timeline-image">
+                            <img src="{{ m.photo.url }}" alt="Suhbat rasmi" onclick="openImageModal(this.src)">
+                        </div>
+                        {% endif %}
+                        <div class="timeline-content">
+                            <div class="row g-2">
+                                {% if m.return_date %}
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="small text-muted"><i
+                                            class="bi bi-arrow-return-left me-1 text-primary"></i>Qaytish: <span
+                                            class="text-dark fw-bold">{{ m.return_date|date:"d.m.Y" }}</span></div>
+                                </div>
+                                {% endif %}
+                                {% if m.work_title %}
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="small text-muted"><i class="bi bi-briefcase me-1 text-primary"></i>Ish:
+                                        <span class="text-dark fw-bold">{{ m.work_title }}</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if m.work_income %}
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="small text-muted"><i
+                                            class="bi bi-cash-stack me-1 text-primary"></i>Daromad: <span
+                                            class="text-dark fw-bold">{{ m.work_income|floatformat:0|intcomma }}</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if m.work_conditions_rating %}
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="small text-muted"><i class="bi bi-stars me-1 text-primary"></i>Ish
+                                        sharoiti: <span class="text-dark fw-bold">{{ m.work_conditions_rating }}/10</span></div>
+                                </div>
+                                {% endif %}
+                                {% if m.education_institution %}
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="small text-muted"><i
+                                            class="bi bi-mortarboard me-1 text-primary"></i>Dargoh: <span
+                                            class="text-dark fw-bold">{{ m.education_institution }}</span></div>
+                                </div>
+                                {% endif %}
+                                {% if m.education_direction %}
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="small text-muted"><i class="bi bi-book me-1 text-primary"></i>Yo'nalish:
+                                        <span class="text-dark fw-bold">{{ m.education_direction }}</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if m.education_course %}
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="small text-muted"><i class="bi bi-layers me-1 text-primary"></i>Kurs:
+                                        <span class="text-dark fw-bold">{{ m.education_course }}</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% if m.description %}
+                            <div class="mt-3 p-3 bg-light rounded-3 border-start border-3 border-primary-subtle">
+                                <small class="text-muted d-block text-uppercase smaller fw-bold mb-1">Izoh:</small>
+                                <div class="text-dark">{{ m.description|linebreaksbr }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5 bg-light rounded-4">
+            <i class="bi bi-chat-quote fs-1 text-muted opacity-25 d-block mb-3"></i>
+            <p class="text-muted mb-0 small">Suhbatlar hali o'tkazilmagan</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .timeline-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem 0;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-left: 28px;
+    }
+
+    .timeline-item::before {
+        content: "";
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #f1f5f9;
+    }
+
+    .timeline-dot {
+        position: absolute;
+        left: 4px;
+        top: 14px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #0ea5e9;
+        border: 3px solid #fff;
+        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+        z-index: 2;
+    }
+
+    .timeline-card {
+        background: #fff;
+        border: 1px solid #f1f5f9;
+        border-radius: 18px;
+        padding: 1rem 1.25rem;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .timeline-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .timeline-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+    }
+
+    .meta-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .badge-date {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: #f0f9ff;
+        color: #0369a1;
+        padding: 0.35rem 0.8rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .badge-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: #f8fafc;
+        color: #64748b;
+        padding: 0.35rem 0.8rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .timeline-body {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 1.25rem;
+        align-items: start;
+    }
+
+    .timeline-image {
+        width: 100px;
+        height: 80px;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #f1f5f9;
+    }
+
+    .timeline-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        cursor: pointer;
+    }
+
+    .timeline-content {
+        color: #334155;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+        .timeline-body {
+            grid-template-columns: 1fr;
+        }
+
+        .timeline-image {
+            width: 100%;
+            height: 160px;
+        }
+    }
+</style>
+{% endblock %}

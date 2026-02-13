@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Topshiriqqa javob yuborish</h1>
+            </div>
+            <div class="col-sm-6">
+                <div class="float-right">
+                    <a href="{% url 'ishsiz_yoshlar:task_detail' task.pk %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Orqaga
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="bi bi-clipboard-check"></i> {{ task.title }}
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="text-muted">Ijrochi</label>
+                        <p>{{ task.assigned_to.full_name }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted">Muddat</label>
+                        <p>{{ task.due_date|date:"d.m.Y H:i" }}</p>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted">Tavsifi</label>
+                    <p>{{ task.description|linebreaks }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.response_type.label }}</label>
+                        {{ form.response_type }}
+                        {% if form.response_type.errors %}
+                        <div class="text-danger">{{ form.response_type.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.comment.label }}</label>
+                        {{ form.comment }}
+                        {% if form.comment.errors %}
+                        <div class="text-danger">{{ form.comment.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.completion_file.label }}</label>
+                        {{ form.completion_file }}
+                        {% if form.completion_file.errors %}
+                        <div class="text-danger">{{ form.completion_file.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send"></i> Yuborish
+                        </button>
+                        <a href="{% url 'ishsiz_yoshlar:task_detail' task.pk %}" class="btn btn-secondary">
+                            Bekor qilish
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

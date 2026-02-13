@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm rounded-4 text-center">
+                <div class="card-body p-5">
+                    <div class="text-danger mb-4">
+                        <i class="bi bi-exclamation-triangle-fill fs-1"></i>
+                    </div>
+                    <h3 class="fw-bold mb-3">Haqiqatdan ham o'chirmoqchimisiz?</h3>
+                    <p class="text-muted mb-4">Siz "{{ object.yosh.fullname }}" ma'lumotlarini o'chirib tashlamoqchisiz. Bu amalni qaytarib bo'lmaydi!</p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger rounded-pill py-3 fw-bold">Ha, o'chirilsin</button>
+                            <a href="{% url 'ishsiz_yoshlar:list' %}" class="btn btn-light rounded-pill py-2">Yo'q, fikrimdan qaytdim</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

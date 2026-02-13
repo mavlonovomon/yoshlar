@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Topshiriq tafsilotlari</h1>
+            </div>
+            <div class="col-sm-6">
+                <div class="float-right">
+                    <a href="{% url 'ishsiz_yoshlar:task_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Orqaga
+                    </a>
+                    {% if user.is_superuser or user.is_staff %}
+                    <a href="{% url 'ishsiz_yoshlar:task_edit' task.pk %}" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Tahrirlash
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Task Details -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="bi bi-clipboard-check"></i> {{ task.title }}
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="text-muted">Holati</label>
+                                <div>
+                                    {% if task.status == 'YANGI' %}
+                                    <span class="badge bg-primary">Yangi</span>
+                                    {% elif task.status == 'BAJARILMOQDA' %}
+                                    <span class="badge bg-warning">Bajarilmoqda</span>
+                            {% elif task.status == 'TASDIQLANGAN' %}
+                            <span class="badge bg-info">Tekshirilmoqda</span>
+                                    {% elif task.status == 'RAD_ETILGAN' %}
+                                    <span class="badge bg-danger">Rad etilgan</span>
+                                    {% elif task.status == 'YAKUNLANGAN' %}
+                                    <span class="badge bg-success">Yakunlangan</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted">Muhimlik</label>
+                                <div>
+                                    {% if task.priority == 'LOW' %}
+                                    <span class="badge bg-secondary">Past</span>
+                                    {% elif task.priority == 'MEDIUM' %}
+                                    <span class="badge bg-primary">O'rta</span>
+                                    {% elif task.priority == 'HIGH' %}
+                                    <span class="badge bg-warning">Yuqori</span>
+                                    {% elif task.priority == 'URGENT' %}
+                                    <span class="badge bg-danger">Shoshilinch</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="text-muted">Tavsifi</label>
+                            <p>{{ task.description|linebreaks }}</p>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="text-muted">Ijrochi</label>
+                                <p>
+                                    {{ task.assigned_to.full_name }}
+                                    {% if task.assigned_to.is_sector_coordinator %}
+                                    <span class="badge bg-warning-subtle text-warning border ms-1">Koordinator</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted">Yaratgan</label>
+                                <p>{{ task.created_by.full_name }}</p>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="text-muted">Muddat</label>
+                                <p>{{ task.due_date|date:"d.m.Y H:i" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted">Bajarilgan vaqt</label>
+                                <p>{{ task.completed_at|date:"d.m.Y H:i"|default:"-" }}</p>
+                            </div>
+                        </div>
+
+                        {% if task.attachment %}
+                        <div class="mb-3">
+                            <label class="text-muted">Biriktirilgan fayl</label>
+                            <p>
+                                <a href="{{ task.attachment.url }}" target="_blank" class="btn btn-info btn-sm">
+                                    <i class="bi bi-download"></i> Faylni yuklab olish
+                                </a>
+                            </p>
+                        </div>
+                        {% endif %}
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="text-muted">Yaratilgan vaqt</label>
+                                <p>{{ task.created_at|date:"d.m.Y H:i" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted">Yangilangan vaqt</label>
+                                <p>{{ task.updated_at|date:"d.m.Y H:i" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Actions -->
+                {% if request.user == task.assigned_to and task.status != 'YAKUNLANGAN' %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="bi bi-gear"></i> Amallar
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex gap-2">
+                            <form action="{% url 'ishsiz_yoshlar:task_accept' task.pk %}" method="post"
+                                style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="comment" value="Topshiriq qabul qilindi">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check-circle"></i> Qabul qilish
+                                </button>
+                            </form>
+                            <a href="{% url 'ishsiz_yoshlar:task_respond' task.pk %}" class="btn btn-primary">
+                                <i class="bi bi-send"></i> Javob yuborish
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Responses -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="bi bi-chat-dots"></i> Javoblar ({{ responses.count }})
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        {% for response in responses %}
+                        <div class="border-bottom pb-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>{{ response.user.full_name }}</strong>
+                                <small class="text-muted">{{ response.responded_at|date:"d.m.Y H:i" }}</small>
+                            </div>
+                            <div class="mb-2">
+                                {% if response.response_type == 'QABUL_QILDIM' %}
+                                <span class="badge bg-success">Qabul qildi</span>
+                                {% elif response.response_type == 'RAD_ETDIM' %}
+                                <span class="badge bg-danger">Rad etdi</span>
+                                {% elif response.response_type == 'BAJARILDI' %}
+                                <span class="badge bg-success">Bajarildi</span>
+                                {% elif response.response_type == 'MUAMMO_BOR' %}
+                                <span class="badge bg-warning">Muamm bor</span>
+                                {% endif %}
+                            </div>
+                            {% if response.comment %}
+                            <p>{{ response.comment|linebreaks }}</p>
+                            {% endif %}
+                            {% if response.completion_file %}
+                            <p>
+                                <a href="{{ response.completion_file.url }}" target="_blank"
+                                    class="btn btn-sm btn-info">
+                                    <i class="bi bi-file-earmark"></i> Bajarilgan ishing fayli
+                                </a>
+                            </p>
+                            {% endif %}
+
+                            {% if user.is_superuser or user.is_staff %}
+                            <div class="mt-2 d-flex gap-2 flex-wrap">
+                                <form action="{% url 'ishsiz_yoshlar:task_review' task.pk %}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="approve">
+                                    <input type="text" name="comment" class="form-control form-control-sm mb-2" placeholder="Izoh (ixtiyoriy)">
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <i class="bi bi-check2-circle"></i> Tasdiqlash
+                                    </button>
+                                </form>
+                                <form action="{% url 'ishsiz_yoshlar:task_review' task.pk %}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="return">
+                                    <input type="text" name="comment" class="form-control form-control-sm mb-2" placeholder="Qaytarish izohi">
+                                    <button type="submit" class="btn btn-sm btn-warning">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Qaytarish
+                                    </button>
+                                </form>
+                                <form action="{% url 'ishsiz_yoshlar:task_review' task.pk %}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="reject">
+                                    <input type="text" name="comment" class="form-control form-control-sm mb-2" placeholder="Rad etish izohi">
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="bi bi-x-circle"></i> Rad etish
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <p class="text-muted">Javoblar yo'q</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <!-- Notifications -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="bi bi-bell"></i> Xabarlar
+                        </h3>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if notifications %}
+                        <ul class="list-group list-group-flush">
+                            {% for notification in notifications %}
+                            <li class="list-group-item {% if not notification.is_read %}bg-light{% endif %}">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <small class="text-muted">{{ notification.created_at|date:"d.m.Y H:i" }}</small>
+                                        <p class="mb-0">{{ notification.message }}</p>
+                                    </div>
+                                    {% if not notification.is_read %}
+                                    <span class="badge bg-primary">Yangi</span>
+                                    {% endif %}
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <div class="p-3 text-center text-muted">
+                            <i class="bi bi-bell-slash" style="font-size: 2rem;"></i>
+                            <p class="mt-2">Xabarlar yo'q</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

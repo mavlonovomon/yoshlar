@@ -1,0 +1,39 @@
+from django.urls import path
+from . import views
+
+app_name = 'ishsiz_yoshlar'
+
+urlpatterns = [
+    path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
+    path('svod/', views.SvodTabsView.as_view(), name='svod'),
+    path('detailed-svod/', views.DetailedSvodView.as_view(), name='detailed_svod'),
+    path('professional-svod/', views.SvodTabsView.as_view(default_tab='professional'), name='professional_svod'),
+    path('export-professional-svod/', views.ExportProfessionalSvodView.as_view(), name='export_professional_svod'),
+    path('export-mahalla-svod/', views.ExportMahallaSvodView.as_view(), name='export_mahalla_svod'),
+    path('export-leader-svod/', views.ExportLeaderSvodView.as_view(), name='export_leader_svod'),
+    path('leader-svod/', views.SvodTabsView.as_view(default_tab='leader'), name='leader_svod'),
+    path('list/', views.UnemployedYouthListView.as_view(), name='list'),
+    path('detail/<int:pk>/', views.UnemployedYouthDetailView.as_view(), name='detail'),
+    path('meeting-create/<int:pk>/', views.MeetingCreateView.as_view(), name='meeting_create'),
+    path('assistance-update/<int:pk>/', views.AssistanceUpdateView.as_view(), name='assistance_update'),
+    path('yosh-autocomplete/', views.YoshAutocompleteView.as_view(), name='yosh_autocomplete'),
+    path('create/', views.UnemployedYouthCreateView.as_view(), name='create'),
+    path('edit/<int:pk>/', views.UnemployedYouthUpdateView.as_view(), name='edit'),
+    path('delete/<int:pk>/', views.UnemployedYouthDeleteView.as_view(), name='delete'),
+    path('import/', views.ImportExcelView.as_view(), name='import'),
+    path('meeting-update/<int:pk>/', views.MeetingUpdateView.as_view(), name='meeting_update'),
+    
+    # Task Management URLs (Topshiriq Tizimi)
+    path('tasks/', views.TaskListView.as_view(), name='task_list'),
+    path('tasks/create/', views.TaskCreateView.as_view(), name='task_create'),
+    path('tasks/<int:pk>/', views.TaskDetailView.as_view(), name='task_detail'),
+    path('tasks/<int:pk>/edit/', views.TaskUpdateView.as_view(), name='task_edit'),
+    path('tasks/<int:pk>/delete/', views.TaskDeleteView.as_view(), name='task_delete'),
+    path('tasks/<int:pk>/respond/', views.TaskResponseCreateView.as_view(), name='task_respond'),
+    path('tasks/<int:pk>/accept/', views.TaskAcceptView.as_view(), name='task_accept'),
+    path('tasks/<int:pk>/review/', views.TaskReviewView.as_view(), name='task_review'),
+    
+    # Notifications URLs
+    path('notifications/', views.NotificationListView.as_view(), name='notification_list'),
+    path('notifications/<int:pk>/read/', views.MarkNotificationReadView.as_view(), name='notification_read'),
+]

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kirish - Yoshlar Tizimi</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+
+<body class="login-body">
+    <div class="login-container">
+        <div class="login-header">
+            <div class="login-logo-container" style="display: flex; justify-content: center; margin-bottom: 20px;">
+                <div
+                    style="width: 64px; height: 64px; background: #4F7FFF; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; box-shadow: 0 10px 15px -3px rgba(79, 127, 255, 0.4);">
+                    <i class="bi bi-person-badge"></i>
+                </div>
+            </div>
+            <h1 class="login-title">Yoshlar Tizimi</h1>
+            <p class="login-subtitle">Xush kelibsiz! Iltimos, ma'lumotlaringizni kiriting.</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="error-container">
+                {% for error in form.non_field_errors %}
+                <i class="bi bi-exclamation-circle-fill" style="margin-right: 8px;"></i> {{ error }}<br>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="{{ form.mahalla.id_for_label }}"><i class="bi bi-geo-alt" style="margin-right: 6px;"></i>
+                    Mahalla (Yetakchi uchun)</label>
+                {{ form.mahalla }}
+            </div>
+
+            <div class="login-divider" id="adminLoginDivider">YOKI</div>
+
+            <div class="form-group" id="adminLoginGroup">
+                <label for="{{ form.username.id_for_label }}"><i class="bi bi-person" style="margin-right: 6px;"></i>
+                    Login (Super Admin)</label>
+                {{ form.username }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}"><i class="bi bi-lock" style="margin-right: 6px;"></i>
+                    Parol</label>
+                {{ form.password }}
+            </div>
+
+            <button type="submit" class="btn-login">
+                Tizimga kirish <i class="bi bi-arrow-right-short" style="font-size: 20px;"></i>
+            </button>
+        </form>
+
+        <div class="login-divider">YOKI</div>
+        <button type="button" id="eimzoLoginBtn" class="btn-login" style="background: #16a34a;">
+            E-IMZO orqali kirish
+        </button>
+        <div id="eimzoStatus" style="text-align:center;margin-top:10px;font-size:12px;color:#64748b;"></div>
+
+        <div style="text-align: center; margin-top: 32px; color: #9ca3af; font-size: 12px; font-weight: 500;">
+            &copy; 2024 Yoshlar Tizimi. Barcha huquqlar himoyalangan.
+        </div>
+    </div>
+</body>
+
+<script>
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return "";
+    }
+
+    async function getChallenge() {
+        const res = await fetch("{% url 'eimzo_auth:eimzo_challenge' %}", {
+            credentials: 'same-origin',
+            headers: { "X-CSRFToken": getCookie("csrftoken") }
+        });
+        if (!res.ok) throw new Error("Challenge olishda xatolik");
+        return res.json();
+    }
+
+    async function verifySignature(signature, cert, chain) {
+        const res = await fetch("{% url 'eimzo_auth:eimzo_verify' %}", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken")
+            },
+            body: JSON.stringify({ signature, cert, chain })
+        });
+        return res.json();
+    }
+
+    const CAPI_URLS = [
+        "https://127.0.0.1:64646/plugin/e-imzo-client.js",
+        "https://127.0.0.1:64646/CAPIWS.js",
+        "https://localhost:64646/CAPIWS.js",
+        "http://127.0.0.1:64646/CAPIWS.js",
+        "https://127.0.0.1:64443/CAPIWS.js",
+        "https://localhost:64443/CAPIWS.js"
+    ];
+    let capiLoadPromise = null;
+
+    function loadScriptOnce(url) {
+        return new Promise((resolve, reject) => {
+            const s = document.createElement("script");
+            s.src = url;
+            s.async = true;
+            s.onload = () => resolve();
+            s.onerror = () => reject(new Error("Script yuklanmadi: " + url));
+            document.head.appendChild(s);
+        });
+    }
+
+    async function loadCapi() {
+        if (window.CAPIWS && window.CAPIWS.callFunction) return true;
+        if (capiLoadPromise) return capiLoadPromise;
+        capiLoadPromise = (async () => {
+            for (const url of CAPI_URLS) {
+                try {
+                    await loadScriptOnce(url);
+                    if (window.CAPIWS && window.CAPIWS.callFunction) return true;
+                } catch (e) {
+                    // try next url
+                }
+            }
+            return false;
+        })();
+        return capiLoadPromise;
+    }
+
+    async function ensureCapi() {
+        const ok = await loadCapi();
+        if (!ok || !window.CAPIWS || !window.CAPIWS.callFunction) {
+            const statusBox = document.getElementById("eimzoStatus");
+            if (statusBox) {
+                statusBox.innerHTML = `
+                    <div class="alert alert-warning py-2 small mb-0">
+                        <b>E-IMZO topilmadi!</b><br>
+                        1. <a href="https://esi.uz/download/e-imzo" target="_blank">Pluginni yuklab oling</a><br>
+                        2. Agar o'rnatilgan bo'lsa, <a href="https://127.0.0.1:64646" target="_blank" onclick="window.open('https://127.0.0.1:64646', '_blank'); return false;" style="color: #dc3545; font-weight: bold; text-decoration: underline;">BU YERNI BOSING</a> va ochilgan oynada <b>"Advanced" -> "Proceed to 127.0.0.1 (unsafe)"</b> tugmasini bosing.
+                    </div>`;
+            }
+            throw new Error("E-IMZO Web Plugin topilmadi");
+        }
+    }
+
+    async function callCapi(plugin, name, args = [], timeoutMs = 15000) {
+        await ensureCapi();
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => {
+                reject(new Error("E-IMZO javob bermadi (timeout)"));
+            }, timeoutMs);
+            window.CAPIWS.callFunction({
+                plugin,
+                name,
+                arguments: args
+            }, function (event, data) {
+                clearTimeout(timer);
+                resolve(data);
+            }, function (error) {
+                clearTimeout(timer);
+                reject(new Error(error));
+            });
+        });
+    }
+
+    function unwrapResult(payload) {
+        if (payload && typeof payload === "object") {
+            if ("result" in payload) return payload.result;
+            if ("data" in payload) return payload.data;
+            if ("responseObject" in payload) return payload.responseObject;
+        }
+        return payload;
+    }
+
+    function normalizeCertList(payload) {
+        const val = unwrapResult(payload);
+        if (Array.isArray(val)) return val;
+        if (val && Array.isArray(val.certificates)) return val.certificates;
+        return [];
+    }
+
+    function pickCertificate(certs) {
+        if (!certs.length) return null;
+        return certs[0];
+    }
+
+    function getCertBase64(item) {
+        return item.certificate_64 || item.certificate || item.cert || item.cert_64 || item.base64 || item.pem || null;
+    }
+
+    function getCertId(item) {
+        return item.certId || item.cert_id || item.id || null;
+    }
+
+    function getSerial(item) {
+        return item.serialNumber || item.serial_number || item.sn || item.serial || null;
+    }
+
+    function getDiskPathName(item) {
+        return {
+            disk: item.disk || item.storage || item.drive || null,
+            path: item.path || item.storagePath || "",
+            name: item.name || item.alias || item.fileName || item.file_name || null
+        };
+    }
+
+    function toBase64Utf8(text) {
+        return btoa(unescape(encodeURIComponent(text)));
+    }
+
+    async function signWithEimzo(nonce, statusCb) {
+        const setStatus = typeof statusCb === "function" ? statusCb : () => { };
+        setStatus("Sertifikatlar olinmoqda...");
+        let certs = [];
+        let pluginUsed = "certkey";
+        try {
+            const certsResp = await callCapi("certkey", "list_all_certificates", []);
+            certs = normalizeCertList(certsResp);
+        } catch (e) {
+            pluginUsed = "pfx";
+            const certsResp = await callCapi("pfx", "list_all_certificates", []);
+            certs = normalizeCertList(certsResp);
+        }
+
+        if (!certs.length) {
+            throw new Error("Sertifikat topilmadi");
+        }
+
+        const certItem = pickCertificate(certs);
+        const { disk, path, name } = getDiskPathName(certItem);
+        const serialNumber = getSerial(certItem);
+        if (!disk || !name || !serialNumber) {
+            throw new Error("Sertifikat ma'lumotlari yetarli emas");
+        }
+
+        setStatus("Kalit yuklanmoqda...");
+        const loadResp = await callCapi(pluginUsed, "load_key", [disk, path || "", name, serialNumber]);
+        const loadRes = unwrapResult(loadResp);
+        const keyId = (loadRes && (loadRes.id || loadRes.keyId || loadRes.pfxId)) || loadRes;
+
+        if (!keyId) {
+            throw new Error("Kalit yuklanmadi");
+        }
+
+        setStatus("Imzo yaratilmoqda...");
+        const nonce64 = toBase64Utf8(nonce);
+        const signResp = await callCapi("pkcs7", "create_pkcs7", [nonce64, keyId, "yes"]);
+        const signRes = unwrapResult(signResp);
+        const signature = (signRes && (signRes.pkcs7_64 || signRes.pkcs7 || signRes.signature)) || signRes;
+
+        let chain = null;
+        try {
+            const certId = getCertId(certItem) || keyId;
+            setStatus("Sertifikat zanjiri olinmoqda...");
+            const chainResp = await callCapi("x509", "get_certificate_chain", [certId]);
+            const chainRes = unwrapResult(chainResp);
+            if (Array.isArray(chainRes)) chain = chainRes;
+            if (chainRes && Array.isArray(chainRes.chain)) chain = chainRes.chain;
+        } catch (e) {
+            chain = null;
+        }
+
+        try {
+            await callCapi(pluginUsed, "unload_key", [keyId]);
+        } catch (e) {
+            // ignore
+        }
+
+        let cert64 = getCertBase64(certItem);
+        if (!cert64 && Array.isArray(chain) && chain.length) {
+            cert64 = chain[0];
+        }
+
+        return { signature, cert: cert64, chain };
+    }
+
+    document.getElementById("eimzoLoginBtn").addEventListener("click", async () => {
+        const status = document.getElementById("eimzoStatus");
+        const setStatus = (msg, isHtml = false) => {
+            if (isHtml) status.innerHTML = msg;
+            else status.textContent = msg;
+        };
+
+        setStatus("Plugin tekshirilmoqda...");
+        try {
+            await ensureCapi();
+            const { nonce } = await getChallenge();
+            setStatus("Imzolanmoqda...");
+            const resultSign = await signWithEimzo(nonce, setStatus);
+            const signature = resultSign.signature;
+            const cert = resultSign.cert || null;
+            const chain = resultSign.chain || null;
+            setStatus("Tekshirilmoqda...");
+            const result = await verifySignature(signature, cert, chain);
+            if (result.ok) {
+                window.location.href = result.redirect || "/";
+            } else {
+                setStatus(result.error || "Xatolik yuz berdi");
+            }
+        } catch (err) {
+            console.error(err);
+            if (err.message.includes("E-IMZO")) {
+                setStatus(`
+                    <div class="alert alert-danger py-2 small mt-2 text-start">
+                        <b>E-IMZO bilan bog'lanib bo'lmadi!</b><br>
+                        1. Plugin o'rnatilmagan bo'lsa: <a href="https://esi.uz/download/e-imzo" target="_blank">YUKLAB OLISH</a><br>
+                        2. O'rnatilgan bo'lsa, brauzer ruxsat bormayapti. <a href="https://127.0.0.1:64646" target="_blank" class="fw-bold text-danger">MANA BU YERNI BOSING</a> va ochilgan oynada <b>"Advanced" -> "Proceed"</b> tugmasini bosing.
+                    </div>`, true);
+            } else {
+                setStatus(err.message || "Xatolik yuz berdi");
+            }
+        }
+    });
+
+    (function () {
+        const mahallaEl = document.getElementById('{{ form.mahalla.id_for_label }}');
+        const adminLoginGroup = document.getElementById('adminLoginGroup');
+        const adminLoginDivider = document.getElementById('adminLoginDivider');
+        const usernameEl = document.getElementById('{{ form.username.id_for_label }}');
+
+        function toggleAdminLogin() {
+            const hasMahalla = mahallaEl && mahallaEl.value && mahallaEl.value.trim() !== '';
+            if (adminLoginGroup) adminLoginGroup.style.display = hasMahalla ? 'none' : '';
+            if (adminLoginDivider) adminLoginDivider.style.display = hasMahalla ? 'none' : '';
+            if (hasMahalla && usernameEl) usernameEl.value = '';
+        }
+
+        if (mahallaEl) {
+            mahallaEl.addEventListener('change', toggleAdminLogin);
+            toggleAdminLogin();
+        }
+    })();
+</script>
+
+</html>

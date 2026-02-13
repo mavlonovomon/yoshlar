@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Migratsiyadagi yoshlar - Dashboard</h2>
+            <p class="text-muted mb-0">Migratsiyadagi yoshlar bo'yicha qisqa tahlil</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-white shadow-sm border-0 px-3" onclick="window.print()">
+                <i class="bi bi-printer me-2"></i>Chop etish
+            </button>
+            <button class="btn btn-primary shadow-sm border-0 px-3" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise me-2"></i>Yangilash
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-primary-soft text-primary me-3">
+                            <i class="bi bi-people fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted small fw-bold text-uppercase mb-1">Jami Migratsiyada</h6>
+                            <h2 class="fw-bold mb-0">{{ total_migrants|intcomma }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-progress progress" style="height: 4px;">
+                    <div class="progress-bar bg-primary" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-info-soft text-info me-3">
+                            <i class="bi bi-chat-left-text fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted small fw-bold text-uppercase mb-1">Suhbat o'tkazilgan</h6>
+                            <h2 class="fw-bold mb-0">{{ total_meetings|intcomma }}</h2>
+                        </div>
+                        <div class="ms-auto text-end">
+                            <div class="small fw-bold text-info">{% widthratio total_meetings total_migrants 100 %}%</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-progress progress" style="height: 4px;">
+                    <div class="progress-bar bg-info" style="width: {% widthratio total_meetings total_migrants 100 %}%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-warning-soft text-warning me-3">
+                            <i class="bi bi-hourglass-split fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted small fw-bold text-uppercase mb-1">Suhbat kutilmoqda</h6>
+                            <h2 class="fw-bold mb-0">{{ total_pending|intcomma }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-progress progress" style="height: 4px;">
+                    <div class="progress-bar bg-warning" style="width: {% widthratio total_pending total_migrants 100 %}%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-success-soft text-success me-3">
+                            <i class="bi bi-briefcase fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted small fw-bold text-uppercase mb-1">Ish sababli</h6>
+                            <h2 class="fw-bold mb-0">{{ total_work|intcomma }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-progress progress" style="height: 4px;">
+                    <div class="progress-bar bg-success" style="width: {% widthratio total_work total_migrants 100 %}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3 px-4">
+                    <h5 class="fw-bold mb-0">Sabablar bo'yicha taqsimot</h5>
+                </div>
+                <div class="card-body p-4">
+                    <canvas id="reasonChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3 px-4">
+                    <h5 class="fw-bold mb-0">Davlatlar bo'yicha top-10</h5>
+                </div>
+                <div class="card-body p-4">
+                    <canvas id="countryChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ by_reason|json_script:"reason-data" }}
+{{ by_country|json_script:"country-data" }}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const reasonData = JSON.parse(document.getElementById('reason-data').textContent);
+        const countryData = JSON.parse(document.getElementById('country-data').textContent);
+
+        const colors = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#0ea5e9', '#6366f1', '#8b5cf6', '#ec4899'];
+
+        new Chart(document.getElementById('reasonChart'), {
+            type: 'doughnut',
+            data: {
+                labels: reasonData.map(d => d.label),
+                datasets: [{
+                    data: reasonData.map(d => d.total),
+                    backgroundColor: colors,
+                    borderWidth: 0
+                }]
+            },
+            options: { plugins: { legend: { position: 'bottom' } } }
+        });
+
+        new Chart(document.getElementById('countryChart'), {
+            type: 'bar',
+            data: {
+                labels: countryData.map(d => d.destination_country || '-'),
+                datasets: [{
+                    label: 'Yoshlar soni',
+                    data: countryData.map(d => d.total),
+                    backgroundColor: '#4f46e5',
+                    borderRadius: 6
+                }]
+            },
+            options: { plugins: { legend: { display: false } } }
+        });
+    });
+</script>
+
+<style>
+    .bg-primary-soft {
+        background-color: rgba(79, 70, 229, 0.1);
+    }
+
+    .bg-success-soft {
+        background-color: rgba(16, 185, 129, 0.1);
+    }
+
+    .bg-info-soft {
+        background-color: rgba(14, 165, 233, 0.1);
+    }
+
+    .bg-warning-soft {
+        background-color: rgba(245, 158, 11, 0.1);
+    }
+
+    .stats-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+</style>
+{% endblock %}
