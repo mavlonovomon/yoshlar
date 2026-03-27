@@ -70,9 +70,6 @@ class AssistanceForm(forms.ModelForm):
             cleaned['assistance_type'] = None
         return cleaned
 
-class ExcelImportForm(forms.Form):
-    excel_file = forms.FileField(label="Excel faylni tanlang", widget=forms.FileInput(attrs={'class': 'form-control'}))
-
 
 # Task Management Forms (Topshiriq Tizimi)
 

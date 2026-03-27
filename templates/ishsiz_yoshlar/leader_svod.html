@@ -2,11 +2,15 @@
 {% load static %}
 {% load humanize %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/ishsiz_svod_tables.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid py-4" style="background-color: #f8fafc; min-height: 100vh;">
+<div class="container-fluid py-4 svod-page">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold mb-0 text-dark" style="letter-spacing: -0.5px;">Mas'ul Rahbarlar Kesimida Tahlil</h2>
+            <h2 class="fw-bold mb-0 text-dark svod-title">Mas'ul Rahbarlar Kesimida Tahlil</h2>
             <p class="text-muted small mb-0">Rahbarlar bo'yicha ishsiz yoshlar bandligi ko'rsatkichlari</p>
         </div>
         <div class="d-flex gap-2">
@@ -16,31 +20,28 @@
         </div>
     </div>
 
-    <!-- Spreadsheet Table Header Title -->
-    <div class="card border-0 shadow-sm mb-4 p-4 text-center bg-white" style="border-radius: 15px;">
-        <h5 class="fw-bold text-dark px-lg-5 mb-0" style="line-height: 1.8; font-size: 1.25rem;">
-            Xazorasp tumanidagi <span class="text-primary" style="border-bottom: 2px solid #0d6efd;">Mas'ul rahbarlar
-                kesimida</span> ishsiz yoshlar bandligini tahlili<br>
-            <span class="text-danger fw-black" style="font-size: 1.5rem; letter-spacing: 2px;">MA'LUMOT</span>
+    <div class="card border-0 shadow-sm mb-4 p-4 text-center bg-white svod-header-card">
+        <h5 class="fw-bold text-dark px-lg-5 mb-0 svod-report-title">
+            Hazorasp tumanidagi <span class="text-primary svod-report-accent">mas'ul rahbarlar kesimida</span>
+            ishsiz yoshlar bandligini tahlili<br>
+            <span class="text-danger fw-black svod-report-mark">MA'LUMOT</span>
         </h5>
     </div>
 
-    <!-- Main Table Container -->
-    <div class="card p-0 shadow-lg border-0 overflow-hidden" style="border-radius: 12px; border: 1px solid #e2e8f0;">
+    <div class="card p-0 shadow-lg border-0 overflow-hidden svod-table-card">
         <div class="table-responsive">
             <table class="table table-bordered align-middle mb-0 professional-table">
                 <thead>
                     <tr class="header-lvl-1">
-                        <th rowspan="2" style="width: 45px;">No</th>
-                        <th rowspan="2" style="min-width: 250px;">Mas'ul rahbar (F.I.Sh, Lavozimi)</th>
-                        <th rowspan="2" style="min-width: 100px;">Sohalar</th>
+                        <th rowspan="2" class="col-w-45">No</th>
+                        <th rowspan="2" class="col-min-w-250">Mas'ul rahbar (F.I.Sh, lavozimi)</th>
+                        <th rowspan="2" class="col-min-w-100">Sohalar</th>
                         <th rowspan="2" class="v-text">Ishsiz yoshlar soni</th>
                         <th rowspan="2" class="v-text">Uchrashuv o'tkazilgan yoshlar</th>
                         <th rowspan="2" class="v-text">Jami bandligi ta'minlanganlar</th>
-                        <th colspan="5" class="bg-primary text-white">Bantlikni ta'minlash yo'nalishlari (Yordam turi)
-                        </th>
-                        <th rowspan="2" class="v-text">Bantligi ta'minlan-maganlar</th>
-                        <th rowspan="2" class="v-text" style="min-width: 80px;">Ijro holati (foiz)</th>
+                        <th colspan="5" class="bg-primary text-white">Bandlikni ta'minlash yo'nalishlari (yordam turi)</th>
+                        <th rowspan="2" class="v-text">Bandligi ta'minlanmaganlar</th>
+                        <th rowspan="2" class="v-text col-min-w-80">Ijro holati (foiz)</th>
                     </tr>
                     <tr class="header-lvl-2">
                         <th class="small-header">Doimiy ish</th>
@@ -65,11 +66,9 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Summary Totals Row -->
                     <tr class="summary-row">
                         <td class="text-center">-</td>
-                        <td colspan="2" class="fw-bold text-center py-3" style="font-size: 0.95rem;">Xazorasp tumani
-                            jami</td>
+                        <td colspan="2" class="fw-bold text-center py-3 summary-label">Hazorasp tumani jami</td>
                         <td class="text-center fw-bold text-dark">{{ totals.total_youth }}</td>
                         <td class="text-center fw-bold text-dark">{{ totals.with_meeting }}</td>
                         <td class="text-center fw-bold text-dark">{{ totals.total_assisted }}</td>
@@ -79,18 +78,16 @@
                         <td class="text-center fw-bold text-dark">{{ totals.yer }}</td>
                         <td class="text-center fw-bold text-dark">{{ totals.subsidiya }}</td>
                         <td class="text-center fw-bold text-dark">{{ totals.not_assisted }}</td>
-                        <td class="text-center fw-bold status-cell-total" style="background: #16a34a; color: white;">
-                            {{ totals.percent }}%
-                        </td>
+                        <td class="text-center fw-bold status-cell-total">{{ totals.percent }}%</td>
                     </tr>
 
                     {% for s in statistics %}
                     <tr class="data-row">
                         <td class="text-center color-index fw-medium">{{ forloop.counter }}</td>
                         <td class="text-wrap">
-                            <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ s.full_name }}</div>
-                            <div class="text-muted" style="font-size: 0.75rem;">{{ s.position|default:"-" }}</div>
-                            <div class="badge bg-light text-muted border fw-normal mt-1" style="font-size: 0.65rem;">{{ s.get_level_display }}</div>
+                            <div class="fw-bold text-dark leader-name">{{ s.full_name }}</div>
+                            <div class="text-muted leader-position">{{ s.position|default:"-" }}</div>
+                            <div class="badge bg-light text-muted border fw-normal mt-1 leader-level-badge">{{ s.get_level_display }}</div>
                         </td>
                         <td class="text-center fw-medium bg-light">{{ s.sector|default:"-" }}</td>
                         <td class="text-center fw-bold bg-light-subtle">{{ s.total_youth }}</td>
@@ -102,13 +99,11 @@
                         <td class="text-center">{{ s.yer|default:0 }}</td>
                         <td class="text-center">{{ s.subsidiya|default:0 }}</td>
                         <td class="text-center text-danger fw-medium">{{ s.not_assisted }}</td>
-                        <td class="text-center fw-bold status-cell" data-percent="{{ s.percent }}">
-                            {{ s.percent }}%
-                        </td>
+                        <td class="text-center fw-bold status-cell" data-percent="{{ s.percent }}">{{ s.percent }}%</td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="13" class="text-center py-5 text-muted"> Ma'mulot topilmadi </td>
+                        <td colspan="13" class="text-center py-5 text-muted">Ma'lumot topilmadi</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -116,89 +111,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
-<style>
-    .professional-table {
-        border: 2px solid #94a3b8;
-        background-color: white;
-        table-layout: auto;
-    }
-
-    .professional-table thead th {
-        background: #f8fafc;
-        color: #1e293b;
-        font-weight: 800;
-        text-transform: none;
-        text-align: center;
-        vertical-align: middle !important;
-        font-size: 0.82rem;
-        padding: 12px 10px;
-        border: 1px solid #94a3b8;
-    }
-
-    .header-lvl-1 th {
-        background: #f1f5f9;
-    }
-
-    .small-header {
-        font-size: 0.76rem !important;
-        background: #f8fafc !important;
-        font-weight: 800 !important;
-        text-transform: none !important;
-        line-height: 1.35;
-        min-width: 130px;
-        padding: 10px 8px !important;
-    }
-
-    .v-text {
-        min-width: 115px;
-        line-height: 1.25;
-    }
-
-    .professional-table tbody td {
-        border: 1px solid #cbd5e1;
-        font-size: 0.86rem;
-        padding: 10px 12px;
-        line-height: 1.35;
-        vertical-align: middle;
-    }
-
-    .summary-row {
-        background-color: #dcfce7 !important;
-        border-bottom: 2px solid #16a34a;
-    }
-
-    .header-lvl-filter th {
-        background: #ffedd5 !important;
-        padding: 2px !important;
-        font-size: 0.7rem;
-        color: #9a3412;
-    }
-
-    .status-cell {
-        min-width: 70px;
-    }
-</style>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const cells = document.querySelectorAll('.status-cell');
-        cells.forEach(cell => {
-            const val = parseFloat(cell.getAttribute('data-percent'));
-            if (val === 0) {
-                cell.style.backgroundColor = '#fee2e2';
-                cell.style.color = '#991b1b';
-            } else if (val < 25) {
-                cell.style.backgroundColor = '#fef9c3';
-                cell.style.color = '#854d0e';
-            } else if (val >= 25 && val < 50) {
-                cell.style.backgroundColor = '#dcfce7';
-                cell.style.color = '#166534';
-            } else if (val >= 50) {
-                cell.style.backgroundColor = '#22c55e';
-                cell.style.color = 'white';
-            }
-        });
-    });
-</script>
+{% block extra_js %}
+<script src="{% static 'js/pages/svod_status_cells.js' %}"></script>
 {% endblock %}

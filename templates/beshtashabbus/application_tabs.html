@@ -1,0 +1,549 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid py-4">
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div><h4 class="fw-bold mb-1">5 tashabbus arizalari monitoringi</h4>
+<p class="text-muted mb-0">{% if snapshot %}Joriy snapshot: {{ snapshot.created_at|date:"d.m.Y H:i" }} ({{ snapshot.year }}-yil){% else %}Snapshot mavjud emas{% endif %}</p></div>
+{% if can_upload %}<a href="?tab=upload" class="btn btn-primary btn-sm"><i class="bi bi-upload me-1"></i> Snapshot boshqaruvi</a>{% endif %}
+</div>
+<div class="card border-0 shadow-sm mb-4">
+<div class="card-header bg-white border-0 pt-3">
+<ul class="nav nav-pills card-header-pills">
+<li class="nav-item"><a class="nav-link {% if active_tab == 'svod' %}active{% endif %}" href="{% url 'beshtashabbus:application_svod' %}?tab=svod"><i class="bi bi-grid-3x3-gap me-1"></i> Ariza svod</a></li>
+<li class="nav-item"><a class="nav-link {% if active_tab == 'extended' %}active{% endif %}" href="{% url 'beshtashabbus:application_svod' %}?tab=extended"><i class="bi bi-list-columns-reverse me-1"></i> Kengaytirilgan svod</a></li>
+<li class="nav-item"><a class="nav-link {% if active_tab == 'youth_list' %}active{% endif %}" href="{% url 'beshtashabbus:application_youth_list' %}"><i class="bi bi-people me-1"></i> Yoshlar ro'yxati</a></li>
+<li class="nav-item"><a class="nav-link {% if active_tab == 'svod_norma' %}active{% endif %}" href="{% url 'beshtashabbus:application_svod_norma' %}"><i class="bi bi-table me-1"></i> Svod norma</a></li>
+<li class="nav-item"><a class="nav-link {% if active_tab == 'upload' %}active{% endif %}" href="{% url 'beshtashabbus:application_svod' %}?tab=upload"><i class="bi bi-files me-1"></i> Snapshotlar</a></li>
+</ul></div>
+<div class="card-body"><div class="tab-content">
+<div class="tab-pane fade {% if active_tab == 'svod' %}show active{% endif %}" id="svod-pane" role="tabpanel">
+{% if snapshot %}
+<div class="row g-2 mb-3">
+<div class="col-md-3"><div class="border rounded p-2 bg-light"><div class="small text-muted">Jami arizalar</div><div class="fw-bold">{{ meta_rows_total }}</div></div></div>
+<div class="col-md-3"><div class="border rounded p-2 bg-light"><div class="small text-muted">Unikal PINFL</div><div class="fw-bold">{{ meta_unique_pinfl }}</div></div></div>
+<div class="col-md-3"><div class="border rounded p-2 bg-light"><div class="small text-muted">Yosh ro'yxatida topildi</div><div class="fw-bold text-success">{{ meta_matched_pinfl }}</div></div></div>
+<div class="col-md-3"><div class="border rounded p-2 bg-light"><div class="small text-muted">Yosh ro'yxatida topilmadi</div><div class="fw-bold text-danger">{{ meta_not_found_pinfl }}</div></div></div>
+</div>
+<div class="row g-2 mb-3">
+<div class="col-md-3"><div class="border rounded p-2"><div class="small text-muted">Fayl svodi ariza</div><div class="fw-bold">{{ source_applications_total }}</div></div></div>
+<div class="col-md-3"><div class="border rounded p-2"><div class="small text-muted">Tizim svodi ariza</div><div class="fw-bold">{{ system_applications_total }}</div></div></div>
+<div class="col-md-3"><div class="border rounded p-2"><div class="small text-muted">Fayl svodi unikal</div><div class="fw-bold">{{ source_unique_total }}</div></div></div>
+<div class="col-md-3"><div class="border rounded p-2"><div class="small text-muted">Tizim svodi unikal</div><div class="fw-bold">{{ system_unique_total }}</div></div></div>
+</div>
+<div class="row g-2 mb-3">
+<div class="col-md-6"><div class="border rounded p-2 bg-light"><div class="small text-muted">Arizalar farqi (Tizim - Fayl)</div><div class="fw-bold {% if method_delta_applications > 0 %}text-success{% elif method_delta_applications < 0 %}text-danger{% endif %}">{% if method_delta_applications > 0 %}+{% endif %}{{ method_delta_applications }}</div></div></div>
+<div class="col-md-6"><div class="border rounded p-2 bg-light"><div class="small text-muted">Unikal farqi (Tizim - Fayl)</div><div class="fw-bold {% if method_delta_unique > 0 %}text-success{% elif method_delta_unique < 0 %}text-danger{% endif %}">{% if method_delta_unique > 0 %}+{% endif %}{{ method_delta_unique }}</div></div></div>
+</div>
+{% endif %}
+{% if snapshots|length > 1 %}
+<div class="bg-light rounded p-3 mb-4"><form method="get" class="row g-2 align-items-end">
+<input type="hidden" name="tab" value="svod"><input type="hidden" name="compare" value="1">
+<div class="col-md-4"><label class="form-label small fw-semibold">1-snapshot</label>
+<select name="left_snapshot_id" class="form-select form-select-sm">
+{% for s in snapshot_choices_left %}<option value="{{ s.id }}" {% if s.selected %}selected{% endif %}>{{ s.label }}</option>{% endfor %}
+</select></div>
+<div class="col-md-4"><label class="form-label small fw-semibold">2-snapshot</label>
+<select name="right_snapshot_id" class="form-select form-select-sm">
+{% for s in snapshot_choices_right %}<option value="{{ s.id }}" {% if s.selected %}selected{% endif %}>{{ s.label }}</option>{% endfor %}
+</select></div>
+<div class="col-md-4 d-flex gap-2"><button type="submit" class="btn btn-primary btn-sm px-3">Farqni ko'rish</button><a href="?tab=svod" class="btn btn-outline-secondary btn-sm">Tozalash</a></div>
+</form></div>
+{% endif %}
+<ul class="nav nav-tabs mb-3" id="svod-inner-tabs" role="tablist">
+<li class="nav-item" role="presentation"><button class="nav-link {% if compare_enabled and compare_rows %}active{% endif %}" id="compare-table-tab" data-bs-toggle="tab" data-bs-target="#compare-table-pane" type="button" role="tab">Snapshotlar farqi</button></li>
+<li class="nav-item" role="presentation"><button class="nav-link {% if not compare_enabled or not compare_rows %}active{% endif %}" id="source-table-tab" data-bs-toggle="tab" data-bs-target="#source-table-pane" type="button" role="tab">1) Fayl svodi</button></li>
+<li class="nav-item" role="presentation"><button class="nav-link" id="system-table-tab" data-bs-toggle="tab" data-bs-target="#system-table-pane" type="button" role="tab">2) Tizim svodi</button></li>
+<li class="nav-item" role="presentation"><button class="nav-link" id="method-diff-table-tab" data-bs-toggle="tab" data-bs-target="#method-diff-table-pane" type="button" role="tab">3) Svodlar farqi</button></li>
+</ul>
+<div class="tab-content" id="svod-inner-content">
+<div class="tab-pane fade {% if compare_enabled and compare_rows %}show active{% endif %}" id="compare-table-pane" role="tabpanel">
+{% if compare_enabled and compare_rows %}
+<div class="mb-4"><h6 class="fw-bold mb-3 text-primary"><i class="bi bi-intersect me-1"></i> Snapshotlar farqi (tizim svodi): <span class="text-dark">{{ compare_left.created_at|date:"d.m.Y H:i" }}</span> <i class="bi bi-arrow-right mx-2 text-muted"></i> <span class="text-dark">{{ compare_right.created_at|date:"d.m.Y H:i" }}</span></h6>
+{% if compare_summary %}
+<div class="row g-3 mb-3">
+<div class="col-md-6"><div class="card border shadow-none"><div class="card-body py-2"><div class="small text-muted mb-1">Jami arizalar farqi</div><span class="h4 mb-0 {% if compare_summary.delta_applications > 0 %}text-success{% elif compare_summary.delta_applications < 0 %}text-danger{% endif %}">{% if compare_summary.delta_applications > 0 %}+{% endif %}{{ compare_summary.delta_applications }}</span> <span class="small text-muted">({{ compare_summary.left_applications }} &rarr; {{ compare_summary.right_applications }})</span></div></div></div>
+<div class="col-md-6"><div class="card border shadow-none"><div class="card-body py-2"><div class="small text-muted mb-1">Unikal yoshlar farqi</div><span class="h4 mb-0 {% if compare_summary.delta_unique > 0 %}text-success{% elif compare_summary.delta_unique < 0 %}text-danger{% endif %}">{% if compare_summary.delta_unique > 0 %}+{% endif %}{{ compare_summary.delta_unique }}</span> <span class="small text-muted">({{ compare_summary.left_unique }} &rarr; {{ compare_summary.right_unique }})</span></div></div></div>
+</div>{% endif %}
+<div class="table-responsive rounded border"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>Mahalla</th><th class="text-center">1-snap ariza</th><th class="text-center">2-snap ariza</th><th class="text-center">Farq</th><th class="text-center">1-snap unikal</th><th class="text-center">2-snap unikal</th><th class="text-center">Farq</th></tr></thead><tbody>
+{% for row in compare_rows %}<tr><td class="fw-semibold">{{ row.mahalla_name }}</td><td class="text-center">{{ row.left_applications }}</td><td class="text-center">{{ row.right_applications }}</td><td class="text-center {{ row.delta_applications_class }}">{% if row.delta_applications > 0 %}+{% endif %}{{ row.delta_applications }}</td><td class="text-center">{{ row.left_unique }}</td><td class="text-center">{{ row.right_unique }}</td><td class="text-center {{ row.delta_unique_class }}">{% if row.delta_unique > 0 %}+{% endif %}{{ row.delta_unique }}</td></tr>
+{% endfor %}</tbody></table></div></div>
+{% else %}
+<div class="alert alert-light border text-muted">Snapshotlar farqi uchun ma'lumot yo'q.</div>
+{% endif %}
+</div>
+<div class="tab-pane fade {% if not compare_enabled or not compare_rows %}show active{% endif %}" id="source-table-pane" role="tabpanel">
+<h6 class="fw-bold mb-3 mt-1">1) Fayldagi mahallalar bo'yicha svod</h6>
+<div class="table-responsive rounded border mb-4"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th style="width:50px">#</th><th>Mahalla</th><th class="text-center">Umumiy arizalar</th><th class="text-center">Unikal yoshlar</th></tr></thead><tbody>
+{% for row in source_rows %}<tr><td>{{ forloop.counter }}</td><td class="fw-semibold">{{ row.mahalla_name }}</td><td class="text-center">{{ row.applications_count }}</td><td class="text-center">{{ row.unique_participants_count }}</td></tr>
+{% empty %}<tr><td colspan="4" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i> Snapshot mavjud emas.</td></tr>
+{% endfor %}</tbody></table></div>
+</div>
+<div class="tab-pane fade" id="system-table-pane" role="tabpanel">
+<h6 class="fw-bold mb-3 mt-1">2) Tizimdagi yoshlar PINFL bo'yicha svod</h6>
+<div class="table-responsive rounded border mb-4"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th style="width:50px">#</th><th>Mahalla</th><th class="text-center">Umumiy arizalar</th><th class="text-center">Unikal yoshlar</th></tr></thead><tbody>
+{% for row in system_rows %}<tr><td>{{ forloop.counter }}</td><td class="fw-semibold">{{ row.mahalla_name }}</td><td class="text-center">{{ row.applications_count }}</td><td class="text-center">{{ row.unique_participants_count }}</td></tr>
+{% empty %}<tr><td colspan="4" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i> Snapshot mavjud emas.</td></tr>
+{% endfor %}</tbody></table></div>
+</div>
+<div class="tab-pane fade" id="method-diff-table-pane" role="tabpanel">
+<h6 class="fw-bold mb-3 mt-1">3) Ikki svod farqi (Tizim - Fayl)</h6>
+<div class="table-responsive rounded border"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>Mahalla</th><th class="text-center">Fayl ariza</th><th class="text-center">Tizim ariza</th><th class="text-center">Farq</th><th class="text-center">Fayl unikal</th><th class="text-center">Tizim unikal</th><th class="text-center">Farq</th><th class="text-center">PINFL bo'yicha topilmagan arizalar</th></tr></thead><tbody>
+{% for row in method_diff_rows %}<tr><td class="fw-semibold">{{ row.mahalla_name }}</td><td class="text-center">{{ row.source_applications }}</td><td class="text-center">{{ row.system_applications }}</td><td class="text-center {{ row.delta_applications_class }}">{% if row.delta_applications > 0 %}+{% endif %}{{ row.delta_applications }}</td><td class="text-center">{{ row.source_unique }}</td><td class="text-center">{{ row.system_unique }}</td><td class="text-center {{ row.delta_unique_class }}">{% if row.delta_unique > 0 %}+{% endif %}{{ row.delta_unique }}</td><td class="text-center {% if row.not_found_applications %}text-danger fw-semibold{% else %}text-muted{% endif %}">{{ row.not_found_applications }}</td></tr>
+{% empty %}<tr><td colspan="8" class="text-center text-muted py-5">Farq ko'rsatish uchun ma'lumot yo'q.</td></tr>
+{% endfor %}</tbody></table></div>
+</div>
+</div></div>
+<div class="tab-pane fade {% if active_tab == 'extended' %}show active{% endif %}" id="extended-pane" role="tabpanel">
+<div class="table-responsive rounded border"><table class="table table-sm table-bordered table-hover mb-0 align-middle"><thead class="table-light"><tr><th style="width:50px">#</th><th>Mahalla</th><th class="text-center">Arizalar</th><th class="text-center">Unikal</th><th class="text-center">Erkak</th><th class="text-center">Ayol</th><th>Top kategoriya (3)</th><th>Top yo'nalish (3)</th></tr></thead><tbody>
+{% for row in rows %}<tr><td>{{ forloop.counter }}</td><td class="fw-semibold">{{ row.mahalla_name }}</td><td class="text-center fw-bold">{{ row.applications_count }}</td><td class="text-center">{{ row.unique_participants_count }}</td><td class="text-center">{{ row.male_count }}</td><td class="text-center">{{ row.female_count }}</td>
+<td>{% for name, cnt in row.top_categories %}<div class="small">{{ name }}: <strong>{{ cnt }}</strong></div>{% empty %}<span class="text-muted small">-</span>{% endfor %}</td>
+<td>{% for name, cnt in row.top_directions %}<div class="small">{{ name }}: <strong>{{ cnt }}</strong></div>{% empty %}<span class="text-muted small">-</span>{% endfor %}</td></tr>
+{% empty %}<tr><td colspan="8" class="text-center text-muted py-5"><i class="bi bi-card-list fs-2 d-block mb-2"></i> Snapshot mavjud emas.</td></tr>
+{% endfor %}</tbody></table></div></div>
+<div class="tab-pane fade {% if active_tab == 'youth_list' %}show active{% endif %}" id="youth-list-pane" role="tabpanel">
+    <div class="bg-light rounded p-3 mb-4 border">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Snapshot tanlang</label>
+                <select name="snapshot_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                    {% for s in snapshots %}
+                    <option value="{{ s.id }}" {% if snapshot.id == s.id %}selected{% endif %}>
+                        {{ s.created_at|date:"d.m.Y H:i" }} ({{ s.year }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Mahalla</label>
+                <select name="mahalla" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Barcha mahallalar</option>
+                    {% for m in mahallas %}
+                    <option value="{{ m.id }}" {% if selected_mahalla == m.id %}selected{% endif %}>{{ m.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Qidirish (F.I.Sh yoki PINFL)</label>
+                <input type="text" name="q" class="form-control form-control-sm" placeholder="Ism yoki PINFL..." value="{{ search_query }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Holati</label>
+                <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Barchasi</option>
+                    <option value="applied" {% if selected_status == "applied" %}selected{% endif %}>Ariza topshirgan</option>
+                    <option value="not_applied" {% if selected_status == "not_applied" %}selected{% endif %}>Topshirmagan</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-search me-1"></i> Filtrlash</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-responsive rounded border">
+        <table class="table table-sm table-bordered table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:50px">#</th>
+                    <th>F.I.Sh</th>
+                    <th class="text-center">Yosh</th>
+                    <th>PINFL</th>
+                    <th>Mahalla</th>
+                    <th class="text-center">Holati</th>
+                    <th class="text-center">Arizalar soni</th>
+                    <th>Yo'nalishlar</th>
+                    {% if can_submit_application %}<th class="text-center">Ariza</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for yosh in yoshlar %}
+                <tr class="{% if yosh.app_count > 0 %}table-success-subtle{% else %}table-danger-subtle{% endif %}">
+                    <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
+                    <td class="fw-semibold">{{ yosh.fullname }}</td>
+                    <td class="text-center">{{ yosh.display_age|default:"-" }}</td>
+                    <td class="small">{{ yosh.jshshir }}</td>
+                    <td class="cell-mahalla">{{ yosh.mahalla.name }}</td>
+                    <td class="text-center cell-status">
+                        {% if yosh.app_count > 0 %}
+                        <span class="badge bg-success text-white">Ariza topshirgan</span>
+                        {% else %}
+                        <span class="badge bg-danger text-white">Topshirmagan</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center fw-bold cell-count">{{ yosh.app_count }}</td>
+                    <td class="small cell-directions">
+                        {% if yosh.applied_directions %}
+                        <ul class="mb-0 ps-3">
+                            {% for dir in yosh.applied_directions %}
+                            <li>{{ dir }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    {% if can_submit_application %}
+                    <td class="text-center cell-action">
+                        <button type="button" class="btn btn-sm btn-outline-primary js-apply-btn" data-yosh-id="{{ yosh.id }}" data-yosh-name="{{ yosh.fullname|escape }}">
+                            Ariza yuborish
+                        </button>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{% if can_submit_application %}8{% else %}7{% endif %}" class="text-center text-muted py-5">
+                        <i class="bi bi-person-x fs-2 d-block mb-2"></i> Yoshlar topilmadi.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if can_submit_application %}
+    <div class="modal fade" id="applyModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ariza yuborish</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Yopish"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-2 text-muted small" id="applyModalSubtitle"></div>
+                    <div class="alert alert-danger d-none" id="applyModalError"></div>
+                    <div class="mb-2 small fw-semibold">Tanlov kategoriyasi</div>
+                    <select id="applyCategorySelect" class="form-select mb-3">
+                        <option value="">Tanlang...</option>
+                        {% for cat in sporttype_categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="mb-2 small fw-semibold">Yo'nalish</div>
+                    <select id="applyDirectionSelect" class="form-select" disabled>
+                        <option value="">Avval kategoriya tanlang...</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Bekor qilish</button>
+                    <button type="button" class="btn btn-primary" id="applyModalSubmit">Yuborish</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if is_paginated %}
+    <nav class="mt-4">
+        <ul class="pagination pagination-sm justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if snapshot %}&snapshot_id={{ snapshot.id }}{% endif %}{% if selected_mahalla %}&mahalla={{ selected_mahalla }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">Oldingi</a>
+            </li>
+            {% endif %}
+            
+            <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if snapshot %}&snapshot_id={{ snapshot.id }}{% endif %}{% if selected_mahalla %}&mahalla={{ selected_mahalla }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">Keyingi</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<div class="tab-pane fade {% if active_tab == 'svod_norma' %}show active{% endif %}" id="svod-norma-pane" role="tabpanel">
+<div class="bg-light rounded p-3 mb-4 border">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label small fw-semibold">Snapshot tanlang</label>
+            <select name="snapshot_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                {% for s in snapshots %}
+                <option value="{{ s.id }}" {% if snapshot.id == s.id %}selected{% endif %}>
+                    {{ s.created_at|date:"d.m.Y H:i" }} ({{ s.year }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-funnel me-1"></i> Ko'rsatish</button>
+        </div>
+    </form>
+</div>
+
+{% if svod_rows %}
+<div class="svod-norma-wrapper">
+<div class="table-responsive rounded border" style="max-height:80vh; overflow:auto;">
+<table class="table table-sm table-bordered mb-0 align-middle svod-norma-table" id="svodNormaTable">
+<thead class="table-light">
+<tr>
+    <th class="svod-sticky-col svod-col-idx" rowspan="2" style="min-width:40px; z-index:12;">#</th>
+    <th class="svod-sticky-col svod-col-cat" rowspan="2" style="min-width:160px; left:40px; z-index:12;">Kategoriya</th>
+    <th class="svod-sticky-col svod-col-dir" rowspan="2" style="min-width:180px; left:200px; z-index:12;">Yo'nalish</th>
+    <th class="svod-sticky-col svod-col-age" rowspan="2" style="min-width:120px; left:380px; z-index:12;">Yosh toifasi</th>
+    <th class="svod-sticky-col svod-col-gen" rowspan="2" style="min-width:60px; left:500px; z-index:12;">Jins</th>
+    <th class="svod-sticky-col svod-col-norma" rowspan="2" style="min-width:60px; left:560px; z-index:12;">Norma</th>
+    {% for m_name in svod_mahalla_names %}
+    <th class="text-center svod-mahalla-header"><div class="svod-rotated-header">{{ m_name }}</div></th>
+    {% endfor %}
+    <th class="text-center" rowspan="2" style="min-width:60px;">Jami</th>
+</tr>
+</thead>
+<tbody>
+{% for row in svod_rows %}
+<tr>
+    <td class="svod-sticky-col svod-col-idx text-muted small" style="z-index:5;">{{ forloop.counter }}</td>
+    <td class="svod-sticky-col svod-col-cat small" style="left:40px; z-index:5;">{{ row.norm.selection_category }}</td>
+    <td class="svod-sticky-col svod-col-dir small" style="left:200px; z-index:5;">{{ row.norm.direction }}</td>
+    <td class="svod-sticky-col svod-col-age small" style="left:380px; z-index:5;">{{ row.norm.age_category }}</td>
+    <td class="svod-sticky-col svod-col-gen small text-center" style="left:500px; z-index:5;">
+        {% if row.norm.gender == 'male' %}<i class="bi bi-gender-male text-primary"></i>
+        {% elif row.norm.gender == 'female' %}<i class="bi bi-gender-female text-danger"></i>
+        {% else %}<span class="text-muted">—</span>{% endif %}
+    </td>
+    <td class="svod-sticky-col svod-col-norma text-center fw-bold" style="left:560px; z-index:5;">{{ row.norm.norma }}</td>
+    {% for cell in row.cells %}
+    <td class="text-center svod-cell {% if cell.status == 'ok' %}svod-cell-ok{% else %}svod-cell-low{% endif %}">{{ cell.value }}</td>
+    {% endfor %}
+    <td class="text-center fw-bold">{{ row.total }}</td>
+</tr>
+{% endfor %}
+</tbody>
+<tfoot class="table-light">
+<tr class="fw-bold">
+    <td class="svod-sticky-col svod-col-idx" style="z-index:5;"></td>
+    <td class="svod-sticky-col svod-col-cat" style="left:40px; z-index:5;" colspan="4">JAMI</td>
+    <td class="svod-sticky-col svod-col-norma text-center" style="left:560px; z-index:5;"></td>
+    {% for total in svod_col_totals %}
+    <td class="text-center">{{ total }}</td>
+    {% endfor %}
+    <td class="text-center">{{ svod_col_totals|length }}</td>
+</tr>
+</tfoot>
+</table>
+</div>
+</div>
+{% else %}
+<div class="alert alert-light border text-muted text-center py-5">
+    <i class="bi bi-table fs-2 d-block mb-2"></i>
+    {% if not svod_rows and snapshot %}Svod norma jadvali uchun ma'lumot topilmadi. Normalar import qilinganligini tekshiring.{% else %}Snapshot mavjud emas.{% endif %}
+</div>
+{% endif %}
+</div>
+
+<div class="tab-pane fade {% if active_tab == 'upload' %}show active{% endif %}" id="upload-pane" role="tabpanel">
+{% if can_upload %}
+<div class="bg-light rounded p-4 mb-4 border-start border-4 border-primary"><h6 class="fw-bold mb-3">Yangi snapshot yuklash</h6>
+<form method="post" action="{% url 'beshtashabbus:application_upload' %}" enctype="multipart/form-data" class="row g-3 align-items-end">{% csrf_token %}
+<div class="col-md-2"><label class="form-label small fw-semibold">Yil</label><input type="number" name="year" class="form-control form-control-sm" value="2026" min="2020" max="2100"></div>
+<div class="col-md-7"><label class="form-label small fw-semibold">Excel fayl (.xlsx)</label><input type="file" name="file" class="form-control form-control-sm" accept=".xlsx" required></div>
+<div class="col-md-3"><button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-cloud-upload me-1"></i> Import va Snapshot</button></div>
+</form><div class="mt-2 small text-muted"><i class="bi bi-info-circle me-1"></i> Snapshotda 2 svod olinadi: 1) fayldagi mahalla bo'yicha, 2) PINFL orqali tizimdagi yosh mahallasi bo'yicha. Pastda farqi ham ko'rsatiladi.</div></div>
+{% endif %}
+<h6 class="fw-bold mb-3">Mavjud snapshotlar tarixi</h6>
+<div class="table-responsive rounded border"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>Vaqt</th><th>Yil</th><th>Fayl nomi</th><th class="text-center">Satrlar</th><th class="text-center">Unikal PINFL</th><th class="text-center">Topilgan</th><th class="text-center">Topilmagan</th><th>Yuklagan</th></tr></thead><tbody>
+{% for s in snapshots %}<tr {% if snapshot.id == s.id %}class="table-primary"{% endif %}><td>{{ s.created_at|date:"d.m.Y H:i" }}</td><td>{{ s.year }}</td><td class="small">{{ s.source_file_name }}</td><td class="text-center">{{ s.display_meta.rows_total|default:"-" }}</td><td class="text-center">{{ s.display_meta.unique_pinfl|default:"-" }}</td><td class="text-center text-success">{{ s.display_meta.matched_pinfl|default:"-" }}</td><td class="text-center text-danger">{{ s.display_meta.not_found_pinfl|default:"-" }}</td><td>{{ s.uploaded_by.full_name|default:s.uploaded_by.username|default:"-" }}</td></tr>
+{% empty %}<tr><td colspan="8" class="text-center text-muted py-5">Snapshotlar mavjud emas</td></tr>{% endfor %}
+</tbody></table></div></div>
+</div></div></div></div>
+{% if can_submit_application %}
+<script>
+(function () {
+    const applyButtons = document.querySelectorAll(".js-apply-btn");
+    const modalEl = document.getElementById("applyModal");
+    if (!applyButtons.length || !modalEl) {
+        return;
+    }
+
+    const modal = new bootstrap.Modal(modalEl);
+    const subtitleEl = document.getElementById("applyModalSubtitle");
+    const errorEl = document.getElementById("applyModalError");
+    const submitBtn = document.getElementById("applyModalSubmit");
+    const categorySelect = document.getElementById("applyCategorySelect");
+    const directionSelect = document.getElementById("applyDirectionSelect");
+    let currentYoshId = null;
+    let currentRow = null;
+
+    function getCsrfToken() {
+        const match = document.cookie.match(/csrftoken=([^;]+)/);
+        return match ? match[1] : "";
+    }
+
+    function clearError() {
+        errorEl.textContent = "";
+        errorEl.classList.add("d-none");
+    }
+
+    applyButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+            currentYoshId = btn.getAttribute("data-yosh-id");
+            currentRow = btn.closest("tr");
+            const name = btn.getAttribute("data-yosh-name") || "";
+            subtitleEl.textContent = name ? `${name} uchun yo'nalish tanlang` : "Yo'nalish tanlang";
+            clearError();
+            categorySelect.value = "";
+            directionSelect.innerHTML = "<option value=\"\">Avval kategoriya tanlang...</option>";
+            directionSelect.disabled = true;
+            modal.show();
+        });
+    });
+
+    categorySelect.addEventListener("change", async () => {
+        clearError();
+        const categoryId = categorySelect.value;
+        if (!categoryId) {
+            directionSelect.innerHTML = "<option value=\"\">Avval kategoriya tanlang...</option>";
+            directionSelect.disabled = true;
+            return;
+        }
+
+        directionSelect.disabled = true;
+        directionSelect.innerHTML = "<option value=\"\">Yuklanmoqda...</option>";
+        try {
+            const response = await fetch(
+                `{% url 'beshtashabbus:application_sporttypes' %}?yosh_id=${encodeURIComponent(currentYoshId)}&category_id=${encodeURIComponent(categoryId)}`
+            );
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || "Xatolik yuz berdi.");
+            }
+
+            if (!Array.isArray(data.items) || data.items.length === 0) {
+                directionSelect.innerHTML = "<option value=\"\">Yo'nalish topilmadi.</option>";
+                directionSelect.disabled = true;
+                return;
+            }
+
+            directionSelect.innerHTML = "<option value=\"\">Tanlang...</option>";
+            data.items.forEach((item) => {
+                const option = document.createElement("option");
+                option.value = item.id;
+                option.textContent = item.name;
+                option.setAttribute("data-name", item.name || "");
+                directionSelect.appendChild(option);
+            });
+            directionSelect.disabled = false;
+        } catch (err) {
+            directionSelect.innerHTML = "<option value=\"\">Yo'nalish topilmadi.</option>";
+            directionSelect.disabled = true;
+            errorEl.textContent = err.message || "Sport yo'nalishlarini yuklashda xatolik.";
+            errorEl.classList.remove("d-none");
+        }
+    });
+
+    submitBtn.addEventListener("click", async () => {
+        clearError();
+        if (!currentYoshId) {
+            errorEl.textContent = "Yosh topilmadi.";
+            errorEl.classList.remove("d-none");
+            return;
+        }
+
+        const categoryId = categorySelect.value;
+        const categoryName = categorySelect.options[categorySelect.selectedIndex]?.textContent || "";
+        if (!categoryId) {
+            errorEl.textContent = "Kategoriya tanlang.";
+            errorEl.classList.remove("d-none");
+            return;
+        }
+
+        if (!directionSelect.value) {
+            errorEl.textContent = "Yo'nalish tanlang.";
+            errorEl.classList.remove("d-none");
+            return;
+        }
+
+        const sporttypeId = directionSelect.value;
+        const sporttypeName = directionSelect.options[directionSelect.selectedIndex]?.textContent || "";
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Yuborilmoqda...";
+        try {
+            const formData = new FormData();
+            formData.append("yosh_id", currentYoshId);
+            formData.append("category_id", categoryId);
+            formData.append("category_name", categoryName);
+            formData.append("sporttype_id", sporttypeId);
+            formData.append("sporttype_name", sporttypeName);
+
+            const response = await fetch("{% url 'beshtashabbus:application_submit' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": getCsrfToken(),
+                },
+                body: formData,
+            });
+            const data = await response.json();
+            if (response.ok && data.success) {
+                if (currentRow) {
+                    const statusCell = currentRow.querySelector(".cell-status");
+                    const countCell = currentRow.querySelector(".cell-count");
+                    const directionsCell = currentRow.querySelector(".cell-directions");
+                    if (statusCell) {
+                        statusCell.innerHTML = "<span class=\"badge bg-success text-white\">Ariza topshirgan</span>";
+                    }
+                    if (countCell) {
+                        const currentCount = parseInt(countCell.textContent || "0", 10);
+                        const nextCount = Number.isFinite(currentCount) ? currentCount + 1 : 1;
+                        countCell.textContent = nextCount.toString();
+                    }
+                    if (directionsCell) {
+                        const existing = Array.from(directionsCell.querySelectorAll("li")).map((li) => li.textContent.trim());
+                        if (!existing.includes(sporttypeName)) {
+                            let list = directionsCell.querySelector("ul");
+                            if (!list) {
+                                directionsCell.innerHTML = "<ul class=\"mb-0 ps-3\"></ul>";
+                                list = directionsCell.querySelector("ul");
+                            }
+                            const li = document.createElement("li");
+                            li.textContent = sporttypeName;
+                            list.appendChild(li);
+                        }
+                    }
+                    currentRow.classList.remove("table-danger-subtle");
+                    currentRow.classList.add("table-success-subtle");
+                }
+                modal.hide();
+            } else {
+                errorEl.textContent = data.error || "Xatolik yuz berdi.";
+                errorEl.classList.remove("d-none");
+            }
+        } catch (err) {
+            errorEl.textContent = "Serverga ulanishda xatolik.";
+            errorEl.classList.remove("d-none");
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Yuborish";
+        }
+    });
+})();
+</script>
+{% endif %}
+<style>
+.nav-pills .nav-link{color:#64748b;font-weight:500;padding:.5rem 1.25rem;border-radius:6px;transition:all .2s}
+.nav-pills .nav-link:hover{background-color:#f1f5f9;color:#334155}
+.nav-pills .nav-link.active{background-color:#e2e8f0;color:#0f172a;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.table-sm td,.table-sm th{padding:.6rem .75rem}
+
+/* Svod Norma table styles */
+.svod-norma-table{font-size:.78rem}
+.svod-norma-table th,.svod-norma-table td{white-space:nowrap;vertical-align:middle}
+.svod-sticky-col{position:sticky;background:#fff;z-index:3}
+.svod-col-idx{left:0;min-width:40px}
+thead .svod-sticky-col{background:#f8f9fa !important;z-index:12 !important}
+tfoot .svod-sticky-col{background:#f8f9fa !important}
+.svod-norma-table thead th{position:sticky;top:0;background:#f8f9fa;z-index:10;box-shadow:inset 0 -1px 0 #dee2e6}
+.svod-mahalla-header{min-width:42px;padding:2px !important;height:130px;vertical-align:bottom !important}
+.svod-rotated-header{writing-mode:vertical-rl;transform:rotate(180deg);font-size:.7rem;font-weight:600;white-space:nowrap;max-height:120px;overflow:hidden;text-overflow:ellipsis}
+.svod-cell{min-width:42px;font-weight:500;transition:background-color .15s}
+.svod-cell-ok{background-color:#d1fae5 !important;color:#065f46}
+.svod-cell-low{background-color:#fee2e2 !important;color:#991b1b}
+.svod-cell-ok:hover{background-color:#a7f3d0 !important}
+.svod-cell-low:hover{background-color:#fecaca !important}
+.svod-norma-wrapper{margin:0 -1rem}
+@media(min-width:768px){.svod-norma-wrapper{margin:0}}
+
+</style>
+{% endblock %}

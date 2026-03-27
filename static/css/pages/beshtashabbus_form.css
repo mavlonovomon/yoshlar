@@ -1,0 +1,10 @@
+.form-control,
+.form-select {
+    border-width: 2px;
+    background: #fcfcfc;
+}
+
+.form-control:focus,
+.form-select:focus {
+    background: #fff;
+}

@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+{% block content %}
+<div class="container-fluid py-5" style="max-width: 800px; margin: auto;">
+    <div class="card shadow-sm border-0 border-top border-5 border-{% if existing_response %}warning{% else %}primary{% endif %} mb-4">
+        <div class="card-body py-4 px-5">
+            <h1 class="card-title fw-bold mb-3">{{ survey.title }}</h1>
+            {% if existing_response %}
+                <div class="alert alert-warning py-2 mb-3 small"><i class="bi bi-info-circle me-1"></i> Siz ushbu javobingizni tahrirlayapsiz.</div>
+            {% endif %}
+            {% if survey.description %}
+            <p class="card-text text-muted mb-0" style="white-space: pre-wrap;">{{ survey.description }}</p>
+            {% endif %}
+            <hr class="mt-4 mb-0">
+            <div class="text-danger small mt-2">* majburiy savol</div>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        {% for section in question_sections %}
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body py-4 px-5">
+                {% if section.title != "Asosiy savollar" %}
+                <div class="badge bg-light text-dark border mb-3 px-3 py-2">{{ section.title }}</div>
+                {% endif %}
+                {% for q in section.questions %}
+                {% with val=answers_map|get_item:q.id %}
+                <div class="{% if not forloop.last %}mb-4{% endif %}">
+                <label class="form-label fw-semibold fs-5 mb-3">{{ q.text }} {% if q.is_required %}<span class="text-danger">*</span>{% endif %}</label>
+                
+                {% if q.question_type == 'short_text' %}
+                    <input type="text" name="question_{{ q.id }}" class="form-control" {% if q.is_required %}required{% endif %} placeholder="Qisqa javob" value="{{ val|default:'' }}">
+                
+                {% elif q.question_type == 'long_text' %}
+                    <textarea name="question_{{ q.id }}" class="form-control" rows="3" {% if q.is_required %}required{% endif %} placeholder="Kengaytirilgan javob">{{ val|default:'' }}</textarea>
+                
+                {% elif q.question_type == 'number' %}
+                    <input type="number" name="question_{{ q.id }}" class="form-control" {% if q.is_required %}required{% endif %} placeholder="Son kiriting" value="{{ val|default:'' }}">
+                
+                {% elif q.question_type == 'date' %}
+                    <input type="date" name="question_{{ q.id }}" class="form-control" style="max-width: 200px;" {% if q.is_required %}required{% endif %} value="{{ val|default:'' }}">
+                
+                {% elif q.question_type == 'radio' %}
+                    {% for choice in q.get_choices_list %}
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="question_{{ q.id }}" id="q_{{ q.id }}_choice_{{ forloop.counter }}" value="{{ choice }}" {% if q.is_required and forloop.first %}required{% endif %} {% if val == choice %}checked{% endif %}>
+                        <label class="form-check-label" for="q_{{ q.id }}_choice_{{ forloop.counter }}">{{ choice }}</label>
+                    </div>
+                    {% empty %}
+                    <div class="text-muted small">Variantlar mavjud emas</div>
+                    {% endfor %}
+                
+                {% elif q.question_type == 'checkbox' %}
+                    {% for choice in q.get_choices_list %}
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" name="question_{{ q.id }}" id="q_{{ q.id }}_choice_{{ forloop.counter }}" value="{{ choice }}" {% if choice in val %}checked{% endif %}>
+                        <label class="form-check-label" for="q_{{ q.id }}_choice_{{ forloop.counter }}">{{ choice }}</label>
+                    </div>
+                    {% empty %}
+                    <div class="text-muted small">Variantlar mavjud emas</div>
+                    {% endfor %}
+                
+                {% elif q.question_type == 'select' %}
+                    <select name="question_{{ q.id }}" class="form-select" style="max-width: 400px;" {% if q.is_required %}required{% endif %}>
+                        <option value="">Tanlang...</option>
+                        {% for choice in q.get_choices_list %}
+                        <option value="{{ choice }}" {% if val == choice %}selected{% endif %}>{{ choice }}</option>
+                        {% endfor %}
+                    </select>
+
+                {% elif q.question_type == 'buttons' %}
+                    <div class="btn-group" role="group" aria-label="Choices">
+                        {% for choice in q.get_choices_list %}
+                        <input type="radio" class="btn-check" name="question_{{ q.id }}" id="btn_q_{{ q.id }}_choice_{{ forloop.counter }}" value="{{ choice }}" autocomplete="off" {% if q.is_required and forloop.first %}required{% endif %} {% if val == choice %}checked{% endif %}>
+                        <label class="btn btn-outline-primary" for="btn_q_{{ q.id }}_choice_{{ forloop.counter }}">{{ choice }}</label>
+                        {% empty %}
+                        <div class="text-muted small">Variantlar mavjud emas</div>
+                        {% endfor %}
+                    </div>
+                
+                {% elif q.question_type == 'image' %}
+                    <input type="file" name="question_{{ q.id }}" class="form-control" accept="image/*" {% if q.is_required and not existing_response %}required{% endif %}>
+                    {% if existing_response and val %}<div class="text-muted small mt-2">Oldin yuklangan rasm bor. Yangisini biriktirsangiz u almashadi.</div>{% endif %}
+                
+                {% elif q.question_type == 'file' %}
+                    <input type="file" name="question_{{ q.id }}" class="form-control" {% if q.is_required and not existing_response %}required{% endif %}>
+                    {% if existing_response and val %}<div class="text-muted small mt-2">Oldin yuklangan fayl bor. Yangisini biriktirsangiz u almashadi.</div>{% endif %}
+                
+                {% endif %}
+                </div>
+                {% endwith %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <button type="submit" class="btn btn-primary btn-lg px-4 rounded-pill">{% if existing_response %}Saqlash{% else %}Jo'natish{% endif %}</button>
+            <a href="{% url 'sorovnoma:survey_list' %}" class="btn btn-link text-muted text-decoration-none">Bekor qilish</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

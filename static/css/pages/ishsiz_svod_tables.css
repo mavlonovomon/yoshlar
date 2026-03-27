@@ -1,0 +1,182 @@
+.svod-page {
+    background-color: #f8fafc;
+    min-height: 100vh;
+}
+
+.svod-title {
+    letter-spacing: -0.5px;
+}
+
+.svod-header-card {
+    border-radius: 15px;
+}
+
+.svod-report-title {
+    line-height: 1.8;
+    font-size: 1.25rem;
+}
+
+.svod-report-accent {
+    border-bottom: 2px solid #0d6efd;
+}
+
+.svod-report-mark {
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+}
+
+.svod-table-card {
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.professional-table {
+    border: 2px solid #94a3b8;
+    background-color: #fff;
+    table-layout: auto;
+}
+
+.professional-table thead th {
+    background: #f8fafc;
+    color: #1e293b;
+    font-weight: 800;
+    text-transform: none;
+    text-align: center;
+    vertical-align: middle !important;
+    font-size: 0.82rem;
+    padding: 12px 10px;
+    border: 1px solid #94a3b8;
+}
+
+.header-lvl-1 th {
+    background: #f1f5f9;
+}
+
+.small-header {
+    font-size: 0.76rem !important;
+    background: #f8fafc !important;
+    font-weight: 800 !important;
+    text-transform: none !important;
+    line-height: 1.35;
+    min-width: 130px;
+    padding: 10px 8px !important;
+}
+
+.header-lvl-filter th {
+    background: #ffedd5 !important;
+    padding: 2px !important;
+    font-size: 0.7rem;
+    color: #9a3412;
+}
+
+.v-text {
+    min-width: 115px;
+    line-height: 1.25;
+}
+
+.col-w-45 {
+    width: 45px;
+}
+
+.col-min-w-80 {
+    min-width: 80px;
+}
+
+.col-min-w-100 {
+    min-width: 100px;
+}
+
+.col-min-w-140 {
+    min-width: 140px;
+}
+
+.col-min-w-150 {
+    min-width: 150px;
+}
+
+.col-min-w-200 {
+    min-width: 200px;
+}
+
+.col-min-w-250 {
+    min-width: 250px;
+}
+
+.col-min-w-280 {
+    min-width: 280px;
+}
+
+.professional-table tbody td {
+    border: 1px solid #cbd5e1;
+    font-size: 0.86rem;
+    padding: 10px 12px;
+    line-height: 1.35;
+    vertical-align: middle;
+}
+
+.summary-row {
+    background-color: #dcfce7 !important;
+    border-bottom: 2px solid #16a34a;
+}
+
+.summary-label {
+    font-size: 0.95rem;
+}
+
+.bg-mahalla {
+    background-color: #ecfdf5;
+    font-weight: 600;
+    color: #065f46;
+}
+
+.bg-light-subtle {
+    background-color: #f8fafc;
+}
+
+.data-row:hover {
+    background-color: #f1f5f9;
+}
+
+.leader-name {
+    font-size: 0.85rem;
+}
+
+.leader-position {
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+
+.leader-level-badge {
+    font-size: 0.65rem;
+}
+
+.status-cell {
+    min-width: 70px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.status-cell-total {
+    background: #16a34a !important;
+    color: #fff !important;
+}
+
+.status-zero {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-color: #fecaca !important;
+}
+
+.status-low {
+    background-color: #fef9c3;
+    color: #854d0e;
+}
+
+.status-medium {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.status-high {
+    background-color: #22c55e;
+    color: #fff;
+}

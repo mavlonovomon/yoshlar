@@ -60,8 +60,8 @@ class MahallaAdmin(admin.ModelAdmin):
 
 @admin.register(Yosh)
 class YoshAdmin(admin.ModelAdmin):
-    search_fields = ('fullname', 'passport_number', 'jshshir')
-    list_display = ('fullname', 'passport_number', 'mahalla')
+    search_fields = ('fullname', 'passport_number', 'guvohnoma_raqami', 'jshshir')
+    list_display = ('fullname', 'passport_number', 'guvohnoma_raqami', 'mahalla')
     list_filter = ('mahalla',)
 
 admin.site.register(Uchrashuv)

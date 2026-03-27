@@ -1,6 +1,4 @@
 import json
-from datetime import date
-from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
@@ -12,6 +10,7 @@ from .models import (
     UzchessMahallaAlias,
     Mahalla,
 )
+from .stats_adapters import BaseStatsAdapter
 
 
 DEFAULT_UZCHESS_URL = (
@@ -56,15 +55,11 @@ def _alias_key(api_name: str) -> str:
 
 def _resolve_alias(api_name: str) -> UzchessMahallaAlias:
     api_key = _alias_key(api_name)
-    alias, created = UzchessMahallaAlias.objects.get_or_create(
+    return BaseStatsAdapter.resolve_alias_record(
+        UzchessMahallaAlias,
+        api_name=api_key,
         api_norm=api_key,
-        defaults={"api_name": api_key},
     )
-    if not created and alias.api_name != api_key:
-        # faqat whitespace farqi bo'lishi mumkin
-        alias.api_name = api_key
-        alias.save(update_fields=["api_name", "last_seen"])
-    return alias
 
 
 def _extract_items(payload: dict | list) -> list[dict]:
@@ -107,49 +102,21 @@ def _extract_metrics(item: dict, area_key: str | None) -> dict:
     return metrics
 
 
-def save_uzchess_snapshot(payload: dict, source_url: str | None = None) -> UzchessStatSnapshot:
-    snapshot = UzchessStatSnapshot.objects.create(
-        snapshot_date=date.today(),
-        source_url=source_url or get_uzchess_url(),
-        raw_payload=payload,
-    )
+class UzchessStatsAdapter(BaseStatsAdapter):
+    snapshot_model = UzchessStatSnapshot
+    stat_model = UzchessMahallaStat
+    unknown_error_message = "JSON o'qib bo'lmadi"
 
-    items = payload.get("items", [])
-    bulk = []
-    for item in items:
-        if not isinstance(item, dict):
-            continue
+    def get_url(self):
+        return get_uzchess_url()
 
-        area_name = _resolve_area_name(item)
-        area_key = "_id" if "_id" in item else None
-        metrics = _extract_metrics(item, area_key)
-
-        alias = _resolve_alias(area_name)
-        bulk.append(UzchessMahallaStat(
-            snapshot=snapshot,
-            mahalla=alias.mahalla,
-            area_external_id=str(item.get("id") or "") or None,
-            area_name=area_name,
-            metrics=metrics,
-        ))
-
-    if bulk:
-        UzchessMahallaStat.objects.bulk_create(bulk)
-
-    return snapshot
-
-
-def fetch_and_store_uzchess_snapshot() -> tuple[UzchessStatSnapshot | None, str | None]:
-    url = get_uzchess_url()
-    try:
+    def fetch_payload(self, url):
         all_items: list[dict] = []
         raw_pages: list[dict | list] = []
 
         start_page = _get_start_page(url)
         page = start_page
 
-        # API pagination: kamida 2-bet borligini bilamiz, shuning uchun bo'sh data kelguncha olamiz.
-        # Infinite loop bo'lmasligi uchun limit qo'yamiz.
         for _ in range(1, 51):
             page_url = _with_page(url, page)
             raw = _fetch_json(page_url)
@@ -161,18 +128,43 @@ def fetch_and_store_uzchess_snapshot() -> tuple[UzchessStatSnapshot | None, str 
             all_items.extend([i for i in items if isinstance(i, dict)])
             page += 1
 
-        payload = {"items": all_items, "raw_pages": raw_pages}
-    except HTTPError as exc:
-        return None, f"HTTP xatolik: {exc.code}"
-    except URLError as exc:
-        return None, f"Ulanish xatoligi: {exc.reason}"
-    except json.JSONDecodeError:
-        return None, "JSON o'qib bo'lmadi"
-    except Exception:
-        return None, "JSON o'qib bo'lmadi"
+        return {"items": all_items, "raw_pages": raw_pages}
 
-    snapshot = save_uzchess_snapshot(payload, source_url=url)
-    return snapshot, None
+    def iter_items(self, payload):
+        return payload.get("items", [])
+
+    def resolve_alias(self, area_name):
+        return _resolve_alias(area_name)
+
+    def resolve_area_name(self, item):
+        return _resolve_area_name(item)
+
+    def resolve_external_id(self, item):
+        return str(item.get("id") or "") or None
+
+    def extract_metrics(self, item):
+        area_key = "_id" if "_id" in item else None
+        return _extract_metrics(item, area_key)
+
+    def build_stat_instance(self, snapshot, alias, item, area_name, area_external_id, metrics):
+        return UzchessMahallaStat(
+            snapshot=snapshot,
+            mahalla=alias.mahalla,
+            area_external_id=area_external_id,
+            area_name=area_name,
+            metrics=metrics,
+        )
+
+
+_adapter = UzchessStatsAdapter()
+
+
+def save_uzchess_snapshot(payload: dict, source_url: str | None = None) -> UzchessStatSnapshot:
+    return _adapter.build_snapshot(payload, source_url or get_uzchess_url())
+
+
+def fetch_and_store_uzchess_snapshot() -> tuple[UzchessStatSnapshot | None, str | None]:
+    return _adapter.fetch_and_store()
 
 
 def build_table(

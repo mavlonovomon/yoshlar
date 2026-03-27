@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="fw-bold mb-0">{{ page_title }}</h3>
+                <a href="{% url 'bilim_sinovi:question_package_list' %}" class="btn btn-light border">Orqaga</a>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                        {% endif %}
+
+                        <div class="row g-3">
+                            <div class="col-md-7">
+                                <label class="form-label fw-semibold">{{ form.package_name.label }}</label>
+                                {{ form.package_name }}
+                                {% if form.package_name.errors %}<div class="text-danger small mt-1">{{ form.package_name.errors|striptags }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold">{{ form.category.label }}</label>
+                                {{ form.category }}
+                                {% if form.category.errors %}<div class="text-danger small mt-1">{{ form.category.errors|striptags }}</div>{% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">{{ form.txt_file.label }}</label>
+                                {{ form.txt_file }}
+                                {% if form.txt_file.help_text %}
+                                <small class="text-muted d-block mt-1">{{ form.txt_file.help_text }}</small>
+                                {% endif %}
+                                {% if form.txt_file.errors %}<div class="text-danger small mt-1">{{ form.txt_file.errors|striptags }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">Import qilish</button>
+                            <a href="{% url 'bilim_sinovi:question_package_list' %}" class="btn btn-outline-secondary">Bekor qilish</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-2">Fayl formati</h6>
+                    <p class="text-muted mb-2">Har bir savol `*`, noto'g'ri javob `-`, to'g'ri javob `+` bilan boshlansin.</p>
+<pre class="bg-light p-3 rounded mb-0">* O'zbekiston poytaxti qaysi shahar?
+- Samarqand
++ Toshkent
+- Buxoro
+- Andijon
+
+* 2 + 2 nechiga teng?
+- 3
+- 5
++ 4
+- 6</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,74 +1,115 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load humanize %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/dashboard_page.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="mb-5">
-        <h2 class="fw-bold mb-1 text-dark">Umumiy Dashboard</h2>
-        <p class="text-muted small">Tizimdagi barcha yoshlar va suhbatlar statistikasi</p>
-    </div>
+<div class="container-fluid py-4 dashboard-page">
+    {% include 'components/page_header.html' with title="Umumiy Dashboard" subtitle="Tizimdagi barcha yoshlar va suhbatlar statistikasi" show_refresh=True %}
 
-    <!-- Stats Row: Optimized for 4 items per row on PC -->
     <div class="row g-4 mb-5 row-cols-1 row-cols-md-2 row-cols-lg-4">
-        <!-- Card 1: Jami Yoshlar -->
-        <div class="col">
-            <div class="card border-0 shadow-sm h-100 overflow-hidden premium-card">
-                <div class="card-header-line bg-primary"></div>
-                <div class="card-body p-4 text-center">
-                    <div class="stats-icon-wrapper mb-3 text-primary">
-                        <i class="bi bi-people fs-4"></i>
-                    </div>
-                    <h2 class="fw-black mb-1 display-6">{{ total_yosh|intcomma }}</h2>
-                    <div class="stats-label">JAMI YOSHLAR</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card 2: Suhbat O'tkazilgan -->
-        <div class="col">
-            <div class="card border-0 shadow-sm h-100 overflow-hidden premium-card">
-                <div class="card-header-line bg-success"></div>
-                <div class="card-body p-4 text-center">
-                    <div class="stats-icon-wrapper mb-3 text-success">
-                        <i class="bi bi-check-circle fs-4"></i>
-                    </div>
-                    <h2 class="fw-black mb-1 display-6 text-success">{{ suhbat_bor|intcomma }}</h2>
-                    <div class="stats-label">SUHBAT O'TKAZILGAN</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card 3: Kutilmoqda -->
-        <div class="col">
-            <div class="card border-0 shadow-sm h-100 overflow-hidden premium-card">
-                <div class="card-header-line bg-danger"></div>
-                <div class="card-body p-4 text-center">
-                    <div class="stats-icon-wrapper mb-3 text-danger">
-                        <i class="bi bi-x-circle fs-4"></i>
-                    </div>
-                    <h2 class="fw-black mb-1 display-6 text-danger">{{ suhbat_yoq|intcomma }}</h2>
-                    <div class="stats-label">KUTILMOQDA</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card 4: Jami Suhbatlar -->
-        <div class="col">
-            <div class="card border-0 shadow-sm h-100 overflow-hidden premium-card">
-                <div class="card-header-line bg-info"></div>
-                <div class="card-body p-4 text-center">
-                    <div class="stats-icon-wrapper mb-3 text-info">
-                        <i class="bi bi-journal-text fs-4"></i>
-                    </div>
-                    <h2 class="fw-black mb-1 display-6 text-info">{{ total_meetings|intcomma }}</h2>
-                    <div class="stats-label">JAMI SUHBATLAR</div>
-                </div>
-            </div>
-        </div>
+        {% include 'components/stats_card.html' with col_class='col' icon='bi-people' icon_bg_class='bg-primary-subtle' icon_text_class='text-primary' label='Jami yoshlar' value=total_yosh progress_class='bg-primary' progress_percent='100' %}
+        {% include 'components/stats_card.html' with col_class='col' icon='bi-check-circle' icon_bg_class='bg-success-subtle' icon_text_class='text-success' label="Suhbat o'tkazilgan" value=suhbat_bor progress_class='bg-success' progress_percent='100' %}
+        {% include 'components/stats_card.html' with col_class='col' icon='bi-x-circle' icon_bg_class='bg-danger-subtle' icon_text_class='text-danger' label='Kutilmoqda' value=suhbat_yoq progress_class='bg-danger' progress_percent='100' %}
+        {% include 'components/stats_card.html' with col_class='col' icon='bi-journal-text' icon_bg_class='bg-info-subtle' icon_text_class='text-info' label='Jami suhbatlar' value=total_meetings progress_class='bg-info' progress_percent='100' %}
     </div>
 
-    <!-- Recent Meetings -->
-    <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 20px;">
+    <div class="row g-4 mb-5">
+        {% include 'components/chart_card.html' with col_class='col-xl-5' title="Suhbat holati" canvas_id="meetingStatusChart" canvas_height="240" %}
+        {% include 'components/chart_card.html' with col_class='col-xl-7' title="Bo'limlar bo'yicha qamrov" canvas_id="moduleSummaryChart" canvas_height="240" %}
+    </div>
+
+    <div class="dashboard-section-head mb-4">
+        <h5 class="fw-bold mb-1 text-dark">Bo'limlar bo'yicha umumiy holat</h5>
+        <p class="text-muted small mb-0">Alohida dashboardlar o'rniga yagona ko'rinish</p>
+    </div>
+    <div class="row g-4 mb-5 row-cols-1 row-cols-md-2 row-cols-xl-5">
+        {% for module in module_summary %}
+        <div class="col">
+            <div class="card border-0 shadow-sm h-100 module-card">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="stats-icon-wrapper {{ module.accent }}">
+                            <i class="bi {{ module.icon }} fs-5"></i>
+                        </div>
+                        <a href="{% url module.list_url %}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                            Ro'yxat
+                        </a>
+                    </div>
+                    <h6 class="text-muted text-uppercase small fw-bold mb-2">{{ module.title }}</h6>
+                    <h3 class="fw-black mb-1">{{ module.value|intcomma }}</h3>
+                    <div class="text-muted smaller">{{ module.meta }}</div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if show_online_users %}
+    <div class="dashboard-section-head mb-4">
+        <h5 class="fw-bold mb-1 text-dark">Hozir onlayn foydalanuvchilar</h5>
+        <p class="text-muted small mb-0">Sessiyada faol bo'lgan foydalanuvchilar oxirgi faollik vaqtiga ko'ra ko'rsatiladi.</p>
+    </div>
+    <div class="card border-0 shadow-sm mb-5">
+        <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="fw-bold mb-0 text-dark">Onlayn userlar</h5>
+                <div class="text-muted small">{{ online_users_count }} ta faol foydalanuvchi</div>
+            </div>
+            <span class="badge bg-success-subtle text-success border">{{ online_users_count }}</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 py-3 border-0">Foydalanuvchi</th>
+                        <th class="py-3 border-0">Rol</th>
+                        <th class="py-3 border-0">Mahalla</th>
+                        <th class="py-3 border-0">So'nggi faollik</th>
+                        <th class="py-3 border-0 text-center">Sessiyalar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for online_user in online_users %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark">{{ online_user.full_name|default:online_user.username }}</div>
+                            <div class="text-muted smaller">#{{ online_user.pk }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary-subtle text-primary border">{{ online_user.get_role_display }}</span>
+                            {% if online_user.is_sector_coordinator %}
+                            <span class="badge bg-warning-subtle text-warning border ms-1">Koordinator</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="text-dark small">{{ online_user.mahalla.name|default:"-" }}</div>
+                        </td>
+                        <td>
+                            <div class="text-dark small">
+                                <i class="bi bi-clock-history me-2 text-success"></i>{{ online_user.online_last_activity|date:"d.m.Y H:i" }}
+                            </div>
+                            <div class="text-muted smaller">{{ online_user.online_last_activity|timesince }} oldin</div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-success">{{ online_user.online_session_count }}</span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="py-5 text-center text-muted">Hozircha onlayn foydalanuvchi yo'q</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card border-0 shadow-sm overflow-hidden recent-meetings-card">
         <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
             <h5 class="fw-bold mb-0 text-dark">Oxirgi Suhbatlar</h5>
             <a href="{% url 'yosh_list' %}" class="btn btn-primary-soft btn-sm rounded-pill px-4">Barcha yoshlar</a>
@@ -108,7 +149,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            <div class="text-muted small" style="max-width: 350px; line-height: 1.4;">
+                            <div class="text-muted small recent-meeting-snippet">
                                 <i class="bi bi-quote text-primary opacity-25 me-1"></i>
                                 {% if meeting.conversation_text %}
                                     {{ meeting.conversation_text|truncatewords:12 }}
@@ -135,63 +176,13 @@
     </div>
 </div>
 
-<style>
-    .premium-card {
-        border-radius: 20px !important;
-        transition: all 0.3s ease;
-        background: #fff;
-    }
+{{ module_summary|json_script:"module-summary-data" }}
+{{ suhbat_bor|json_script:"meeting-covered-count" }}
+{{ suhbat_yoq|json_script:"meeting-pending-count" }}
+{% endblock %}
 
-    .premium-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
-    }
-
-    .card-header-line {
-        height: 8px;
-        width: 100%;
-        opacity: 0.8;
-    }
-
-    .stats-icon-wrapper {
-        width: 50px;
-        height: 50px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0, 0, 0, 0.03);
-        border-radius: 14px;
-    }
-
-    .fw-black {
-        font-weight: 900;
-    }
-
-    .stats-label {
-        font-weight: 800;
-        letter-spacing: 0.8px;
-        color: #64748b;
-        font-size: 0.75rem;
-    }
-
-    .btn-primary-soft {
-        background-color: rgba(13, 110, 253, 0.1);
-        color: #0d6efd;
-    }
-
-    .btn-primary-soft:hover {
-        background-color: #0d6efd;
-        color: #fff;
-    }
-
-    .smaller {
-        font-size: 0.75rem;
-    }
-
-    @media (max-width: 767.98px) {
-        .display-6 {
-            font-size: 1.75rem;
-        }
-    }
-</style>
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{% static 'js/components/charts.js' %}"></script>
+<script src="{% static 'js/pages/dashboard_page.js' %}"></script>
 {% endblock %}

@@ -1,0 +1,33 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">{{ title }}</h2>
+        {% if subtitle %}
+        <p class="text-muted mb-0">{{ subtitle }}</p>
+        {% endif %}
+    </div>
+    <div class="d-flex gap-2">
+        {% if show_print %}
+        <button class="btn btn-white shadow-sm border-0 px-3" onclick="window.print()">
+            <i class="bi bi-printer me-2"></i>Chop etish
+        </button>
+        {% endif %}
+        {% if show_refresh %}
+        <button class="btn btn-primary shadow-sm border-0 px-3" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise me-2"></i>Yangilash
+        </button>
+        {% endif %}
+        {% if create_url and create_label %}
+            {% if create_role == 'YETAKCHI' %}
+                {% if user.is_authenticated and user.role == 'YETAKCHI' %}
+                <a href="{{ create_url }}" class="btn btn-primary shadow-sm border-0 px-3">
+                    <i class="bi bi-plus-circle me-2"></i>{{ create_label }}
+                </a>
+                {% endif %}
+            {% else %}
+            <a href="{{ create_url }}" class="btn btn-primary shadow-sm border-0 px-3">
+                <i class="bi bi-plus-circle me-2"></i>{{ create_label }}
+            </a>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>

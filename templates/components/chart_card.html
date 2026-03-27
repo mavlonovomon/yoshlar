@@ -1,0 +1,10 @@
+{% if col_class %}<div class="{{ col_class }}">{% endif %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3 px-4">
+            <h5 class="fw-bold mb-0">{{ title }}</h5>
+        </div>
+        <div class="card-body p-4">
+            <canvas id="{{ canvas_id }}" height="{{ canvas_height|default:'280' }}"></canvas>
+        </div>
+    </div>
+{% if col_class %}</div>{% endif %}

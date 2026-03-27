@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h3 class="fw-bold mb-1">Kredit Svod</h3>
+                    <p class="text-muted mb-0">Kredit nomzodlari bo'yicha umumiy ko'rsatkichlar</p>
+                </div>
+                <a href="{% url 'kredit_yo_naltirish:svod_export' %}" class="btn btn-outline-success">
+                    Excelga saqlash
+                </a>
+            </div>
+
+            <div class="table-responsive rounded border">
+                <table class="table table-sm table-bordered mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:50px">#</th>
+                            <th>Mahalla</th>
+                            <th class="text-center">Jami</th>
+                            <th class="text-center">Nomzod</th>
+                            <th class="text-center">Jarayonda</th>
+                            <th class="text-center">Ajratildi</th>
+                            <th class="text-center">Rad etildi</th>
+                            <th class="text-center">Monitoring</th>
+                            <th class="text-center">So'ralgan (mln)</th>
+                            <th class="text-center">Ajratilgan (mln)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="table-primary fw-semibold">
+                            <td>—</td>
+                            <td>Jami</td>
+                            <td class="text-center">{{ summary.total|default:0 }}</td>
+                            <td class="text-center">{{ summary.nomination|default:0 }}</td>
+                            <td class="text-center">{{ summary.in_process|default:0 }}</td>
+                            <td class="text-center">{{ summary.approved|default:0 }}</td>
+                            <td class="text-center">{{ summary.rejected|default:0 }}</td>
+                            <td class="text-center">{{ summary.monitoring|default:0 }}</td>
+                            <td class="text-center">{{ summary.requested_sum|default:0|floatformat:0 }}</td>
+                            <td class="text-center">{{ summary.approved_sum|default:0|floatformat:0 }}</td>
+                        </tr>
+                        {% for row in by_mahalla %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td class="fw-semibold">{{ row.mahalla_name }}</td>
+                            <td class="text-center">{{ row.total }}</td>
+                            <td class="text-center">{{ row.nomination }}</td>
+                            <td class="text-center">{{ row.in_process }}</td>
+                            <td class="text-center">{{ row.approved }}</td>
+                            <td class="text-center">{{ row.rejected }}</td>
+                            <td class="text-center">{{ row.monitoring }}</td>
+                            <td class="text-center">{{ row.requested_sum|default:0|floatformat:0 }}</td>
+                            <td class="text-center">{{ row.approved_sum|default:0|floatformat:0 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center text-muted py-4">Ma'lumot topilmadi.</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="table-light fw-semibold">
+                            <td colspan="10">Qaror asosi bo'yicha</td>
+                        </tr>
+                        {% for row in basis_summary %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td colspan="8">{{ row.label }}</td>
+                            <td class="text-center" colspan="2">{{ row.count }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="table-light fw-semibold">
+                            <td colspan="10">Garov turi bo'yicha</td>
+                        </tr>
+                        {% for row in collateral_summary %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td colspan="8">{{ row.label }}</td>
+                            <td class="text-center" colspan="2">{{ row.count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

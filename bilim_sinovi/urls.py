@@ -1,5 +1,7 @@
 from django.urls import path
 from .views import (
+    QuestionPackageImportView,
+    QuestionPackageListView,
     TestConfigCreateView,
     TestConfigUpdateView,
     TestDetailView,
@@ -15,6 +17,8 @@ app_name = 'bilim_sinovi'
 urlpatterns = [
     path('', TestListView.as_view(), name='test_list'),
     path('manage/', TestManageListView.as_view(), name='test_manage_list'),
+    path('manage/packages/', QuestionPackageListView.as_view(), name='question_package_list'),
+    path('manage/packages/import/', QuestionPackageImportView.as_view(), name='question_package_import'),
     path('manage/results/', TestResultsDashboardView.as_view(), name='test_results_dashboard'),
     path('manage/create/', TestConfigCreateView.as_view(), name='test_manage_create'),
     path('manage/<int:pk>/edit/', TestConfigUpdateView.as_view(), name='test_manage_edit'),

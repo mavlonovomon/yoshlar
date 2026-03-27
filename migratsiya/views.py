@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404, redirect
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, TemplateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.db.models import Count, Q
@@ -28,55 +28,6 @@ class MahallaRestrictedMixin:
             if self.model == Mahalla:
                 return queryset.filter(id=user.mahalla.id)
         return queryset
-
-
-class DashboardView(LoginRequiredMixin, TemplateView):
-    template_name = 'migratsiya/dashboard.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        user = self.request.user
-        queryset = MigrationYouth.objects.select_related('yosh__mahalla').all()
-
-        if not getattr(user, 'is_site_admin', False) and user.mahalla:
-            queryset = queryset.filter(yosh__mahalla=user.mahalla)
-
-        total_migrants = queryset.count()
-        total_meetings = queryset.filter(meetings__isnull=False).distinct().count()
-        total_pending = total_migrants - total_meetings
-        total_work = queryset.filter(reason='ISH').count()
-
-        reason_dict = dict(MigrationYouth.REASON_CHOICES)
-        by_reason_raw = queryset.values('reason').annotate(total=Count('id'))
-        by_reason = []
-        for item in by_reason_raw:
-            by_reason.append({
-                'label': reason_dict.get(item['reason'], item['reason']),
-                'total': item['total'],
-            })
-
-        by_country = list(
-            queryset.values('destination_country')
-            .annotate(total=Count('id'))
-            .order_by('-total')[:10]
-        )
-
-        by_mahalla = list(
-            queryset.values('yosh__mahalla__name')
-            .annotate(total=Count('id'))
-            .order_by('yosh__mahalla__name')
-        )
-
-        context.update({
-            'total_migrants': total_migrants,
-            'total_meetings': total_meetings,
-            'total_pending': total_pending,
-            'total_work': total_work,
-            'by_reason': by_reason,
-            'by_country': by_country,
-            'by_mahalla': by_mahalla,
-        })
-        return context
 
 
 class MigrationYouthListView(LoginRequiredMixin, ListView):

@@ -1,6 +1,4 @@
 import json
-from datetime import date
-from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 from urllib.request import Request, urlopen
 
@@ -12,6 +10,7 @@ from .models import (
     QizlarAkademiyasiMahallaAlias,
     Mahalla,
 )
+from .stats_adapters import BaseStatsAdapter
 
 
 DEFAULT_QIZLAR_URL = (
@@ -54,14 +53,11 @@ def _alias_key(api_name: str) -> str:
 
 def _resolve_alias(api_name: str) -> QizlarAkademiyasiMahallaAlias:
     api_key = _alias_key(api_name)
-    alias, created = QizlarAkademiyasiMahallaAlias.objects.get_or_create(
+    return BaseStatsAdapter.resolve_alias_record(
+        QizlarAkademiyasiMahallaAlias,
+        api_name=api_key,
         api_norm=api_key,
-        defaults={"api_name": api_key},
     )
-    if not created and alias.api_name != api_key:
-        alias.api_name = api_key
-        alias.save(update_fields=["api_name", "last_seen"])
-    return alias
 
 
 def _extract_items(payload: dict | list) -> list[dict]:
@@ -103,39 +99,15 @@ def _extract_metrics(item: dict, area_key: str | None) -> dict:
     return metrics
 
 
-def save_qizlar_snapshot(payload: dict, source_url: str | None = None) -> QizlarAkademiyasiStatSnapshot:
-    snapshot = QizlarAkademiyasiStatSnapshot.objects.create(
-        snapshot_date=date.today(),
-        source_url=source_url or get_qizlar_url(),
-        raw_payload=payload,
-    )
+class QizlarStatsAdapter(BaseStatsAdapter):
+    snapshot_model = QizlarAkademiyasiStatSnapshot
+    stat_model = QizlarAkademiyasiMahallaStat
+    unknown_error_message = "JSON o'qib bo'lmadi"
 
-    items = payload.get("items", [])
-    bulk = []
-    for item in items:
-        if not isinstance(item, dict):
-            continue
-        area_name = _resolve_area_name(item)
-        area_key = "_id" if "_id" in item else None
-        metrics = _extract_metrics(item, area_key)
-        alias = _resolve_alias(area_name)
-        bulk.append(QizlarAkademiyasiMahallaStat(
-            snapshot=snapshot,
-            mahalla=alias.mahalla,
-            area_external_id=str(item.get("id") or "") or None,
-            area_name=area_name,
-            metrics=metrics,
-        ))
+    def get_url(self):
+        return get_qizlar_url()
 
-    if bulk:
-        QizlarAkademiyasiMahallaStat.objects.bulk_create(bulk)
-
-    return snapshot
-
-
-def fetch_and_store_qizlar_snapshot() -> tuple[QizlarAkademiyasiStatSnapshot | None, str | None]:
-    url = get_qizlar_url()
-    try:
+    def fetch_payload(self, url):
         all_items: list[dict] = []
         raw_pages: list[dict | list] = []
 
@@ -164,18 +136,43 @@ def fetch_and_store_qizlar_snapshot() -> tuple[QizlarAkademiyasiStatSnapshot | N
 
             page += 1
 
-        payload = {"items": all_items, "raw_pages": raw_pages}
-    except HTTPError as exc:
-        return None, f"HTTP xatolik: {exc.code}"
-    except URLError as exc:
-        return None, f"Ulanish xatoligi: {exc.reason}"
-    except json.JSONDecodeError:
-        return None, "JSON o'qib bo'lmadi"
-    except Exception:
-        return None, "JSON o'qib bo'lmadi"
+        return {"items": all_items, "raw_pages": raw_pages}
 
-    snapshot = save_qizlar_snapshot(payload, source_url=url)
-    return snapshot, None
+    def iter_items(self, payload):
+        return payload.get("items", [])
+
+    def resolve_alias(self, area_name):
+        return _resolve_alias(area_name)
+
+    def resolve_area_name(self, item):
+        return _resolve_area_name(item)
+
+    def resolve_external_id(self, item):
+        return str(item.get("id") or "") or None
+
+    def extract_metrics(self, item):
+        area_key = "_id" if "_id" in item else None
+        return _extract_metrics(item, area_key)
+
+    def build_stat_instance(self, snapshot, alias, item, area_name, area_external_id, metrics):
+        return QizlarAkademiyasiMahallaStat(
+            snapshot=snapshot,
+            mahalla=alias.mahalla,
+            area_external_id=area_external_id,
+            area_name=area_name,
+            metrics=metrics,
+        )
+
+
+_adapter = QizlarStatsAdapter()
+
+
+def save_qizlar_snapshot(payload: dict, source_url: str | None = None) -> QizlarAkademiyasiStatSnapshot:
+    return _adapter.build_snapshot(payload, source_url or get_qizlar_url())
+
+
+def fetch_and_store_qizlar_snapshot() -> tuple[QizlarAkademiyasiStatSnapshot | None, str | None]:
+    return _adapter.fetch_and_store()
 
 
 def build_table(

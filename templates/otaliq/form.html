@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block extra_css %}
+{% include 'components/select2_assets.html' with mode='css' %}
+<link rel="stylesheet" href="{% static 'css/pages/otaliq_form.css' %}">
+{% endblock %}
+
 {% block content %}
 <div class="container py-4">
     <div class="row justify-content-center">
@@ -56,35 +61,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
-<!-- Select2 support -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script>
-    $(document).ready(function () {
-        $('.select2').select2({
-            theme: "classic",
-            width: '100%'
-        });
-    });
-</script>
-
-<style>
-    .bg-primary-soft {
-        background-color: rgba(79, 70, 229, 0.1);
-    }
-
-    .tracking-wider {
-        letter-spacing: 0.05em;
-    }
-
-    .select2-container--classic .select2-selection--single {
-        height: 45px;
-        border-radius: 8px;
-        border: 1px solid #dee2e6;
-        display: flex;
-        align-items: center;
-    }
-</style>
+{% block extra_js %}
+{% include 'components/select2_assets.html' with mode='js' %}
 {% endblock %}

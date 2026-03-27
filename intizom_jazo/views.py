@@ -9,20 +9,18 @@ from .models import DisciplineAction
 
 def _can_manage(user):
     return (
-        user.is_superuser
-        or getattr(user, 'role', '') in {'SUPER_ADMIN', 'RAHBAR'}
-        or user.is_staff
-        or getattr(user, 'is_sector_coordinator', False)
+        getattr(user, 'is_site_admin', False)
     )
 
 
 @login_required
 def list_create(request):
-    if not _can_manage(request.user):
-        messages.error(request, "Bu bo'lim faqat Super Admin yoki rahbar uchun.")
-        return redirect('dashboard')
+    can_manage = _can_manage(request.user)
 
     if request.method == 'POST':
+        if not can_manage:
+            messages.error(request, "Intizomiy jazo qo'shish faqat admin yoki rahbar uchun.")
+            return redirect('intizom_jazo:list')
         form = DisciplineActionForm(request.POST)
         if form.is_valid():
             obj = form.save(commit=False)
@@ -52,5 +50,6 @@ def list_create(request):
         'q': q,
         'action_type': action_type,
         'action_choices': DisciplineAction.ACTION_CHOICES,
+        'can_manage': can_manage,
     }
     return render(request, 'intizom_jazo/list.html', context)

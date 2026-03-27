@@ -16,8 +16,8 @@
                 <h2 class="mb-1">{{ user.full_name|default:user.username }}</h2>
                 <p class="mb-0 text-muted">
                     {{ user.get_role_display }}
-                    {% if user.mahalla %} • {{ user.mahalla.name }}{% endif %}
-                    {% if user.sector %} • {{ user.sector }}-sektor{% endif %}
+                    {% if user.mahalla %} &bull; {{ user.mahalla.name }}{% endif %}
+                    {% if user.sector %} &bull; {{ user.sector }}-sektor{% endif %}
                 </p>
             </div>
         </div>
@@ -31,7 +31,7 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label fw-bold small text-uppercase">PINFL</label>
-                    {{ form.pinfl }}
+                    <input type="text" class="form-control" value="{{ user.pinfl|default:'Biriktirilmagan' }}" readonly disabled>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label fw-bold small text-uppercase">Tug'ilgan sana</label>

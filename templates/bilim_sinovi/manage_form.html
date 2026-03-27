@@ -28,7 +28,7 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">{{ form.subject.label }}</label>
                                 {{ form.subject }}
-                                <small class="text-muted d-block mt-1">Agar to'plamlar tanlanmasa, shu fan ishlatiladi.</small>
+                                <small class="text-muted d-block mt-1">Paket tanlanmasa, shu kategoriya fallback sifatida ishlatiladi.</small>
                                 {% if form.subject.errors %}<div class="text-danger small mt-1">{{ form.subject.errors|striptags }}</div>{% endif %}
                             </div>
                             <div class="col-12">
@@ -38,6 +38,14 @@
                                 <small class="text-muted d-block mt-1">{{ form.question_sets.help_text }}</small>
                                 {% endif %}
                                 {% if form.question_sets.errors %}<div class="text-danger small mt-1">{{ form.question_sets.errors|striptags }}</div>{% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">{{ form.question_packages.label }}</label>
+                                {{ form.question_packages }}
+                                {% if form.question_packages.help_text %}
+                                <small class="text-muted d-block mt-1">{{ form.question_packages.help_text }}</small>
+                                {% endif %}
+                                {% if form.question_packages.errors %}<div class="text-danger small mt-1">{{ form.question_packages.errors|striptags }}</div>{% endif %}
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">{{ form.start_time.label }}</label>

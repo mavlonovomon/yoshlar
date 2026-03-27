@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, TemplateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.db.models import Count, Q
@@ -24,42 +24,6 @@ class MahallaRestrictedMixin:
             if hasattr(self.model, 'mahalla'):
                 return queryset.filter(mahalla=user.mahalla)
         return queryset
-
-
-class DashboardView(LoginRequiredMixin, TemplateView):
-    template_name = 'reyd/dashboard.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        user = self.request.user
-        queryset = RaidEvent.objects.select_related('mahalla').all()
-
-        if not getattr(user, 'is_site_admin', False) and user.mahalla:
-            queryset = queryset.filter(mahalla=user.mahalla)
-
-        total_events = queryset.count()
-        total_photos = RaidPhoto.objects.filter(event__in=queryset).count()
-
-        type_dict = dict(RaidEvent.TYPE_CHOICES)
-        by_type_raw = queryset.values('event_type').annotate(total=Count('id'))
-        by_type = [
-            {'label': type_dict.get(item['event_type'], item['event_type']), 'total': item['total']}
-            for item in by_type_raw
-        ]
-
-        by_mahalla = list(
-            queryset.values('mahalla__name')
-            .annotate(total=Count('id'))
-            .order_by('mahalla__name')
-        )
-
-        context.update({
-            'total_events': total_events,
-            'total_photos': total_photos,
-            'by_type': by_type,
-            'by_mahalla': by_mahalla,
-        })
-        return context
 
 
 class RaidEventListView(LoginRequiredMixin, ListView):

@@ -16,5 +16,7 @@ urlpatterns = [
     path('kredit-yonaltirish/', include('kredit_yo_naltirish.urls')),
     path('intizom-jazo/', include('intizom_jazo.urls')),
     path('bilim-sinovi/', include('bilim_sinovi.urls')),
+    path('hisobot/', include('hisobot.urls')),
+    path('sorovnoma/', include('sorovnoma.urls')),
     path('', include('core.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

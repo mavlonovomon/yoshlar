@@ -29,6 +29,17 @@ class OtaliqMeetingForm(forms.ModelForm):
         }
 
 class OtaliqAssistanceForm(forms.ModelForm):
+    def clean(self):
+        cleaned_data = super().clean()
+        provided = cleaned_data.get('provided')
+        document = cleaned_data.get('document')
+        existing_document = getattr(self.instance, 'document', None) if self.instance else None
+
+        if provided and not document and not existing_document:
+            self.add_error('document', "Yordam ko'rsatilgan deb belgilaganda tasdiqlovchi hujjat yuklang.")
+
+        return cleaned_data
+
     class Meta:
         model = OtaliqAssistance
         fields = ['provided', 'assistance_type', 'date_provided', 'description', 'document']

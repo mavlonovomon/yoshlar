@@ -4,7 +4,7 @@ from . import views
 app_name = 'migratsiya'
 
 urlpatterns = [
-    path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
+    path('', views.MigrationYouthListView.as_view(), name='index'),
     path('list/', views.MigrationYouthListView.as_view(), name='list'),
     path('create/', views.MigrationYouthCreateView.as_view(), name='create'),
     path('edit/<int:pk>/', views.MigrationYouthUpdateView.as_view(), name='edit'),

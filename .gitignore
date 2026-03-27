@@ -49,3 +49,8 @@ Thumbs.db
 # Project temp and archives
 *.tmp
 *.zip
+*.bak.db
+*.premerge.bak.db
+*_source_original.db
+tmp_yt_capi_ws.js
+5tsvod.xlsx

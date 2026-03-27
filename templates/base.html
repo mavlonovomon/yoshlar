@@ -71,6 +71,10 @@
                     class="nav-item {% if request.path == '/' or request.path == '/dashboard/' %}active{% endif %}">
                     <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
                 </a>
+                <a href="{% url 'hisobot:index' %}"
+                    class="nav-item {% if '/hisobot/' in request.path %}active{% endif %}">
+                    <i class="bi bi-file-earmark-text"></i> <span>Hisobot</span>
+                </a>
                 <a href="{% url 'yosh_list' %}" class="nav-item {% if 'yoshlar' in request.path %}active{% endif %}">
                     <i class="bi bi-people"></i> <span>Yoshlar ro'yxati</span>
                 </a>
@@ -86,21 +90,9 @@
                         <i class="bi bi-briefcase"></i> <span>Ishsiz Yoshlar</span>
                     </div>
                     <div class="nav-dropdown-content">
-                        <a href="{% url 'ishsiz_yoshlar:dashboard' %}"
-                            class="nav-sub-item {% if '/ishsiz_yoshlar/dashboard/' == request.path %}active{% endif %}">
-                            <i class="bi bi-graph-up"></i> <span>Dashboard</span>
-                        </a>
                         <a href="{% url 'ishsiz_yoshlar:svod' %}"
-                            class="nav-sub-item {% if '/ishsiz_yoshlar/svod/' == request.path %}active{% endif %}">
-                            <i class="bi bi-geo-alt"></i> <span>Mahallalar Svodka</span>
-                        </a>
-                        <a href="{% url 'ishsiz_yoshlar:leader_svod' %}"
-                            class="nav-sub-item {% if '/ishsiz_yoshlar/leader-svod/' == request.path %}active{% endif %}">
-                            <i class="bi bi-person-badge"></i> <span>Rahbarlar Svodka</span>
-                        </a>
-                        <a href="{% url 'ishsiz_yoshlar:professional_svod' %}"
-                            class="nav-sub-item {% if '/ishsiz_yoshlar/professional-svod/' == request.path %}active{% endif %}">
-                            <i class="bi bi-file-earmark-bar-graph"></i> <span>Professional Svodka</span>
+                            class="nav-sub-item {% if '/ishsiz_yoshlar/svod/' == request.path or '/ishsiz_yoshlar/leader-svod/' == request.path or '/ishsiz_yoshlar/professional-svod/' == request.path %}active{% endif %}">
+                            <i class="bi bi-table"></i> <span>Svodlar</span>
                         </a>
                         <a href="{% url 'ishsiz_yoshlar:list' %}"
                             class="nav-sub-item {% if '/ishsiz_yoshlar/list/' == request.path %}active{% endif %}">
@@ -113,10 +105,6 @@
                         <i class="bi bi-shield-check"></i> <span>Otaliqdagi Yoshlar</span>
                     </div>
                     <div class="nav-dropdown-content">
-                        <a href="{% url 'otaliq:dashboard' %}"
-                            class="nav-sub-item {% if '/otaliq/' == request.path %}active{% endif %}">
-                            <i class="bi bi-graph-up"></i> <span>Dashboard</span>
-                        </a>
                         <a href="{% url 'otaliq:svod' %}"
                             class="nav-sub-item {% if '/otaliq/svod/' == request.path %}active{% endif %}">
                             <i class="bi bi-geo-alt"></i> <span>Svodka (Mahalla)</span>
@@ -133,27 +121,8 @@
                         <i class="bi bi-airplane"></i> <span>Migratsiyadagi Yoshlar</span>
                     </div>
                     <div class="nav-dropdown-content">
-                        <a href="{% url 'migratsiya:dashboard' %}"
-                            class="nav-sub-item {% if '/migratsiya/dashboard/' == request.path %}active{% endif %}">
-                            <i class="bi bi-graph-up"></i> <span>Dashboard</span>
-                        </a>
                         <a href="{% url 'migratsiya:list' %}"
                             class="nav-sub-item {% if '/migratsiya/list/' == request.path %}active{% endif %}">
-                            <i class="bi bi-list-check"></i> <span>Ro'yxat</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="nav-dropdown {% if 'reyd' in request.path %}open active{% endif %}" id="reydDropdown">
-                    <div class="nav-dropdown-toggle" onclick="toggleDropdown('reydDropdown')">
-                        <i class="bi bi-shield-check"></i> <span>Reyd tadbirlari</span>
-                    </div>
-                    <div class="nav-dropdown-content">
-                        <a href="{% url 'reyd:dashboard' %}"
-                            class="nav-sub-item {% if '/reyd/dashboard/' == request.path %}active{% endif %}">
-                            <i class="bi bi-graph-up"></i> <span>Dashboard</span>
-                        </a>
-                        <a href="{% url 'reyd:list' %}"
-                            class="nav-sub-item {% if '/reyd/list/' == request.path %}active{% endif %}">
                             <i class="bi bi-list-check"></i> <span>Ro'yxat</span>
                         </a>
                     </div>
@@ -164,14 +133,28 @@
                         <i class="bi bi-award"></i> <span>Besh tashabbus</span>
                     </div>
                     <div class="nav-dropdown-content">
-                        <a href="{% url 'beshtashabbus:dashboard' %}"
-                            class="nav-sub-item {% if '/beshtashabbus/dashboard/' == request.path %}active{% endif %}">
-                            <i class="bi bi-graph-up"></i> <span>Dashboard</span>
-                        </a>
                         <a href="{% url 'beshtashabbus:list' %}"
                             class="nav-sub-item {% if '/beshtashabbus/list/' == request.path %}active{% endif %}">
                             <i class="bi bi-list-check"></i> <span>Ro'yxat</span>
                         </a>
+                        <a href="{% url 'beshtashabbus:application_svod' %}"
+                            class="nav-sub-item {% if '/beshtashabbus/applications/svod/' == request.path %}active{% endif %}">
+                            <i class="bi bi-table"></i> <span>Ariza svod</span>
+                        </a>
+                        <a href="{% url 'beshtashabbus:application_svod_extended' %}"
+                            class="nav-sub-item {% if '/beshtashabbus/applications/svod-extended/' == request.path %}active{% endif %}">
+                            <i class="bi bi-grid-3x3-gap"></i> <span>Kengaytirilgan svod</span>
+                        </a>
+                        <a href="{% url 'beshtashabbus:application_youth_list' %}"
+                            class="nav-sub-item {% if '/beshtashabbus/applications/youth-list/' == request.path %}active{% endif %}">
+                            <i class="bi bi-people"></i> <span>Yoshlar ro'yxati</span>
+                        </a>
+                        {% if user.is_site_admin %}
+                        <a href="{% url 'beshtashabbus:application_upload' %}"
+                            class="nav-sub-item {% if '/beshtashabbus/applications/upload/' == request.path %}active{% endif %}">
+                            <i class="bi bi-upload"></i> <span>Ariza yuklash</span>
+                        </a>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="nav-dropdown {% if 'yoqlama' in request.path %}open active{% endif %}" id="yoqlamaDropdown">
@@ -191,15 +174,15 @@
                         {% endif %}
                     </div>
                 </div>
-                <div class="nav-dropdown {% if 'profilaktika' in request.path %}open active{% endif %}"
+                <div class="nav-dropdown {% if 'reyd' in request.path or 'profilaktika' in request.path %}open active{% endif %}"
                     id="profilaktikaDropdown">
                     <div class="nav-dropdown-toggle" onclick="toggleDropdown('profilaktikaDropdown')">
-                        <i class="bi bi-shield-exclamation"></i> <span>Profilaktika</span>
+                        <i class="bi bi-shield-exclamation"></i> <span>Ijtimoiy profilaktika</span>
                     </div>
                     <div class="nav-dropdown-content">
-                        <a href="{% url 'profilaktika:index' %}"
-                            class="nav-sub-item {% if '/profilaktika/' == request.path %}active{% endif %}">
-                            <i class="bi bi-grid"></i> <span>Bo'lim</span>
+                        <a href="{% url 'reyd:list' %}"
+                            class="nav-sub-item {% if '/reyd/list/' == request.path %}active{% endif %}">
+                            <i class="bi bi-list-check"></i> <span>Reyd tadbirlari</span>
                         </a>
                     </div>
                 </div>
@@ -211,7 +194,11 @@
                     <div class="nav-dropdown-content">
                         <a href="{% url 'kredit_yo_naltirish:index' %}"
                             class="nav-sub-item {% if '/kredit-yonaltirish/' == request.path %}active{% endif %}">
-                            <i class="bi bi-grid"></i> <span>Bo'lim</span>
+                            <i class="bi bi-list-check"></i> <span>Ro'yxat</span>
+                        </a>
+                        <a href="{% url 'kredit_yo_naltirish:svod' %}"
+                            class="nav-sub-item {% if '/kredit-yonaltirish/svod/' == request.path %}active{% endif %}">
+                            <i class="bi bi-table"></i> <span>Svod</span>
                         </a>
                     </div>
                 </div>
@@ -223,7 +210,7 @@
                     <div class="nav-dropdown-content">
                         <a href="{% url 'intizom_jazo:list' %}"
                             class="nav-sub-item {% if '/intizom-jazo/' == request.path %}active{% endif %}">
-                            <i class="bi bi-list-ul"></i> <span>Ro'yxat va kiritish</span>
+                            <i class="bi bi-list-ul"></i> <span>Ro'yxat</span>
                         </a>
                     </div>
                 </div>
@@ -251,6 +238,19 @@
                         </a>
                     </div>
                 </div>
+                <!-- So'rovnomalar Moduli -->
+                <div class="nav-dropdown {% if 'sorovnoma' in request.path %}open active{% endif %}"
+                    id="sorovnomaDropdown">
+                    <div class="nav-dropdown-toggle" onclick="toggleDropdown('sorovnomaDropdown')">
+                        <i class="bi bi-card-checklist"></i> <span>So'rovnomalar</span>
+                    </div>
+                    <div class="nav-dropdown-content">
+                        <a href="{% url 'sorovnoma:survey_list' %}"
+                            class="nav-sub-item {% if '/sorovnoma/' in request.path %}active{% endif %}">
+                            <i class="bi bi-list-ul"></i> <span>So'rovnomalar ro'yxati</span>
+                        </a>
+                    </div>
+                </div>
                 <!-- Bilim Sinovi Moduli -->
                 <div class="nav-dropdown {% if 'bilim-sinovi' in request.path %}open active{% endif %}"
                     id="bilimDropdown">
@@ -259,11 +259,15 @@
                     </div>
                     <div class="nav-dropdown-content">
                         <a href="{% if user.is_site_admin %}{% url 'bilim_sinovi:test_manage_list' %}{% else %}{% url 'bilim_sinovi:test_list' %}{% endif %}"
-                            class="nav-sub-item {% if '/bilim-sinovi/' in request.path and '/bilim-sinovi/manage/results/' not in request.path %}active{% endif %}">
+                            class="nav-sub-item {% if user.is_site_admin %}{% if '/bilim-sinovi/manage/' in request.path and '/bilim-sinovi/manage/results/' not in request.path and '/bilim-sinovi/manage/packages/' not in request.path %}active{% endif %}{% else %}{% if '/bilim-sinovi/' in request.path %}active{% endif %}{% endif %}">
                             <i class="bi bi-pencil-square"></i>
                             <span>{% if user.is_site_admin %}Tashkillashtirish{% else %}Testlar{% endif %}</span>
                         </a>
                         {% if user.is_site_admin %}
+                        <a href="{% url 'bilim_sinovi:question_package_list' %}"
+                            class="nav-sub-item {% if '/bilim-sinovi/manage/packages/' in request.path %}active{% endif %}">
+                            <i class="bi bi-collection"></i> <span>Savol paketlari</span>
+                        </a>
                         <a href="{% url 'bilim_sinovi:test_results_dashboard' %}"
                             class="nav-sub-item {% if '/bilim-sinovi/manage/results/' in request.path %}active{% endif %}">
                             <i class="bi bi-table"></i> <span>Natijalar</span>
@@ -366,7 +370,29 @@
                 document.body.classList.remove('sidebar-open');
             }
         });
+
+        // Fallback avatar: DB-da rasm yo'li bor, lekin fayl o'chib ketgan bo'lsa placeholder ko'rsatamiz.
+        const avatarFallbackSrc = "{% static 'img/user_bust.png' %}";
+        document.addEventListener('error', function (event) {
+            const target = event.target;
+            if (!(target instanceof HTMLImageElement)) return;
+            if (target.dataset.avatarFallbackApplied === '1') return;
+
+            const src = target.getAttribute('src') || '';
+            const isAvatarMedia = src.includes('/media/profiles/') || src.includes('/media/yoshlar_photos/');
+            const isAvatarClass =
+                target.classList.contains('avatar') ||
+                target.classList.contains('user-avatar') ||
+                target.classList.contains('leader-avatar') ||
+                target.classList.contains('profile-avatar-lg');
+
+            if (isAvatarMedia || isAvatarClass) {
+                target.dataset.avatarFallbackApplied = '1';
+                target.src = avatarFallbackSrc;
+            }
+        }, true);
     </script>
+    {% block extra_js %}{% endblock %}
 </body>
 
 </html>

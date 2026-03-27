@@ -1,0 +1,23 @@
+<div class="{{ col_class|default:'col-xl-3 col-md-6' }}">
+    <div class="card border-0 shadow-sm h-100 overflow-hidden">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon {{ icon_bg_class }} {{ icon_text_class }} me-3">
+                    <i class="bi {{ icon }} fs-4"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted small fw-bold text-uppercase mb-1">{{ label }}</h6>
+                    <h2 class="fw-bold mb-0">{{ value }}</h2>
+                </div>
+                {% if side_text %}
+                <div class="ms-auto text-end">
+                    <div class="small fw-bold {{ side_text_class|default:'' }}">{{ side_text }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="stats-progress progress" style="height: 4px;">
+            <div class="progress-bar {{ progress_class|default:'bg-primary' }}" style="width: {{ progress_percent|default:'100' }}%"></div>
+        </div>
+    </div>
+</div>

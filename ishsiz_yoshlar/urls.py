@@ -4,7 +4,7 @@ from . import views
 app_name = 'ishsiz_yoshlar'
 
 urlpatterns = [
-    path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
+    path('', views.UnemployedYouthListView.as_view(), name='index'),
     path('svod/', views.SvodTabsView.as_view(), name='svod'),
     path('detailed-svod/', views.DetailedSvodView.as_view(), name='detailed_svod'),
     path('professional-svod/', views.SvodTabsView.as_view(default_tab='professional'), name='professional_svod'),
@@ -20,7 +20,6 @@ urlpatterns = [
     path('create/', views.UnemployedYouthCreateView.as_view(), name='create'),
     path('edit/<int:pk>/', views.UnemployedYouthUpdateView.as_view(), name='edit'),
     path('delete/<int:pk>/', views.UnemployedYouthDeleteView.as_view(), name='delete'),
-    path('import/', views.ImportExcelView.as_view(), name='import'),
     path('meeting-update/<int:pk>/', views.MeetingUpdateView.as_view(), name='meeting_update'),
     
     # Task Management URLs (Topshiriq Tizimi)

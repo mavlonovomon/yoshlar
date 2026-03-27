@@ -1,13 +1,11 @@
 import json
 import re
-from datetime import date
 from urllib.request import Request, urlopen
-from urllib.error import URLError, HTTPError
 
 from django.conf import settings
-from django.utils import timezone
 
 from .models import MutolaaStatSnapshot, MutolaaMahallaStat, MutolaaMahallaAlias, Mahalla
+from .stats_adapters import BaseStatsAdapter, pick_metric
 
 
 DEFAULT_MUTOLAA_URL = (
@@ -68,14 +66,11 @@ def _normalize_name(value: str) -> str:
 
 def _resolve_alias(api_name: str) -> MutolaaMahallaAlias:
     api_norm = _normalize_name(api_name)
-    alias, created = MutolaaMahallaAlias.objects.get_or_create(
+    return BaseStatsAdapter.resolve_alias_record(
+        MutolaaMahallaAlias,
+        api_name=api_name,
         api_norm=api_norm,
-        defaults={"api_name": api_name},
     )
-    if not created and alias.api_name != api_name:
-        alias.api_name = api_name
-        alias.save(update_fields=["api_name", "last_seen"])
-    return alias
 
 
 def _resolve_mahalla_id(item: dict) -> str | None:
@@ -99,54 +94,50 @@ def _extract_metrics(item: dict) -> dict:
     return metrics
 
 
-def _pick_metric(metrics: dict, keys: list[str]) -> float | int | None:
-    for key in keys:
-        if key in metrics and metrics[key] is not None:
-            return metrics[key]
-    return None
+class MutolaaStatsAdapter(BaseStatsAdapter):
+    snapshot_model = MutolaaStatSnapshot
+    stat_model = MutolaaMahallaStat
+
+    def get_url(self):
+        return get_mutolaa_url()
+
+    def fetch_payload(self, url):
+        return _fetch_json(url)
+
+    def iter_items(self, payload):
+        return _extract_items(payload)
+
+    def resolve_alias(self, area_name):
+        return _resolve_alias(area_name)
+
+    def resolve_area_name(self, item):
+        return _resolve_mahalla_name(item)
+
+    def resolve_external_id(self, item):
+        return _resolve_mahalla_id(item)
+
+    def extract_metrics(self, item):
+        return _extract_metrics(item)
+
+    def build_stat_instance(self, snapshot, alias, item, area_name, area_external_id, metrics):
+        return MutolaaMahallaStat(
+            snapshot=snapshot,
+            mahalla=alias.mahalla,
+            mahalla_external_id=area_external_id,
+            mahalla_name=area_name,
+            metrics=metrics,
+        )
+
+
+_adapter = MutolaaStatsAdapter()
 
 
 def save_mutolaa_snapshot(payload: dict, source_url: str | None = None) -> MutolaaStatSnapshot:
-    snapshot = MutolaaStatSnapshot.objects.create(
-        snapshot_date=date.today(),
-        source_url=source_url or get_mutolaa_url(),
-        raw_payload=payload,
-    )
-
-    items = _extract_items(payload)
-    bulk = []
-    for item in items:
-        if not isinstance(item, dict):
-            continue
-        mahalla_name = _resolve_mahalla_name(item)
-        alias = _resolve_alias(mahalla_name)
-        bulk.append(MutolaaMahallaStat(
-            snapshot=snapshot,
-            mahalla=alias.mahalla,
-            mahalla_external_id=_resolve_mahalla_id(item),
-            mahalla_name=mahalla_name,
-            metrics=_extract_metrics(item),
-        ))
-
-    if bulk:
-        MutolaaMahallaStat.objects.bulk_create(bulk)
-
-    return snapshot
+    return _adapter.build_snapshot(payload, source_url or get_mutolaa_url())
 
 
 def fetch_and_store_mutolaa_snapshot() -> tuple[MutolaaStatSnapshot | None, str | None]:
-    url = get_mutolaa_url()
-    try:
-        payload = _fetch_json(url)
-    except HTTPError as exc:
-        return None, f"HTTP xatolik: {exc.code}"
-    except URLError as exc:
-        return None, f"Ulanish xatoligi: {exc.reason}"
-    except json.JSONDecodeError:
-        return None, "JSON o'qib bo'lmadi"
-
-    snapshot = save_mutolaa_snapshot(payload, source_url=url)
-    return snapshot, None
+    return _adapter.fetch_and_store()
 
 
 def build_table(
@@ -183,8 +174,8 @@ def build_table(
         item["row_class"] = "row-missing" if row is None else ""
 
         total_youth = youth_counts.get(mahalla.id)
-        users_total = _pick_metric(metrics, ["users_total", "user_count", "users", "foydalanuvchilar"])
-        reading_books = _pick_metric(metrics, ["read_book_count"])
+        users_total = pick_metric(metrics, ["users_total", "user_count", "users", "foydalanuvchilar"])
+        reading_books = pick_metric(metrics, ["read_book_count"])
 
         item["total_youth"] = total_youth if total_youth is not None else 0
         item["users_total"] = users_total if users_total is not None else 0

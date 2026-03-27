@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid py-5" style="max-width: 800px; margin: auto;">
+    <div class="mb-4">
+        {% if is_admin_view %}
+        <a href="{% url 'sorovnoma:survey_response_list' survey.pk %}" class="btn btn-sm btn-light border"><i class="bi bi-arrow-left"></i> Natijalar ro'yxatiga qaytish</a>
+        {% else %}
+        <a href="{% url 'sorovnoma:survey_list' %}" class="btn btn-sm btn-light border"><i class="bi bi-arrow-left"></i> So'rovnomalar ro'yxatiga qaytish</a>
+        {% endif %}
+    </div>
+
+    <div class="card shadow-sm border-0 border-top border-5 border-info mb-4">
+        <div class="card-body py-4 px-5">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h1 class="card-title fw-bold mb-3">{{ survey.title }} <span class="badge bg-secondary fs-6 align-middle">Natija</span></h1>
+                    <p class="text-muted mb-2"><strong>Foydalanuvchi:</strong> {% if response_obj.user %}{{ response_obj.user.username }} / {{ response_obj.user.get_full_name|default:"" }}{% else %}Anonim{% endif %}</p>
+                    <p class="text-muted mb-0"><strong>To'ldirilgan vaqt:</strong> {{ response_obj.created_at|date:"d.m.Y H:i" }}</p>
+                </div>
+                {% if is_admin_view or survey.allow_edit %}
+                <div>
+                    <a href="{% url 'sorovnoma:survey_response_edit' response_obj.pk %}" class="btn btn-outline-warning"><i class="bi bi-pencil-square me-1"></i> Tahrirlash</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% for ans in response_obj.answers.all %}
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body py-3 px-4">
+            <label class="form-label fw-semibold text-dark mb-1">
+                {{ forloop.counter }}. {{ ans.question.text }}
+            </label>
+            {% if ans.question.section %}
+            <div class="text-muted small mb-2">{{ ans.question.section }}</div>
+            {% endif %}
+            <div class="mt-2 text-primary fs-6 bg-light p-3 rounded">
+                {% if ans.question.question_type == 'file' or ans.question.question_type == 'image' %}
+                    {% if ans.file_body %}
+                        {% if ans.question.question_type == 'image' %}
+                        <a href="{{ ans.file_body.url }}" target="_blank">
+                            <img src="{{ ans.file_body.url }}" alt="Yuklangan rasm" class="img-thumbnail mt-2" style="max-height: 200px;">
+                        </a>
+                        {% else %}
+                        <a href="{{ ans.file_body.url }}" class="btn btn-sm btn-outline-primary" target="_blank"><i class="bi bi-download"></i> Faylni yuklab olish</a>
+                        {% endif %}
+                    {% else %}
+                        <span class="text-muted fst-italic">Fayl/Rasm yuklanmagan</span>
+                    {% endif %}
+                {% else %}
+                    {% if ans.body %}
+                        {{ ans.body|linebreaksbr }}
+                    {% else %}
+                        <span class="text-muted fst-italic">Javob berilmagan</span>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-warning">
+        Bu so'rovnoma bo'yicha hech qanday javob topilmadi.
+    </div>
+    {% endfor %}
+
+</div>
+{% endblock %}

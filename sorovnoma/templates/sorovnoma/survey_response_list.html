@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="mb-3">
+        <a href="{% url 'sorovnoma:survey_list' %}" class="btn btn-sm btn-light border"><i class="bi bi-arrow-left"></i> Orqaga qaytish</a>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1">{{ survey.title }} - {% if is_admin %}Natijalar{% else %}Mening natijalarim{% endif %}</h4>
+            <p class="text-muted mb-0">{% if is_admin %}Umumiy yig'ilgan javoblar ro'yxati{% else %}Siz to'ldirgan javoblar ro'yxati{% endif %}</p>
+        </div>
+        {% if is_admin %}
+        <div>
+            <a href="{% url 'sorovnoma:export_survey_responses' survey.pk %}" class="btn btn-success"><i class="bi bi-file-earmark-excel me-1"></i> Excel yuklab olish</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive rounded border">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            {% if is_admin %}<th>Foydalanuvchi</th>{% endif %}
+                            <th class="text-center">Sana</th>
+                            {% for q in list_questions %}
+                            <th>
+                                {% if q.section %}
+                                <div class="text-muted small">{{ q.section }}</div>
+                                {% endif %}
+                                {{ q.text|truncatechars:30 }}
+                            </th>
+                            {% endfor %}
+                            <th class="text-center">Harakatlar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for resp in responses %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            {% if is_admin %}
+                            <td class="fw-semibold">{% if resp.user %}{{ resp.user.username }} / {{ resp.user.get_full_name|default:"" }}{% else %}Anonim{% endif %}</td>
+                            {% endif %}
+                            <td class="text-center">{{ resp.created_at|date:"d.m.Y H:i" }}</td>
+                            {% for col in resp.custom_cols %}
+                            <td>
+                                {% if col.type == 'file' %}
+                                <a href="{{ col.url }}" class="btn btn-sm btn-link p-0" target="_blank"><i class="bi bi-paperclip"></i> Fayl/Rasm</a>
+                                {% else %}
+                                {{ col.value|truncatechars:50 }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'sorovnoma:survey_response_detail' resp.pk %}" class="btn btn-outline-info" title="Ko'rish"><i class="bi bi-eye"></i></a>
+                                    {% if is_admin or survey.allow_edit %}
+                                    <a href="{% url 'sorovnoma:survey_response_edit' resp.pk %}" class="btn btn-outline-warning" title="Tahrirlash"><i class="bi bi-pencil-square"></i></a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="100%" class="text-center text-muted py-5 text-center">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i> 
+                                {% if is_admin %}Hali hech kim bu so'rovnomani to'ldirmagan.{% else %}Siz hali bu so'rovnomani to'ldirmagansiz.{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

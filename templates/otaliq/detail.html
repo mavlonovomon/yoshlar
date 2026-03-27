@@ -21,17 +21,15 @@
                         <i class="bi bi-calendar3 me-2 ms-2"></i>{{ item.yosh.birth_date|date:"d.m.Y" }}
                     </p>
                     <div class="d-flex gap-2 flex-wrap">
-                        <span class="badge bg-primary-soft text-primary px-3 py-2 rounded-pill">{{
-                            item.get_category_display }}</span>
+                        <span class="badge bg-primary-soft text-primary px-3 py-2 rounded-pill">{{ item.get_category_display }}</span>
                         {% if item.leader %}
-                        <span class="badge bg-info-soft text-info px-3 py-2 rounded-pill">Mas'ul: {{
-                            item.leader.full_name }}</span>
+                        <span class="badge bg-info-soft text-info px-3 py-2 rounded-pill">Mas'ul: {{ item.leader.full_name }}</span>
                         {% endif %}
                     </div>
                 </div>
                 <div class="text-md-end">
                     <div class="text-muted small mb-1">Status:</div>
-                    {% if item.assistance.provided %}
+                    {% if assistance and assistance.provided %}
                     <span class="badge bg-success text-white px-4 py-2 rounded-pill">Yordam ko'rsatilgan</span>
                     {% else %}
                     <span class="badge bg-warning text-dark px-4 py-2 rounded-pill">O'rganilmoqda</span>
@@ -76,7 +74,12 @@
                     <h5 class="fw-bold mb-0">Yordam ko'rsatish holati</h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST">
+                    {% if assistance and assistance.document %}
+                    <a href="{{ assistance.document.url }}" target="_blank" class="btn btn-outline-primary w-100">
+                        Hujjatni ko'rish
+                    </a>
+                    {% else %}
+                    <form method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
                         <input type="hidden" name="save_assistance" value="1">
                         <div class="mb-3">
@@ -105,6 +108,7 @@
                         </div>
                         <button type="submit" class="btn btn-success w-100 mt-2">Saqlash</button>
                     </form>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -201,7 +205,6 @@
         margin-bottom: 0 !important;
     }
 </style>
-{% endblock %}
 
 <script>
     (function () {
@@ -221,3 +224,4 @@
         toggle();
     })();
 </script>
+{% endblock %}

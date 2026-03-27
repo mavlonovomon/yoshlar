@@ -1,4 +1,9 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/yosh_form.css' %}">
+{% endblock %}
 
 {% block content %}
 <div class="mb-4">
@@ -12,16 +17,16 @@
         <h2 class="card-title">Anketa Ma'lumotlari</h2>
     </div>
     <form method="post" enctype="multipart/form-data">
-        <fieldset {% if readonly %}disabled="disabled" {% endif %} style="border: none; padding: 0; margin: 0;">
+        <fieldset {% if readonly %}disabled="disabled" {% endif %} class="form-fieldset">
             {% csrf_token %}
             {% if form.errors %}
-            <div style="background: #fee2e2; color: #991b1b; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem;">
+            <div class="form-error-box">
                 Xatolik yuz berdi. Iltimos maydonlarni tekshiring.
                 {{ form.errors }}
             </div>
             {% endif %}
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+            <div class="form-grid">
                 <div class="form-group">
                     <label>F.I.Sh (To'liq ismi)</label>
                     {{ form.fullname }}
@@ -35,6 +40,10 @@
                     {{ form.passport_number }}
                 </div>
                 <div class="form-group">
+                    <label>Guvohnoma raqami</label>
+                    {{ form.guvohnoma_raqami }}
+                </div>
+                <div class="form-group">
                     <label>JSHSHIR</label>
                     {{ form.jshshir }}
                 </div>
@@ -43,17 +52,24 @@
                     {{ form.phone_number }}
                 </div>
                 <div class="form-group">
-                    <label>Rasm</label>
+                    <label>Yosh rasmi (pasportdagi)</label>
                     {{ form.photo }}
+                    {% if yosh and not readonly %}
+                    <div class="mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="refreshPassportPhotoBtn">
+                            Onlayn yangilash
+                        </button>
+                        <span class="text-muted small ms-2" id="refreshPassportPhotoStatus"></span>
+                    </div>
+                    {% endif %}
                     {% if yosh and yosh.photo %}
                     <div class="mt-4">
-                        <img src="{{ yosh.photo.url }}" onclick="openImageModal(this.src)"
-                            style="height: 80px; width: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; cursor: pointer;"
+                        <img src="{{ yosh.photo.url }}" class="yosh-photo-preview" id="passportPhotoPreview" onclick="openImageModal(this.src)"
                             title="Kattalashtirish uchun bosing">
                     </div>
                     {% endif %}
                 </div>
-                <div class="form-group" style="grid-column: 1 / -1;">
+                <div class="form-group form-group-full">
                     <label>Manzil</label>
                     {{ form.address }}
                 </div>
@@ -61,27 +77,30 @@
         </fieldset>
 
         {% if not readonly %}
-        <div style="margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
-            <h3 style="margin-bottom: 1rem; font-size: 1.125rem; font-weight: 600;">
+        <div class="conversation-section">
+            <h3 class="conversation-title">
                 {% if meetings %}Yangi suhbat kiritish{% else %}Suhbat o'tkazish{% endif %}
             </h3>
             <div class="form-group">
                 <label>Suhbat mazmuni</label>
                 {{ form.conversation_text }}
-                <div style="font-size: 0.8rem; color: #6b7280; margin-top: 0.5rem;">
+                <div class="form-hint">
                     * Ushbu maydon to'ldirilsa, yangi suhbat sifatida saqlanadi. Eski suhbatlar pastda ko'rsatilgan.
                 </div>
             </div>
-            <div class="form-group" style="margin-top: 1rem;">
-                <label>Suhbat rasmi (ixtiyoriy)</label>
+            <div class="form-group conversation-photo-group">
+                <label>Uchrashuv rasmi (isbot uchun)</label>
                 {{ form.conversation_photo }}
+                <div class="form-hint">
+                    * Matn yozmasangiz ham rasm yuklansa uchrashuv timeline'ga qo'shiladi.
+                </div>
             </div>
         </div>
         {% endif %}
 
         <div class="flex-end mt-4">
             {% if not readonly %}
-            <a href="{% url 'yosh_list' %}" class="btn btn-secondary" style="margin-right: 1rem;">Bekor qilish</a>
+            <a href="{% url 'yosh_list' %}" class="btn btn-secondary btn-cancel">Bekor qilish</a>
             <button type="submit" class="btn btn-primary">Saqlash</button>
             {% else %}
             <a href="{% url 'yosh_list' %}" class="btn btn-primary">Ortga qaytish</a>
@@ -99,12 +118,12 @@
         {% for m in meetings %}
         <div class="timeline-item">
             <div class="timeline-dot"></div>
-        <div class="timeline-card">
-            <div class="timeline-meta">
+            <div class="timeline-card">
+                <div class="timeline-meta">
                     <div class="meta-left">
                         <span class="badge-date">
                             <i class="bi bi-calendar-event"></i>
-                            {{ m.meeting_date|date:"d.m.Y • H:i" }}
+                            {{ m.meeting_date|date:"d.m.Y - H:i" }}
                         </span>
                         <span class="meta-author">
                             <i class="bi bi-person-badge"></i>
@@ -127,7 +146,8 @@
                         <img src="{{ m.photo.url }}" alt="Suhbat rasmi" onclick="openImageModal(this.src)">
                     </div>
                     {% endif %}
-                    <div class="timeline-content">{{ m.conversation_text|linebreaksbr }}</div>
+                    <div class="timeline-content">{{ m.conversation_text|default:"(Suhbat rasmi yuklangan)"|linebreaksbr }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -135,150 +155,63 @@
     </div>
 </div>
 {% endif %}
+{% endblock %}
 
-<style>
-    .timeline-list {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        padding: 1rem;
-    }
+{% block extra_js %}
+<script>
+(function () {
+    const btn = document.getElementById("refreshPassportPhotoBtn");
+    if (!btn) return;
 
-    .timeline-item {
-        position: relative;
-        padding-left: 28px;
-    }
+    const statusEl = document.getElementById("refreshPassportPhotoStatus");
+    const previewEl = document.getElementById("passportPhotoPreview");
+    const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
 
-    .timeline-item::before {
-        content: "";
-        position: absolute;
-        left: 10px;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: #e5e7eb;
-    }
-
-    .timeline-dot {
-        position: absolute;
-        left: 4px;
-        top: 14px;
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        background: #4f46e5;
-        border: 3px solid #eef2ff;
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
-    }
-
-    .timeline-card {
-        background: #f8fafc;
-        border: 1px solid #e5e7eb;
-        border-radius: 14px;
-        padding: 1rem 1.25rem;
-        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
-    }
-
-    .timeline-meta {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        flex-wrap: wrap;
-        margin-bottom: 0.75rem;
-    }
-
-    .meta-left {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-    }
-
-    .badge-date {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        background: #eef2ff;
-        color: #3730a3;
-        padding: 0.35rem 0.65rem;
-        border-radius: 999px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    .meta-author {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        color: #475569;
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-    .timeline-content {
-        color: #0f172a;
-        font-size: 0.92rem;
-        line-height: 1.5;
-        max-height: 180px;
-        overflow: auto;
-        padding-right: 6px;
-    }
-
-    .timeline-body {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        gap: 1rem;
-        align-items: start;
-    }
-
-    .timeline-image {
-        width: 90px;
-        height: 90px;
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
-        background: #fff;
-    }
-
-    .timeline-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        cursor: pointer;
-    }
-
-    .timeline-content::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .timeline-content::-webkit-scrollbar-thumb {
-        background: #cbd5f5;
-        border-radius: 8px;
-    }
-
-    @media (max-width: 768px) {
-        .timeline-item {
-            padding-left: 22px;
+    function getCsrfToken() {
+        if (csrfInput && csrfInput.value) {
+            return csrfInput.value;
         }
-
-        .timeline-item::before {
-            left: 8px;
-        }
-
-        .timeline-dot {
-            left: 2px;
-        }
-
-        .timeline-body {
-            grid-template-columns: 1fr;
-        }
-
-        .timeline-image {
-            width: 100%;
-            height: 180px;
-        }
+        const match = document.cookie.match(/csrftoken=([^;]+)/);
+        return match ? match[1] : "";
     }
-</style>
+
+    btn.addEventListener("click", async () => {
+        statusEl.textContent = "Yuklanmoqda...";
+        btn.disabled = true;
+        try {
+            const response = await fetch("{% url 'yosh_refresh_photo' yosh.pk %}", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "X-CSRFToken": getCsrfToken(),
+                },
+            });
+            const data = await response.json();
+            if (response.ok && data.success) {
+                statusEl.textContent = "Rasm yangilandi.";
+                if (data.photo_url) {
+                    const url = data.photo_url + (data.photo_url.includes("?") ? "&" : "?") + "t=" + Date.now();
+                    if (previewEl) {
+                        previewEl.src = url;
+                    } else {
+                        const img = document.createElement("img");
+                        img.src = url;
+                        img.className = "yosh-photo-preview";
+                        img.id = "passportPhotoPreview";
+                        img.title = "Kattalashtirish uchun bosing";
+                        img.onclick = () => openImageModal(img.src);
+                        btn.closest(".form-group").appendChild(img);
+                    }
+                }
+            } else {
+                statusEl.textContent = data.error || "Xatolik yuz berdi.";
+            }
+        } catch (err) {
+            statusEl.textContent = "Serverga ulanishda xatolik.";
+        } finally {
+            btn.disabled = false;
+        }
+    });
+})();
+</script>
 {% endblock %}

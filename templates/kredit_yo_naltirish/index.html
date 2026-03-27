@@ -4,11 +4,446 @@
 <div class="container-fluid py-4">
     <div class="card border-0 shadow-sm" style="border-radius: 16px;">
         <div class="card-body p-4">
-            <h3 class="fw-bold mb-2">Yoshlarni tadbirkorlikka yo'naltirish va kredit ajratish</h3>
-            <p class="text-muted mb-0">
-                Bo'lim yaratildi. Keyingi bosqichda ro'yxatlar, monitoring va hisobot sahifalari qo'shiladi.
-            </p>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h3 class="fw-bold mb-1">Kredit</h3>
+                    <p class="text-muted mb-0">Nomzodlar va kredit jarayoni</p>
+                </div>
+                {% if tab == 'nomination' and can_add_candidate %}
+                <button type="button" class="btn btn-primary" id="openCandidateModal">
+                    Nomzod qo'shish
+                </button>
+                {% endif %}
+            </div>
+
+
+            <ul class="nav nav-pills mb-4">
+                <li class="nav-item">
+                    <a class="nav-link {% if tab == 'nomination' %}active{% endif %}" href="?tab=nomination">
+                        Nomzodlar <span class="badge bg-danger ms-1">{{ counts.NOMINATION|default:0 }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if tab == 'process' %}active{% endif %}" href="?tab=process">
+                        Jarayonda <span class="badge bg-warning text-dark ms-1">{{ counts.IN_PROCESS|default:0 }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if tab == 'credit' %}active{% endif %}" href="?tab=credit">
+                        Kredit <span class="badge bg-success ms-1">{{ counts.APPROVED|default:0 }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if tab == 'monitoring' %}active{% endif %}" href="?tab=monitoring">
+                        Monitoring <span class="badge bg-info ms-1">{{ counts.MONITORING|default:0 }}</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="table-responsive rounded border mb-4">
+                <table class="table table-sm table-bordered align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:50px">#</th>
+                            <th>Tuman (shahar)</th>
+                            <th>MFY</th>
+                            <th>F.I.Sh</th>
+                            <th>Pasport</th>
+                            <th>JSHSHIR</th>
+                            <th>Tadbirkorlik subyekti</th>
+                            <th>Loyiha maqsadi</th>
+                            <th class="text-center">So'ralgan (mln)</th>
+                            <th class="text-center">Bank krediti (mln)</th>
+                            <th>Garov ta'minoti</th>
+                            <th>Qaror asosi</th>
+                            <th>Telefon</th>
+                            <th class="text-center" style="width:220px;">Amallar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in candidates %}
+                        <tr class="credit-row" data-monitoring-id="monitoring-{{ c.id }}">
+                            <td>{{ forloop.counter }}</td>
+                            <td>-</td>
+                            <td>{{ c.yosh.mahalla.name }}</td>
+                            <td class="fw-semibold">
+                                {% if tab == 'monitoring' %}
+                                <button type="button" class="btn btn-link p-0 text-decoration-none js-monitoring-toggle" data-target="monitoring-{{ c.id }}">
+                                    {{ c.yosh.fullname }}
+                                </button>
+                                {% else %}
+                                {{ c.yosh.fullname }}
+                                {% endif %}
+                            </td>
+                            <td>{{ c.yosh.passport_number|default:"-" }}</td>
+                            <td>{{ c.yosh.jshshir }}</td>
+                            <td>{{ c.get_business_type_display|default:"-" }}</td>
+                            <td>{{ c.project_goal|default:"-" }}</td>
+                            <td class="text-center">
+                                {% if c.requested_amount %}{{ c.requested_amount|floatformat:0 }}{% else %}-{% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if c.credit_amount %}{{ c.credit_amount|floatformat:0 }}{% else %}-{% endif %}
+                            </td>
+                            <td>{{ c.get_collateral_type_display|default:"-" }}</td>
+                            <td>{{ c.get_decision_basis_display|default:"-" }}</td>
+                            <td>{{ c.yosh.phone_number|default:"-" }}</td>
+                            <td class="text-center">
+                                {% if tab == 'nomination' and can_manage_pipeline %}
+                                <form method="post" action="{% url 'kredit_yo_naltirish:move_to_process' c.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-warning">Jarayonga kiritish</button>
+                                </form>
+                                {% elif tab == 'process' and can_manage_pipeline %}
+                                <div class="d-flex flex-column gap-2">
+                                    <button type="button" class="btn btn-sm btn-success js-credit-action"
+                                        data-action="approve"
+                                        data-id="{{ c.id }}"
+                                        data-name="{{ c.yosh.fullname|escape }}">
+                                        Ajratildi
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger js-credit-action"
+                                        data-action="reject"
+                                        data-id="{{ c.id }}"
+                                        data-name="{{ c.yosh.fullname|escape }}">
+                                        Rad etish
+                                    </button>
+                                </div>
+                                {% elif tab == 'credit' %}
+                                    {% if c.stage == "REJECTED" %}
+                                    <span class="badge bg-danger">Rad etildi</span>
+                                    <div class="small text-muted mt-1">{{ c.reject_reason|default:"Sabab yo'q" }}</div>
+                                    {% else %}
+                                    <span class="badge bg-success">Kredit ajratildi</span>
+                                    {% if can_manage_pipeline and not c.monitoring_enabled %}
+                                    <form method="post" action="{% url 'kredit_yo_naltirish:monitoring_enable' c.id %}" class="mt-2">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Monitoringga ruxsat</button>
+                                    </form>
+                                    {% endif %}
+                                    {% endif %}
+                                {% elif tab == 'monitoring' %}
+                                    {% if c.monitoring_enabled %}
+                                    <span class="badge bg-info">Monitoring</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Ruxsat yo'q</span>
+                                    {% endif %}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        {% if tab == 'monitoring' %}
+                        <tr class="table-light monitoring-row d-none" id="monitoring-{{ c.id }}">
+                            <td colspan="14">
+                                {% if c.monitoring_enabled and c.can_add_monitoring %}
+                                <form method="post" action="{% url 'kredit_yo_naltirish:monitoring_add' c.id %}" enctype="multipart/form-data" class="row g-2 align-items-end">
+                                    {% csrf_token %}
+                                    <div class="col-md-2">
+                                        <label class="form-label small fw-semibold">Monitoring sanasi</label>
+                                        <input type="date" name="monitoring_date" class="form-control form-control-sm" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold">Izoh</label>
+                                        <input type="text" name="note" class="form-control form-control-sm" placeholder="Qisqa izoh">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small fw-semibold">Rasmlar (jpg/png)</label>
+                                        <input type="file" name="images" class="form-control form-control-sm" accept=".jpg,.jpeg,.png" multiple>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label small fw-semibold">Hujjat (pdf)</label>
+                                        <input type="file" name="documents" class="form-control form-control-sm" accept=".pdf" multiple>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <button type="submit" class="btn btn-sm btn-success w-100">Saqlash</button>
+                                    </div>
+                                </form>
+                                {% else %}
+                                <span class="text-muted small">Monitoring ruxsati berilmagan yoki sizda ruxsat yo'q.</span>
+                                {% endif %}
+
+                                {% if c.monitoring_entries.all %}
+                                <div class="mt-3">
+                                    <div class="fw-semibold mb-2">Monitoring tarixi</div>
+                                    <div class="d-grid gap-2">
+                                        {% for m in c.monitoring_entries.all %}
+                                        <div class="p-2 border rounded bg-white">
+                                            <div class="d-flex justify-content-between">
+                                                <div class="fw-semibold">{{ m.monitoring_date|date:"d.m.Y" }}</div>
+                                                <div class="text-muted small">{{ m.created_at|date:"d.m.Y H:i" }}</div>
+                                            </div>
+                                            {% if m.note %}
+                                            <div class="small mt-1">{{ m.note }}</div>
+                                            {% endif %}
+                                            {% if m.files.all|length %}
+                                            <div class="mt-2 d-flex flex-wrap gap-2">
+                                                {% for f in m.files.all %}
+                                                {% if f.file_type == "image" %}
+                                                <img src="{{ f.file.url }}" alt="Rasm" style="height:60px;border-radius:6px;cursor:pointer" onclick="openImageModal(this.src)">
+                                                {% else %}
+                                                <a href="{{ f.file.url }}" class="btn btn-sm btn-outline-secondary" target="_blank">PDF</a>
+                                                {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endif %}
+
+                        {% empty %}
+                        <tr>
+                            <td colspan="14" class="text-center text-muted py-4">Ma'lumot topilmadi.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
+
+
+<div class="modal fade" id="creditDecisionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" id="creditDecisionForm">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="creditDecisionTitle">Kredit qarori</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-muted small mb-2" id="creditDecisionName"></div>
+                    <div id="creditDecisionApproveFields" class="mb-2">
+                        <label class="form-label small fw-bold">Kredit summasi</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" name="credit_amount" class="form-control" min="0" step="0.01">
+                            <span class="input-group-text">mln so'm</span>
+                        </div>
+                    </div>
+                    <div id="creditDecisionRejectFields" class="mb-2">
+                        <label class="form-label small fw-bold">Rad etish sababi</label>
+                        <input type="text" name="reject_reason" class="form-control form-control-sm">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Bekor qilish</button>
+                    <button type="submit" class="btn btn-primary" id="creditDecisionSubmit">Saqlash</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="creditCandidateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{% url 'kredit_yo_naltirish:add_candidate' %}" id="creditCandidateForm">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Nomzod qo'shish</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Qidirish (F.I.Sh / JSHSHIR / Pasport / Tel)</label>
+                            <input type="text" class="form-control form-control-sm" id="candidateSearchInput" placeholder="Qidirish...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Tanlangan yosh</label>
+                            <input type="text" class="form-control form-control-sm" id="candidateSelectedLabel" readonly placeholder="Tanlanmagan">
+                            <input type="hidden" name="yosh_id" id="candidateSelectedId">
+                        </div>
+                        <div class="col-12">
+                            <div class="border rounded p-2" style="max-height:180px;overflow:auto" id="candidateResults">
+                                <div class="text-muted small">Qidirish uchun kamida 2 ta belgi kiriting.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Qaror asosi</label>
+                            <select name="decision_basis" class="form-select form-select-sm">
+                                <option value="">Tanlang...</option>
+                                {% for value, label in decision_basis_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Tadbirkorlik subyekti</label>
+                            <select name="business_type" class="form-select form-select-sm">
+                                <option value="">Tanlang...</option>
+                                {% for value, label in business_type_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Garov ta'minoti</label>
+                            <select name="collateral_type" class="form-select form-select-sm">
+                                <option value="">Tanlang...</option>
+                                {% for value, label in collateral_type_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">So'ralgan summa</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="requested_amount" class="form-control" min="0" step="0.01">
+                                <span class="input-group-text">mln so'm</span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Loyiha maqsadi</label>
+                            <input type="text" name="project_goal" class="form-control form-control-sm">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Bekor qilish</button>
+                    <button type="submit" class="btn btn-primary">Saqlash</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const buttons = document.querySelectorAll(".js-credit-action");
+    const modalEl = document.getElementById("creditDecisionModal");
+    if (!buttons.length || !modalEl) return;
+
+    const modal = new bootstrap.Modal(modalEl);
+    const form = document.getElementById("creditDecisionForm");
+    const titleEl = document.getElementById("creditDecisionTitle");
+    const nameEl = document.getElementById("creditDecisionName");
+    const approveFields = document.getElementById("creditDecisionApproveFields");
+    const rejectFields = document.getElementById("creditDecisionRejectFields");
+    const submitBtn = document.getElementById("creditDecisionSubmit");
+
+    buttons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const action = btn.getAttribute("data-action");
+            const id = btn.getAttribute("data-id");
+            const name = btn.getAttribute("data-name") || "";
+            nameEl.textContent = name;
+
+            if (action === "approve") {
+                titleEl.textContent = "Kredit ajratildi";
+                approveFields.style.display = "";
+                rejectFields.style.display = "none";
+                submitBtn.className = "btn btn-success";
+                form.action = "{% url 'kredit_yo_naltirish:approve_candidate' 0 %}".replace("/0/", `/${id}/`);
+            } else {
+                titleEl.textContent = "Kredit rad etildi";
+                approveFields.style.display = "none";
+                rejectFields.style.display = "";
+                submitBtn.className = "btn btn-danger";
+                form.action = "{% url 'kredit_yo_naltirish:reject_candidate' 0 %}".replace("/0/", `/${id}/`);
+            }
+            modal.show();
+        });
+    });
+})();
+</script>
+
+<script>
+(function () {
+    const toggles = document.querySelectorAll(".js-monitoring-toggle");
+    if (!toggles.length) return;
+
+    toggles.forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const targetId = btn.getAttribute("data-target");
+            const row = document.getElementById(targetId);
+            if (!row) return;
+            row.classList.toggle("d-none");
+        });
+    });
+})();
+</script>
+
+<script>
+(function () {
+    const openBtn = document.getElementById("openCandidateModal");
+    const modalEl = document.getElementById("creditCandidateModal");
+    if (!openBtn || !modalEl) return;
+
+    const modal = new bootstrap.Modal(modalEl);
+    const input = document.getElementById("candidateSearchInput");
+    const resultsEl = document.getElementById("candidateResults");
+    const selectedId = document.getElementById("candidateSelectedId");
+    const selectedLabel = document.getElementById("candidateSelectedLabel");
+    let timer = null;
+
+    function renderResults(items) {
+        if (!items.length) {
+            resultsEl.innerHTML = "<div class='text-muted small'>Natija topilmadi.</div>";
+            return;
+        }
+        resultsEl.innerHTML = items.map((item) => `
+            <div class="d-flex justify-content-between align-items-center border-bottom py-1">
+                <div>
+                    <div class="fw-semibold">${item.fullname}</div>
+                    <div class="small text-muted">${item.jshshir} | ${item.passport_number} | ${item.phone_number} | ${item.mahalla}</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-id="${item.id}" data-name="${item.fullname}">
+                    Tanlash
+                </button>
+            </div>
+        `).join("");
+
+        resultsEl.querySelectorAll("button[data-id]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                selectedId.value = btn.getAttribute("data-id");
+                selectedLabel.value = btn.getAttribute("data-name");
+            });
+        });
+    }
+
+    function search(term) {
+        if (term.length < 2) {
+            resultsEl.innerHTML = "<div class='text-muted small'>Qidirish uchun kamida 2 ta belgi kiriting.</div>";
+            return;
+        }
+        fetch("{% url 'kredit_yo_naltirish:search_yosh' %}?q=" + encodeURIComponent(term))
+            .then((res) => res.json())
+            .then((data) => {
+                if (!data.success) {
+                    resultsEl.innerHTML = "<div class='text-danger small'>Xatolik.</div>";
+                    return;
+                }
+                renderResults(data.items || []);
+            })
+            .catch(() => {
+                resultsEl.innerHTML = "<div class='text-danger small'>Ulanishda xatolik.</div>";
+            });
+    }
+
+    input.addEventListener("input", () => {
+        const term = input.value.trim();
+        clearTimeout(timer);
+        timer = setTimeout(() => search(term), 300);
+    });
+
+    openBtn.addEventListener("click", () => {
+        selectedId.value = "";
+        selectedLabel.value = "";
+        input.value = "";
+        resultsEl.innerHTML = "<div class='text-muted small'>Qidirish uchun kamida 2 ta belgi kiriting.</div>";
+        modal.show();
+    });
+})();
+</script>
 {% endblock %}

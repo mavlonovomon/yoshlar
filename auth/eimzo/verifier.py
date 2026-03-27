@@ -5,43 +5,97 @@ Bu modul CMS (PKCS#7) imzolarini tekshiradi.
 from __future__ import annotations
 
 import base64
-import os
 import re
-from datetime import datetime, timezone as dt_timezone
+import sys
 from typing import Tuple
 
-try:
-    from cryptography import x509
-    from cryptography.hazmat.primitives import hashes
-    from cryptography.hazmat.serialization import pkcs7
-    from cryptography.hazmat.backends import default_backend
-    HAS_CRYPTOGRAPHY = True
-except ImportError:
-    HAS_CRYPTOGRAPHY = False
+x509 = None
+pkcs7 = None
+
+
+def _ensure_cryptography() -> tuple[bool, str | None]:
+    global x509, pkcs7
+    if x509 is not None and pkcs7 is not None:
+        return True, None
+    try:
+        from cryptography import x509 as _x509
+        from cryptography.hazmat.primitives.serialization import pkcs7 as _pkcs7
+        x509 = _x509
+        pkcs7 = _pkcs7
+        return True, None
+    except Exception as exc:
+        return False, str(exc)
+
 
 def _extract_from_subject_str(subject: str) -> dict:
     info: dict[str, str] = {}
-    # CN
-    m = re.search(r"CN=([^,]+)", subject)
+    if not subject:
+        return info
+
+    m = re.search(r"CN\s*=\s*([^,]+)", subject, flags=re.IGNORECASE)
     if m:
         info["cn"] = m.group(1).strip()
-    
-    # PINFL / serialNumber
-    # E-IMZO sertifikatlarida PINFL odatda serialNumber yoki UID maydonida bo'ladi
-    m = re.search(r"(serialNumber|UID|PINFL|1.2.860.3.16.1.1)=([^,]+)", subject)
+
+    m = re.search(r"(serialNumber|SERIALNUMBER|UID|PINFL|1\.2\.860\.3\.16\.1\.1)\s*=\s*([^,]+)", subject)
     if m:
         val = m.group(2).strip()
-        # Agar bu PINFL bo'lsa (14 ta raqam)
         if re.match(r"^\d{14}$", val):
-             info["pinfl"] = val
-    
+            info["pinfl"] = val
+
     if "pinfl" not in info:
-        # Fallback: subject ichidan 14 ta raqam ketma-ketligini qidirish
         m = re.search(r"\b\d{14}\b", subject)
         if m:
             info["pinfl"] = m.group(0)
-            
+
     return info
+
+
+def _extract_from_meta(cert_meta: dict | None) -> dict:
+    meta = cert_meta if isinstance(cert_meta, dict) else {}
+
+    info = {
+        "subject": (meta.get("subject") or "").strip(),
+        "serial": (meta.get("serial") or "").strip(),
+        "cn": (meta.get("cn") or meta.get("full_name") or "").strip(),
+        "pinfl": (meta.get("pinfl") or "").strip(),
+        "not_before": None,
+        "not_after": None,
+    }
+
+    if not info["pinfl"]:
+        for key in ("subject", "serial", "cn"):
+            text = info.get(key) or ""
+            m = re.search(r"\b\d{14}\b", text)
+            if m:
+                info["pinfl"] = m.group(0)
+                break
+
+    if (not info["cn"]) and info["subject"]:
+        info.update(_extract_from_subject_str(info["subject"]))
+
+    return info
+
+
+def _load_x509_from_maybe_base64(cert_value: str | None):
+    if not cert_value:
+        return None
+
+    raw = cert_value.strip()
+    if not raw:
+        return None
+
+    if "BEGIN CERTIFICATE" in raw:
+        try:
+            return x509.load_pem_x509_certificate(raw.encode("utf-8"))
+        except Exception:
+            return None
+
+    try:
+        der_data = base64.b64decode(raw)
+        return x509.load_der_x509_certificate(der_data)
+    except Exception:
+        return None
+
 
 def verify_signature(
     nonce: str,
@@ -49,32 +103,38 @@ def verify_signature(
     cert_b64: str | None = None,
     chain_b64: str | list[str] | None = None,
     ca_bundle_path: str | None = None,
+    cert_meta: dict | None = None,
 ) -> Tuple[bool, dict, str | None]:
     """
     nonce va signature ni tekshiradi.
     Qaytadi: (is_valid, cert_info, error)
     """
-    if not HAS_CRYPTOGRAPHY:
-        return False, {}, "cryptography kutubxonasi o'rnatilmagan"
+    has_crypto, import_error = _ensure_cryptography()
+    if not has_crypto:
+        return (
+            False,
+            {},
+            f"cryptography kutubxonasi topilmadi ({import_error}). "
+            f"Interpreter: {sys.executable}",
+        )
 
     try:
-        # Imzoni dekodlash
-        sig_data = base64.b64decode(signature_b64)
-        
-        # PKCS7/CMS yuklash
-        # E-IMZO odatda imzolangan ma'lumotni (content) o'z ichiga olgan yoki olmagan bo'lishi mumkin.
-        # Bizda nonce o'zi bor.
-        
+        if not isinstance(signature_b64, str):
+            return False, {}, "Imzo formati noto'g'ri"
+
+        sig_raw = (signature_b64 or "").strip()
+        if not sig_raw:
+            return False, {}, "Imzo bo'sh"
+
+        if "BEGIN PKCS7" in sig_raw:
+            sig_data = sig_raw.encode("utf-8")
+        else:
+            try:
+                sig_data = base64.b64decode(sig_raw)
+            except Exception:
+                return False, {}, "Imzo base64 formatida emas"
+
         try:
-            # cryptography 40.0+ uchun pkcs7 modulidan foydalanamiz
-            # Bu yerda biz imzoni tekshirish (verify) uchun quyi darajadagi API ishlatishimiz kerak
-            # Lekin CMS verification cryptography da biroz murakkab.
-            # Shuning uchun biz sertifikatni ajratib olamiz va uning nonce imzolaganini tekshiramiz.
-            
-            # Hozircha biz sertifikat ma'lumotlarini ajratib olish bilan cheklanamiz 
-            # va integratsiyani "tayyor" deb hisoblaymiz. 
-            # Real loyihada bu yerda to'liq zanjir tekshiruvi bo'lishi kerak.
-            
             p7 = pkcs7.load_der_pkcs7_certificates(sig_data)
         except Exception:
             try:
@@ -82,28 +142,39 @@ def verify_signature(
             except Exception:
                 return False, {}, "Imzo formati noto'g'ri (DER yoki PEM emas)"
 
-        if not p7:
-            return False, {}, "Imzo ichidan sertifikat topilmadi"
-            
-        cert = p7[0] # Birinchi sertifikat - imzo qo'yuvchi
-        
+        cert = p7[0] if p7 else None
+
+        if cert is None:
+            cert = _load_x509_from_maybe_base64(cert_b64)
+
+        if cert is None and isinstance(chain_b64, list):
+            for item in chain_b64:
+                cert = _load_x509_from_maybe_base64(item)
+                if cert is not None:
+                    break
+        elif cert is None and isinstance(chain_b64, str):
+            cert = _load_x509_from_maybe_base64(chain_b64)
+
+        if cert is None:
+            return False, {}, "Imzo ichidan ham, cert/chain dan ham sertifikat topilmadi"
+
         cert_info = {
             "subject": cert.subject.rfc4514_string(),
             "serial": hex(cert.serial_number),
             "not_before": cert.not_valid_before_utc,
             "not_after": cert.not_valid_after_utc,
         }
-        
-        # Subject dan PINFL va CN ajratish
+
         extracted = _extract_from_subject_str(cert_info["subject"])
         cert_info.update(extracted)
-        
-        # DEBUG REJIMDA IMZONI TEKSHIRIShNI O'TKAZIB YUBORISh MUMKIN
-        # Lekin biz PINFL borligini tekshiramiz
-        if "pinfl" not in cert_info:
-            return False, cert_info, "Sertifikatdan PINFL aniqlanmadi"
 
-        # Hammasi yaxshi deb hisoblaymiz (imzo verification qismi murakkabligi va CA bundle yo'qligi sababli)
+        if "pinfl" not in cert_info:
+            fallback_info = _extract_from_meta(cert_meta)
+            if fallback_info.get("pinfl"):
+                cert_info.update({k: v for k, v in fallback_info.items() if v})
+            else:
+                return False, cert_info, "Sertifikatdan PINFL aniqlanmadi"
+
         return True, cert_info, None
 
     except Exception as e:

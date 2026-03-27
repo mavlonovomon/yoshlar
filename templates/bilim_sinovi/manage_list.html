@@ -5,9 +5,12 @@
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h3 class="fw-bold mb-1">Testlarni Tashkillashtirish</h3>
-            <p class="text-muted mb-0">Mavjud testlarni vaqt oralig'i, to'plam va tartib bo'yicha sozlang.</p>
+            <p class="text-muted mb-0">Mavjud testlarni kategoriya, paket va vaqt oralig'i bo'yicha sozlang.</p>
         </div>
         <div class="d-flex gap-2">
+            <a href="{% url 'bilim_sinovi:question_package_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-collection me-1"></i> Savol paketlari
+            </a>
             <a href="{% url 'bilim_sinovi:test_results_dashboard' %}" class="btn btn-outline-primary">
                 <i class="bi bi-table me-1"></i> Natijalar jadvali
             </a>
@@ -23,7 +26,8 @@
                 <thead class="table-light">
                     <tr>
                         <th>Nomi</th>
-                        <th>To'plamlar</th>
+                        <th>Kategoriyalar</th>
+                        <th>Paketlar</th>
                         <th>Vaqt oralig'i</th>
                         <th class="text-center">Savol</th>
                         <th class="text-center">Tartib</th>
@@ -47,7 +51,16 @@
                             {% elif test.subject %}
                             <span class="badge bg-secondary-subtle text-secondary border">{{ test.subject.name }}</span>
                             {% else %}
-                            <span class="text-muted">To'plam tanlanmagan</span>
+                            <span class="text-muted">Kategoriya tanlanmagan</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if test.question_packages.exists %}
+                            {% for p in test.question_packages.all %}
+                            <span class="badge bg-primary-subtle text-primary border me-1 mb-1">{{ p.name }}</span>
+                            {% endfor %}
+                            {% else %}
+                            <span class="text-muted">Paket tanlanmagan</span>
                             {% endif %}
                         </td>
                         <td>
@@ -75,7 +88,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="8" class="text-center py-4 text-muted">Hali testlar yaratilmagan.</td>
+                        <td colspan="9" class="text-center py-4 text-muted">Hali testlar yaratilmagan.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

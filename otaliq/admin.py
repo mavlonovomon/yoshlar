@@ -19,7 +19,9 @@ class OtaliqAssistanceInline(admin.StackedInline):
 class OtaliqYouthAdmin(admin.ModelAdmin):
     list_display = ('get_fullname', 'category', 'leader', 'get_mahalla', 'created_at')
     list_filter = ('category', 'yosh__mahalla', 'leader')
-    search_fields = ('yosh__fullname', 'yosh__passport_number')
+    search_fields = ('yosh__fullname', 'yosh__passport_number', 'yosh__jshshir')
+    autocomplete_fields = ('yosh', 'leader')
+    list_select_related = ('yosh__mahalla', 'leader')
     inlines = [OtaliqMeetingInline, OtaliqAssistanceInline]
 
     def get_fullname(self, obj):

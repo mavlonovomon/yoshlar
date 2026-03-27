@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Hisobot bo'limi</h2>
+            <p class="text-muted mb-0">Kvartal, yarim yillik va yillik kesimda AI yordamida matnli hisobot shakllantirish va PDF yuklab olish.</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="post" class="row g-3 align-items-end">
+                {% csrf_token %}
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Hisobot turi</label>
+                    <select class="form-select" id="reportType" name="report_type">
+                        {% for item in report_types %}
+                        <option value="{{ item.value }}" {% if selected_type == item.value %}selected{% endif %}>{{ item.label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2" id="yearGroup">
+                    <label class="form-label fw-semibold">Yil</label>
+                    <select class="form-select" name="year">
+                        {% for year in year_options %}
+                        <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2" id="quarterGroup">
+                    <label class="form-label fw-semibold">Kvartal</label>
+                    <select class="form-select" name="quarter">
+                        {% for q in quarter_options %}
+                        <option value="{{ q }}" {% if selected_quarter == q %}selected{% endif %}>{{ q }}-kvartal</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2" id="halfGroup">
+                    <label class="form-label fw-semibold">Yarim yillik</label>
+                    <select class="form-select" name="half">
+                        {% for h in half_options %}
+                        <option value="{{ h }}" {% if selected_half == h %}selected{% endif %}>{{ h }}-yarim yillik</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3" id="monthGroup">
+                    <label class="form-label fw-semibold">Oy</label>
+                    <input type="month" class="form-control" name="month_value" value="{{ selected_month_value }}">
+                </div>
+                <div class="col-md-3" id="weekGroup">
+                    <label class="form-label fw-semibold">Hafta boshlanish sanasi</label>
+                    <input type="date" class="form-control" name="week_start_date" value="{{ selected_week_start_date }}">
+                </div>
+                <div class="col-md-3" id="dayGroup">
+                    <label class="form-label fw-semibold">Sana</label>
+                    <input type="date" class="form-control" name="day_date" value="{{ selected_day_date }}">
+                </div>
+                <div class="col-md-4" id="dateRangeGroup">
+                    <label class="form-label fw-semibold">Vaqt oralig'i</label>
+                    <div class="d-flex gap-2">
+                        <input type="date" class="form-control" name="start_date" value="{{ selected_start_date }}">
+                        <input type="date" class="form-control" name="end_date" value="{{ selected_end_date }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" value="1" id="useAI" name="use_ai" {% if use_ai %}checked{% endif %}>
+                        <label class="form-check-label" for="useAI">
+                            AI orqali matnni tartibga keltirish
+                        </label>
+                    </div>
+                </div>
+                <div class="col-12 d-flex gap-2">
+                    <button type="submit" name="action" value="preview" class="btn btn-primary">
+                        Ko'rish
+                    </button>
+                    <button type="submit" name="action" value="pdf" class="btn btn-outline-danger">
+                        PDF yuklab olish
+                    </button>
+                </div>
+            </form>
+            <p class="text-muted small mt-3 mb-0">
+                Eslatma: kvartal/yarim yillik/yillik/oylik/haftalik/kunlikda agar davr hali tugamagan bo'lsa joriy svod snapshoti olinadi, tugagan davrlar uchun esa davr yakuni holati tiklanadi; vaqt oralig'i rejimida tanlangan sanalar bo'yicha hisoblanadi.
+            </p>
+        </div>
+    </div>
+
+    {% if report_text %}
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 pt-4 pb-2">
+                    <h5 class="fw-bold mb-1">Shakllangan hisobot matni</h5>
+                    <div class="text-muted small">
+                        Davr: {{ period.label }} | Sana oralig'i: {{ period.date_range_label }}
+                    </div>
+                    {% if ai_used %}
+                    <div class="text-success small mt-1">AI tartiblash qo'llandi.</div>
+                    {% endif %}
+                </div>
+                <div class="card-body pt-2">
+                    <textarea class="form-control" rows="12" readonly>{{ report_text }}</textarea>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 pt-4 pb-2">
+                    <h5 class="fw-bold mb-1">Umumiy ko'rsatkichlar</h5>
+                    <div class="text-muted small">Davr yakuni: {{ stats.as_of_date }}</div>
+                </div>
+                <div class="card-body pt-2">
+                    <div class="small text-muted mb-2">Hisoblash rejimi</div>
+                    <div class="h6 fw-bold mb-3">{{ stats.calculation_mode_label }}</div>
+                    <div class="small text-muted mb-2">Bo'limlar soni</div>
+                    <div class="h4 fw-bold mb-3">{{ stats.module_count }}</div>
+                    <div class="small text-muted mb-2">Jami ko'rsatkichlar</div>
+                    <div class="h6 fw-bold mb-3">{{ stats.aggregate_total }}</div>
+                    <div class="small text-muted mb-2">Qamrab olingan ko'rsatkichlar</div>
+                    <div class="h6 fw-bold mb-3">{{ stats.aggregate_covered }} ({{ stats.aggregate_covered_percent }}%)</div>
+                    {% if stats.aggregate_coverage_base != stats.aggregate_total %}
+                    <div class="small text-muted">Foiz bazasi: {{ stats.aggregate_coverage_base }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 pt-4 pb-2">
+            <h5 class="fw-bold mb-1">Bo'limlar kesimidagi tafsilotlar</h5>
+            <div class="text-muted small">Har bir bo'lim uchun DBdan olinadigan real ko'rsatkichlar</div>
+        </div>
+        <div class="card-body pt-2">
+            <div class="row g-3">
+                {% for module in stats.module_reports %}
+                <div class="col-12">
+                    <div class="border rounded p-3">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                            <div>
+                                <h6 class="fw-bold mb-1">{{ module.title }}</h6>
+                                <div class="small text-muted">{{ module.summary }}</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="small text-muted">{{ module.total_label }}</div>
+                                <div class="fw-bold">{{ module.total_value }}</div>
+                                {% if module.covered_label and module.covered_value != None %}
+                                <div class="small text-muted mt-1">{{ module.covered_label }}</div>
+                                <div class="fw-semibold">
+                                    {{ module.covered_value }}
+                                    {% if module.covered_percent != None %}
+                                    ({{ module.covered_percent }}%)
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if module.secondary_metrics %}
+                        <div class="row g-2 mb-2">
+                            {% for metric in module.secondary_metrics %}
+                            <div class="col-md-3 col-sm-6">
+                                <div class="small text-muted">{{ metric.label }}</div>
+                                <div class="fw-semibold">{{ metric.value }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% if module.breakdowns %}
+                        <div class="row g-2">
+                            {% for breakdown in module.breakdowns %}
+                            <div class="col-md-6">
+                                <div class="small text-muted mb-1">{{ breakdown.title }}</div>
+                                <ul class="list-group list-group-flush">
+                                    {% for item in breakdown.items %}
+                                    <li class="list-group-item d-flex justify-content-between px-0 py-1">
+                                        <span>{{ item.label }}</span>
+                                        <span class="fw-semibold">{{ item.count }}</span>
+                                    </li>
+                                    {% empty %}
+                                    <li class="list-group-item px-0 py-1 text-muted">Ma'lumot yo'q</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    (function () {
+        const reportTypeEl = document.getElementById("reportType");
+        const yearGroup = document.getElementById("yearGroup");
+        const quarterGroup = document.getElementById("quarterGroup");
+        const halfGroup = document.getElementById("halfGroup");
+        const monthGroup = document.getElementById("monthGroup");
+        const weekGroup = document.getElementById("weekGroup");
+        const dayGroup = document.getElementById("dayGroup");
+        const dateRangeGroup = document.getElementById("dateRangeGroup");
+
+        function syncPeriodVisibility() {
+            const reportType = (reportTypeEl.value || "QUARTER").toUpperCase();
+            const isCustom = reportType === "DATE_RANGE";
+            yearGroup.style.display = (isCustom || reportType === "MONTH" || reportType === "WEEK" || reportType === "DAY") ? "none" : "";
+            quarterGroup.style.display = reportType === "QUARTER" ? "" : "none";
+            halfGroup.style.display = reportType === "HALF_YEAR" ? "" : "none";
+            monthGroup.style.display = reportType === "MONTH" ? "" : "none";
+            weekGroup.style.display = reportType === "WEEK" ? "" : "none";
+            dayGroup.style.display = reportType === "DAY" ? "" : "none";
+            dateRangeGroup.style.display = isCustom ? "" : "none";
+        }
+
+        reportTypeEl.addEventListener("change", syncPeriodVisibility);
+        syncPeriodVisibility();
+    })();
+</script>
+{% endblock %}

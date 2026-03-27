@@ -15,7 +15,13 @@
                 <div class="card-body p-4 d-flex flex-column">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <span class="badge bg-soft-primary text-primary rounded-pill px-3 py-2">
-                            {{ test.subject.name }}
+                            {% if test.subject %}
+                                {{ test.subject.name }}
+                            {% elif test.question_packages.exists and test.question_packages.first.category %}
+                                {{ test.question_packages.first.category.name }}
+                            {% else %}
+                                Kategoriya yo'q
+                            {% endif %}
                         </span>
                         {% if user_results|get_item:test.pk %}
                         <span class="badge bg-success rounded-circle p-2" title="Topshirilgan">

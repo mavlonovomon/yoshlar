@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load core_extras %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/mega_projects.css' %}?v=20260301a">
+{% endblock %}
+
+{% block content %}
+<div class="mega-wrap">
+    <div class="mega-hero">
+        <div>
+            <div class="mega-title">{{ mega_title }}</div>
+        </div>
+    </div>
+
+    <div class="mega-panel">
+        <div class="mega-section">
+            <h4>Mahallalar bo'yicha statistika</h4>
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="mega-status">
+                    {% if snapshot %}
+                    So'ngi yangilanish: {{ snapshot.fetched_at|date:"d.m.Y H:i" }}
+                    {% else %}
+                    Hali ma'lumot yo'q
+                    {% endif %}
+                </div>
+                {% if can_refresh %}
+                <form method="post" action="{% url mega_refresh_url_name %}">
+                    {% csrf_token %}
+                    <button class="mega-refresh" type="submit">
+                        <i class="bi bi-arrow-repeat"></i> Yangilash
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+
+            {% if snapshot_history|length > 1 %}
+            <form method="get" class="row g-2 align-items-end mb-3">
+                <input type="hidden" name="compare" value="1">
+                <div class="col-md-5">
+                    <label class="form-label small fw-semibold mb-1">1-snapshot</label>
+                    <select name="left_snapshot_id" class="form-select form-select-sm">
+                        {% for snapshot_item in snapshot_history %}
+                        <option value="{{ snapshot_item.id }}"
+                            {% if selected_left_snapshot_id == snapshot_item.id|stringformat:"s" %}selected{% endif %}>
+                            {{ snapshot_item.fetched_at|date:"d.m.Y H:i" }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label small fw-semibold mb-1">2-snapshot</label>
+                    <select name="right_snapshot_id" class="form-select form-select-sm">
+                        {% for snapshot_item in snapshot_history %}
+                        <option value="{{ snapshot_item.id }}"
+                            {% if selected_right_snapshot_id == snapshot_item.id|stringformat:"s" %}selected{% endif %}>
+                            {{ snapshot_item.fetched_at|date:"d.m.Y H:i" }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-outline-primary w-100">Farqni ko'rish</button>
+                    <a href="{{ request.path }}" class="btn btn-sm btn-outline-secondary">Tozalash</a>
+                </div>
+            </form>
+            {% endif %}
+
+            <ul class="nav nav-tabs mb-3" id="mega-view-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if compare_enabled %}active{% endif %}" id="mega-compare-tab"
+                        data-bs-toggle="tab" data-bs-target="#mega-compare-pane" type="button" role="tab"
+                        aria-controls="mega-compare-pane"
+                        aria-selected="{% if compare_enabled %}true{% else %}false{% endif %}">
+                        Farqni ko'rish
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if not compare_enabled %}active{% endif %}" id="mega-svod-tab"
+                        data-bs-toggle="tab" data-bs-target="#mega-svod-pane" type="button" role="tab"
+                        aria-controls="mega-svod-pane"
+                        aria-selected="{% if not compare_enabled %}true{% else %}false{% endif %}">
+                        Svod jadval
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="mega-view-tab-content">
+                <div class="tab-pane fade {% if compare_enabled %}show active{% endif %}" id="mega-compare-pane"
+                    role="tabpanel" aria-labelledby="mega-compare-tab">
+                    {% if compare_enabled %}
+                    <div class="alert alert-light border mb-3 py-2">
+                        <div class="small">
+                            Solishtirish:
+                            <strong>{{ compare_left_snapshot.fetched_at|date:"d.m.Y H:i" }}</strong>
+                            va
+                            <strong>{{ compare_right_snapshot.fetched_at|date:"d.m.Y H:i" }}</strong>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm table-bordered bg-white">
+                            <thead>
+                                <tr>
+                                    <th>Ko'rsatkich</th>
+                                    <th>1-snapshot</th>
+                                    <th>2-snapshot</th>
+                                    <th>Farq</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in compare_summary %}
+                                <tr>
+                                    <td>{{ item.label }}</td>
+                                    <td>{{ item.old }}</td>
+                                    <td>{{ item.new }}</td>
+                                    <td class="{{ item.delta_class }}">
+                                        {% if item.delta > 0 %}+{% endif %}{{ item.delta }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm table-bordered bg-white">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2">Mahalla</th>
+                                    {% for field_key, field_label in compare_fields %}
+                                    <th colspan="3">{{ field_label }}</th>
+                                    {% endfor %}
+                                </tr>
+                                <tr>
+                                    {% for field_key, field_label in compare_fields %}
+                                    <th>1</th>
+                                    <th>2</th>
+                                    <th>Farq</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in compare_rows %}
+                                <tr>
+                                    <td>{{ row.mahalla_name }}</td>
+                                    {% for cell in row.cells %}
+                                    <td>{{ cell.old }}</td>
+                                    <td>{{ cell.new }}</td>
+                                    <td class="{{ cell.delta_class }}">
+                                        {% if cell.delta > 0 %}+{% endif %}{{ cell.delta }}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-light border text-muted mb-0">
+                        Farqni ko'rish uchun yuqoridan 2 ta snapshot tanlab, "Farqni ko'rish" tugmasini bosing.
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="tab-pane fade {% if not compare_enabled %}show active{% endif %}" id="mega-svod-pane"
+                    role="tabpanel" aria-labelledby="mega-svod-tab">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered bg-white mega-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    {% for col in table_columns %}
+                                    {% with label=mega_column_labels|get_item:col %}
+                                    <th>{% if label %}{{ label }}{% else %}{{ col|capfirst }}{% endif %}</th>
+                                    {% endwith %}
+                                    {% empty %}
+                                    <th>Mahalla</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if total_row %}
+                                <tr class="mega-total-row">
+                                    <td>-</td>
+                                    {% for col in table_columns %}
+                                    <td>{{ total_row|get_item:col }}</td>
+                                    {% endfor %}
+                                </tr>
+                                {% endif %}
+                                {% for row in table_rows %}
+                                <tr class="{{ row|get_item:'row_class' }}">
+                                    <td>{{ forloop.counter }}</td>
+                                    {% for col in table_columns %}
+                                    {% if col == "users_ratio_percent" %}
+                                    <td class="mega-ratio {{ row|get_item:'ratio_class' }}">
+                                        {{ row|get_item:col }}
+                                    </td>
+                                    {% else %}
+                                    <td>{{ row|get_item:col }}</td>
+                                    {% endif %}
+                                    {% empty %}
+                                    <td>Ma'lumot yo'q</td>
+                                    {% endfor %}
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="{{ table_columns|length|add:'1' }}" class="text-center text-muted">
+                                        Ma'lumot yo'q
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

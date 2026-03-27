@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, TemplateView, View
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, View
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Count, Q
-from .models import OtaliqYouth, OtaliqLeader, OtaliqMeeting, OtaliqAssistance
+from .models import OtaliqYouth, OtaliqLeader, OtaliqMeeting
 from .forms import OtaliqYouthForm, OtaliqMeetingForm, OtaliqAssistanceForm, OtaliqLeaderForm
 from core.models import Mahalla, Yosh
 from django.contrib import messages
@@ -12,52 +12,6 @@ from openpyxl.styles import Alignment, Border, Side, Font, PatternFill
 from django.http import HttpResponse
 from datetime import datetime
 import datetime as dt_module
-
-class DashboardView(LoginRequiredMixin, TemplateView):
-    template_name = 'otaliq/dashboard.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        user = self.request.user
-        queryset = OtaliqYouth.objects.all()
-
-        if not getattr(user, 'is_site_admin', False) and user.mahalla:
-            queryset = queryset.filter(yosh__mahalla=user.mahalla)
-
-        total_youth = queryset.count()
-        total_assisted = queryset.filter(assistance__provided=True).count()
-        total_visited = queryset.filter(meetings__isnull=False).distinct().count()
-        
-        by_mahalla = queryset.values('yosh__mahalla__name').annotate(total=Count('id')).order_by('yosh__mahalla__name')
-        
-        category_dict = dict(OtaliqYouth.CATEGORY_CHOICES)
-        by_category_raw = queryset.values('category').annotate(total=Count('id'))
-        by_category = []
-        for item in by_category_raw:
-            by_category.append({
-                'label': category_dict.get(item['category'], item['category']),
-                'total': item['total']
-            })
-        
-        assistance_dict = dict(OtaliqAssistance.ASSISTANCE_TYPES)
-        by_assistance_type_raw = queryset.filter(assistance__provided=True).values('assistance__assistance_type').annotate(total=Count('id'))
-        by_assistance_type = []
-        for item in by_assistance_type_raw:
-            by_assistance_type.append({
-                'label': assistance_dict.get(item['assistance__assistance_type'], item['assistance__assistance_type']),
-                'total': item['total']
-            })
-        
-        context.update({
-            'total_youth': total_youth,
-            'total_assisted': total_assisted,
-            'total_visited': total_visited,
-            'total_pending': total_youth - total_visited,
-            'by_mahalla': list(by_mahalla),
-            'by_category': list(by_category),
-            'by_assistance_type': list(by_assistance_type),
-        })
-        return context
 
 class OtaliqListView(LoginRequiredMixin, ListView):
     model = OtaliqYouth
@@ -94,7 +48,9 @@ class OtaliqDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['meeting_form'] = OtaliqMeetingForm()
-        context['assistance_form'] = OtaliqAssistanceForm(instance=getattr(self.object, 'assistance', None))
+        assistance_instance = getattr(self.object, 'assistance', None)
+        context['assistance'] = assistance_instance
+        context['assistance_form'] = OtaliqAssistanceForm(instance=assistance_instance)
         context['meetings'] = self.object.meetings.all()
         return context
 
@@ -119,7 +75,10 @@ class OtaliqDetailView(LoginRequiredMixin, DetailView):
                 assistance.save()
                 messages.success(request, "Yordam ma'lumotlari yangilandi.")
             else:
-                messages.error(request, "Xatolik! Yordam ma'lumotlarini saqlashda xato.")
+                if form.errors.get('document'):
+                    messages.error(request, form.errors['document'][0])
+                else:
+                    messages.error(request, "Xatolik! Yordam ma'lumotlarini saqlashda xato.")
         
         return redirect('otaliq:detail', pk=self.object.pk)
 

@@ -2,9 +2,7 @@ import gzip
 import json
 import logging
 import re
-from datetime import date
 from urllib.request import Request, urlopen
-from urllib.error import URLError, HTTPError
 
 from django.conf import settings
 
@@ -14,12 +12,13 @@ from .models import (
     UstozAiMahallaAlias,
     Mahalla,
 )
+from .stats_adapters import BaseStatsAdapter, pick_metric
 
 logger = logging.getLogger(__name__)
 
 
 DEFAULT_USTOZ_AI_URL = (
-    "https://api.ustozaibot.uz/api/v1/statistics-cached/village-school"
+    "https://api.ustozaibot.uz/api/v1/statistics/village-school"
     "?district=Xazorasp+tumani&region=Xorazm+viloyati"
 )
 
@@ -101,14 +100,11 @@ def _normalize_name(value: str) -> str:
 
 def _resolve_alias(api_name: str) -> UstozAiMahallaAlias:
     api_norm = _normalize_name(api_name)
-    alias, created = UstozAiMahallaAlias.objects.get_or_create(
+    return BaseStatsAdapter.resolve_alias_record(
+        UstozAiMahallaAlias,
+        api_name=api_name,
         api_norm=api_norm,
-        defaults={"api_name": api_name},
     )
-    if not created and alias.api_name != api_name:
-        alias.api_name = api_name
-        alias.save(update_fields=["api_name", "last_seen"])
-    return alias
 
 
 def _resolve_area_id(item: dict) -> str | None:
@@ -132,57 +128,53 @@ def _extract_metrics(item: dict) -> dict:
     return metrics
 
 
-def _pick_metric(metrics: dict, keys: list[str]) -> float | int | None:
-    for key in keys:
-        if key in metrics and metrics[key] is not None:
-            return metrics[key]
-    return None
+class UstozAiStatsAdapter(BaseStatsAdapter):
+    snapshot_model = UstozAiStatSnapshot
+    stat_model = UstozAiMahallaStat
+    unknown_error_message = "Noma'lum xatolik (logni tekshiring)"
+    log_unknown_error = True
+    logger = logger
+
+    def get_url(self):
+        return get_ustoz_ai_url()
+
+    def fetch_payload(self, url):
+        return _fetch_json(url)
+
+    def iter_items(self, payload):
+        return _extract_items(payload)
+
+    def resolve_alias(self, area_name):
+        return _resolve_alias(area_name)
+
+    def resolve_area_name(self, item):
+        return _resolve_area_name(item)
+
+    def resolve_external_id(self, item):
+        return _resolve_area_id(item)
+
+    def extract_metrics(self, item):
+        return _extract_metrics(item)
+
+    def build_stat_instance(self, snapshot, alias, item, area_name, area_external_id, metrics):
+        return UstozAiMahallaStat(
+            snapshot=snapshot,
+            mahalla=alias.mahalla,
+            area_external_id=area_external_id,
+            area_name=area_name,
+            metrics=metrics,
+        )
+
+
+_adapter = UstozAiStatsAdapter()
 
 
 def save_ustoz_ai_snapshot(payload: dict, source_url: str | None = None) -> UstozAiStatSnapshot:
-    snapshot = UstozAiStatSnapshot.objects.create(
-        snapshot_date=date.today(),
-        source_url=source_url or get_ustoz_ai_url(),
-        raw_payload=payload,
-    )
-
-    items = _extract_items(payload)
-    bulk = []
-    for item in items:
-        if not isinstance(item, dict):
-            continue
-        area_name = _resolve_area_name(item)
-        alias = _resolve_alias(area_name)
-        bulk.append(UstozAiMahallaStat(
-            snapshot=snapshot,
-            mahalla=alias.mahalla,
-            area_external_id=_resolve_area_id(item),
-            area_name=area_name,
-            metrics=_extract_metrics(item),
-        ))
-
-    if bulk:
-        UstozAiMahallaStat.objects.bulk_create(bulk)
-
-    return snapshot
+    return _adapter.build_snapshot(payload, source_url or get_ustoz_ai_url())
 
 
 def fetch_and_store_ustoz_ai_snapshot() -> tuple[UstozAiStatSnapshot | None, str | None]:
-    url = get_ustoz_ai_url()
-    try:
-        payload = _fetch_json(url)
-    except HTTPError as exc:
-        return None, f"HTTP xatolik: {exc.code}"
-    except URLError as exc:
-        return None, f"Ulanish xatoligi: {exc.reason}"
-    except json.JSONDecodeError:
-        return None, "JSON o'qib bo'lmadi"
-    except Exception:
-        logger.exception("Ustoz AI snapshot olishda noma'lum xatolik")
-        return None, "Noma'lum xatolik (logni tekshiring)"
-
-    snapshot = save_ustoz_ai_snapshot(payload, source_url=url)
-    return snapshot, None
+    return _adapter.fetch_and_store()
 
 
 def build_table(
@@ -221,12 +213,12 @@ def build_table(
         item["row_class"] = "row-missing" if row is None else ""
 
         total_youth = youth_counts.get(mahalla.id)
-        users_total = _pick_metric(
+        users_total = pick_metric(
             metrics,
             ["users_total", "user_count", "users", "student_count", "students_count", "active_users"],
         )
-        video_views = _pick_metric(metrics, ["views"])
-        certificates_count = _pick_metric(metrics, ["certificates"])
+        video_views = pick_metric(metrics, ["views"])
+        certificates_count = pick_metric(metrics, ["certificates"])
 
         item["total_youth"] = total_youth if total_youth is not None else 0
         item["users_total"] = users_total if users_total is not None else 0

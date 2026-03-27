@@ -10,8 +10,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST, require_GET
 
 from .eimzo.verifier import verify_signature
-from .eimzo.cert_utils import extract_pinfl, extract_cn, extract_validity
-from .models import EimzoProfile
+from .eimzo.cert_utils import extract_pinfl, extract_validity
 
 
 NONCE_TTL_SECONDS = getattr(settings, 'EIMZO_NONCE_TTL_SECONDS', 120)
@@ -43,6 +42,7 @@ def eimzo_verify(request):
     signature = payload.get('signature')
     cert = payload.get('cert')
     chain = payload.get('chain')
+    cert_meta = payload.get('cert_meta')
     if not signature:
         return HttpResponseBadRequest("Imzo yuborilmadi")
 
@@ -67,12 +67,12 @@ def eimzo_verify(request):
         cert_b64=cert,
         chain_b64=chain,
         ca_bundle_path=ca_bundle_path,
+        cert_meta=cert_meta,
     )
     if not is_valid:
         return JsonResponse({'ok': False, 'error': error or "Imzo noto'g'ri"}, status=401)
 
     pinfl = extract_pinfl(cert_info)
-    full_name = extract_cn(cert_info)
     not_before, not_after = extract_validity(cert_info)
 
     if not pinfl:
@@ -85,23 +85,13 @@ def eimzo_verify(request):
     if not_before and now < not_before:
         return JsonResponse({'ok': False, 'error': 'Sertifikat hali kuchga kirmagan'}, status=401)
 
-    user = authenticate(request, pinfl=pinfl, full_name=full_name)
+    user = authenticate(request, pinfl=pinfl)
     if user is None:
-        return JsonResponse({'ok': False, 'error': 'Autentifikatsiya xatoligi'}, status=401)
+        return JsonResponse({'ok': False, 'error': "PINFL bo'yicha foydalanuvchi topilmadi"}, status=401)
 
     login(request, user)
 
     # nonce replay prevention
     request.session['eimzo_nonce_used'] = True
-
-    # Sertifikat profilini yangilash
-    profile, _ = EimzoProfile.objects.get_or_create(user=user)
-    profile.cert_serial = cert_info.get('serial')
-    profile.cert_subject = cert_info.get('subject')
-    profile.cert_valid_from = not_before
-    profile.cert_valid_to = not_after
-    profile.last_verified_at = now
-    profile.save()
-
     messages.success(request, "E-IMZO orqali tizimga kirildi.")
     return JsonResponse({'ok': True, 'redirect': '/'})

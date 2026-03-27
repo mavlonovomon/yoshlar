@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-1">5 tashabbus arizalari kengaytirilgan svod</h4>
+            <p class="text-muted mb-0">
+                {% if snapshot %}
+                Snapshot: {{ snapshot.created_at|date:"d.m.Y H:i" }}
+                {% else %}
+                Snapshot mavjud emas
+                {% endif %}
+            </p>
+        </div>
+        {% if can_upload %}
+        <a href="{% url 'beshtashabbus:application_upload' %}" class="btn btn-outline-primary">
+            <i class="bi bi-upload me-1"></i> Fayl yuklash
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Mahalla</th>
+                            <th>Arizalar</th>
+                            <th>Unikal yoshlar</th>
+                            <th>Erkak</th>
+                            <th>Ayol</th>
+                            <th>Top kategoriya (3)</th>
+                            <th>Top yo'nalish (3)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ row.mahalla_name }}</td>
+                            <td>{{ row.applications_count }}</td>
+                            <td>{{ row.unique_participants_count }}</td>
+                            <td>{{ row.male_count }}</td>
+                            <td>{{ row.female_count }}</td>
+                            <td>
+                                {% for name, cnt in row.top_categories %}
+                                    <div>{{ name }}: <strong>{{ cnt }}</strong></div>
+                                {% empty %}
+                                    <span class="text-muted">-</span>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% for name, cnt in row.top_directions %}
+                                    <div>{{ name }}: <strong>{{ cnt }}</strong></div>
+                                {% empty %}
+                                    <span class="text-muted">-</span>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">Ma'lumot yo'q</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

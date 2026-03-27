@@ -53,11 +53,12 @@ class YoshForm(forms.ModelForm):
 
     class Meta:
         model = Yosh
-        fields = ['fullname', 'birth_date', 'passport_number', 'jshshir', 'address', 'photo', 'phone_number']
+        fields = ['fullname', 'birth_date', 'passport_number', 'guvohnoma_raqami', 'jshshir', 'address', 'photo', 'phone_number']
         widgets = {
             'fullname': forms.TextInput(attrs={'class': 'form-control'}),
             'birth_date': forms.DateInput(format='%Y-%m-%d', attrs={'class': 'form-control', 'type': 'date'}),
             'passport_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'guvohnoma_raqami': forms.TextInput(attrs={'class': 'form-control'}),
             'jshshir': forms.TextInput(attrs={'class': 'form-control'}),
             'address': forms.TextInput(attrs={'class': 'form-control'}),
             'photo': forms.FileInput(attrs={'class': 'form-control'}),
@@ -81,7 +82,6 @@ class UserProfileForm(forms.ModelForm):
         fields = [
             'full_name',
             'profile_image',
-            'pinfl',
             'phone_number',
             'email',
             'telegram_username',
@@ -97,7 +97,6 @@ class UserProfileForm(forms.ModelForm):
         widgets = {
             'full_name': forms.TextInput(attrs={'class': 'form-control'}),
             'profile_image': forms.FileInput(attrs={'class': 'form-control'}),
-            'pinfl': forms.TextInput(attrs={'class': 'form-control'}),
             'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'telegram_username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '@username'}),

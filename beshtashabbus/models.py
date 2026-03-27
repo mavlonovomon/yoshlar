@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import FileExtensionValidator
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.utils import timezone
 from PIL import Image
 from io import BytesIO
 import logging
@@ -89,3 +90,100 @@ class FiveInitiativePhoto(models.Model):
                 logger.error("Five initiative photo processing error: %s", exc)
 
         super().save(*args, **kwargs)
+
+
+class FiveInitiativeApplicationSnapshot(models.Model):
+    """5 tashabbus arizalari import snapshoti."""
+    year = models.PositiveSmallIntegerField(default=2026, db_index=True, verbose_name="Yil")
+    source_file_name = models.CharField(max_length=255, verbose_name="Yuklangan fayl")
+    uploaded_by = models.ForeignKey(
+        'core.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='five_initiative_application_snapshots',
+        verbose_name="Yuklagan foydalanuvchi",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name="Yuklangan vaqt")
+    raw_meta = models.JSONField(default=dict, blank=True, verbose_name="Import meta")
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "5 tashabbus ariza snapshoti"
+        verbose_name_plural = "5 tashabbus ariza snapshotlari"
+
+    def __str__(self):
+        return f"{self.year} | {timezone.localtime(self.created_at):%d.%m.%Y %H:%M}"
+
+
+class FiveInitiativeApplicationEntry(models.Model):
+    """Snapshot ichidagi tozalangan ariza qatori."""
+    snapshot = models.ForeignKey(
+        FiveInitiativeApplicationSnapshot,
+        on_delete=models.CASCADE,
+        related_name='entries',
+        verbose_name="Snapshot",
+    )
+    region = models.CharField(max_length=150, blank=True, default="", verbose_name="Viloyat")
+    district = models.CharField(max_length=150, blank=True, default="", verbose_name="Tuman")
+    sector = models.CharField(max_length=150, blank=True, default="", verbose_name="Sektor")
+    mahalla = models.ForeignKey(
+        Mahalla,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='five_initiative_application_entries',
+        verbose_name="Mahalla",
+    )
+    mahalla_name_raw = models.CharField(max_length=255, verbose_name="Mahalla (xom)")
+    participant_name = models.CharField(max_length=255, verbose_name="Ishtirokchi F.I.O")
+    pinfl = models.CharField(max_length=14, db_index=True, verbose_name="PINFL")
+    gender = models.CharField(max_length=30, blank=True, default="", verbose_name="Jinsi")
+    age_category = models.CharField(max_length=80, blank=True, default="", verbose_name="Yosh toifasi")
+    selection_category = models.CharField(max_length=120, db_index=True, verbose_name="Kategoriya")
+    direction = models.CharField(max_length=120, db_index=True, verbose_name="Yo'nalish")
+
+    class Meta:
+        ordering = ['mahalla_name_raw', 'participant_name']
+        verbose_name = "5 tashabbus ariza qatori"
+        verbose_name_plural = "5 tashabbus ariza qatorlari"
+        permissions = [
+            ("submit_application", "5 tashabbus ariza yuborish ruxsati"),
+        ]
+        indexes = [
+            models.Index(fields=['snapshot', 'mahalla']),
+            models.Index(fields=['snapshot', 'selection_category']),
+            models.Index(fields=['snapshot', 'direction']),
+            models.Index(fields=['snapshot', 'pinfl']),
+        ]
+
+
+class FiveInitiativeSvodNorm(models.Model):
+    """5 tashabbus svod jadvali uchun norma qatori.
+
+    Har bir qator 4 ta ustun (kategoriya, yo'nalish, yosh toifasi, jins)
+    bo'yicha aniqlangan norma qiymatini saqlaydi.
+    Agar gender bo'sh bo'lsa – erkak + ayol qo'shib hisoblanadi.
+    """
+    selection_category = models.CharField(max_length=150, verbose_name="Kategoriya")
+    direction = models.CharField(max_length=150, verbose_name="Yo'nalish")
+    age_category = models.CharField(max_length=100, verbose_name="Yosh toifasi")
+    gender = models.CharField(
+        max_length=30, blank=True, default="",
+        verbose_name="Jinsi",
+        help_text="Bo'sh bo'lsa erkak+ayol qo'shiladi",
+    )
+    norma = models.PositiveIntegerField(default=0, verbose_name="Norma")
+    row_order = models.PositiveIntegerField(default=0, verbose_name="Tartib raqami")
+
+    class Meta:
+        ordering = ['row_order', 'selection_category', 'direction']
+        verbose_name = "5 tashabbus svod norma"
+        verbose_name_plural = "5 tashabbus svod normalari"
+        unique_together = ('selection_category', 'direction', 'age_category', 'gender')
+
+    def __str__(self):
+        parts = [self.selection_category, self.direction, self.age_category]
+        if self.gender:
+            parts.append(self.gender)
+        return " | ".join(parts) + f" (norma={self.norma})"

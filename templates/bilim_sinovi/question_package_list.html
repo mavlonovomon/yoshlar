@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h3 class="fw-bold mb-1">Savollar Paketlari</h3>
+            <p class="text-muted mb-0">Yuklangan savollar paketlari va import statistikasi.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'bilim_sinovi:test_manage_list' %}" class="btn btn-light border">
+                <i class="bi bi-arrow-left me-1"></i> Tashkillashtirishga qaytish
+            </a>
+            <a href="{% url 'bilim_sinovi:question_package_import' %}" class="btn btn-primary">
+                <i class="bi bi-upload me-1"></i> Yangi import
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Paket nomi</th>
+                        <th>Kategoriya</th>
+                        <th>Yaratgan</th>
+                        <th class="text-center">O'qilgan</th>
+                        <th class="text-center">Saqlangan</th>
+                        <th class="text-center">Skip</th>
+                        <th class="text-center">Jami savol</th>
+                        <th>Manba fayl</th>
+                        <th>Yaratilgan vaqti</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for package in packages %}
+                    <tr>
+                        <td class="fw-semibold">{{ package.name }}</td>
+                        <td>{{ package.category.name }}</td>
+                        <td>{{ package.created_by.full_name|default:'-' }}</td>
+                        <td class="text-center">{{ package.parsed_count }}</td>
+                        <td class="text-center text-success fw-semibold">{{ package.imported_count }}</td>
+                        <td class="text-center text-muted">{{ package.skipped_count }}</td>
+                        <td class="text-center">{{ package.question_count }}</td>
+                        <td>{{ package.source_file|default:'-' }}</td>
+                        <td>{{ package.created_at|date:"d.m.Y H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-muted">Hali paketlar import qilinmagan.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

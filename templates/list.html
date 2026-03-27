@@ -26,7 +26,7 @@
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
                     <input type="text" name="q" class="form-control border-start-0"
-                        placeholder="F.I.Sh, tel, pasport, jshshir..." value="{{ request.GET.q }}">
+                        placeholder="F.I.Sh, tel, pasport, guvohnoma, jshshir..." value="{{ request.GET.q }}">
                 </div>
             </div>
 
@@ -83,7 +83,9 @@
                         <th style="width: 50px;">T/r</th>
                         {% if mahallas %}<th>Mahalla</th>{% endif %}
                         <th>F.I.Sh va Kontakt</th>
-                        <th>Hujjat ma'lumotlari</th>
+                        <th>Passport raqami</th>
+                        <th>Guvohnoma raqami</th>
+                        <th>JSHSHIR</th>
                         <th>Suhbat holati</th>
                         <th class="text-center" style="width: 180px;">Amallar</th>
                     </tr>
@@ -126,9 +128,13 @@
                             </div>
                         </td>
                         <td>
-                            <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ item.passport_number }}</div>
-                            <div class="text-muted smaller" style="font-size: 0.75rem;">JSHSHIR: {{ item.jshshir }}
-                            </div>
+                            <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ item.passport_number|default:"-" }}</div>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ item.guvohnoma_raqami|default:"-" }}</div>
+                        </td>
+                        <td>
+                            <div class="text-muted smaller" style="font-size: 0.8rem;">{{ item.jshshir }}</div>
                         </td>
                         <td>
                             {% if item.has_meeting %}
@@ -160,7 +166,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="{% if mahallas %}6{% else %}5{% endif %}" class="text-center py-5">
+                        <td colspan="{% if mahallas %}8{% else %}7{% endif %}" class="text-center py-5">
                             <div class="mb-3 text-muted">
                                 <i class="bi bi-database-exclamation display-4"></i>
                             </div>
@@ -204,4 +210,5 @@
     </div>
     {% endif %}
 </div>
+
 {% endblock %}

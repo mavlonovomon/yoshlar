@@ -114,6 +114,7 @@ class Yosh(models.Model):
     fullname = models.CharField(max_length=255, verbose_name="F.I.Sh", db_index=True)
     birth_date = models.DateField(verbose_name="Tug'ilgan sana")
     passport_number = models.CharField(max_length=20, verbose_name="Pasport raqami", blank=True)
+    guvohnoma_raqami = models.CharField(max_length=30, verbose_name="Guvohnoma raqami", blank=True)
     jshshir = models.CharField(max_length=14, verbose_name="JSHSHIR", unique=True, db_index=True)
     address = models.CharField(max_length=500, verbose_name="Manzil")
     photo = models.ImageField(upload_to='yoshlar_photos/', verbose_name="Rasm", blank=True, null=True)
