@@ -49,8 +49,12 @@ Thumbs.db
 # Project temp and archives
 *.tmp
 *.zip
+*.dump
+*.sql
 *.bak.db
 *.premerge.bak.db
 *_source_original.db
 tmp_yt_capi_ws.js
 5tsvod.xlsx
+yoshlar_pg*.dump
+yoshlar_pg*.sql
