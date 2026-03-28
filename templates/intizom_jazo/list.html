@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load core_extras %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -75,14 +76,14 @@
                         <table class="table table-sm align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th>Sana</th>
-                                    <th>Xodim</th>
-                                    <th>Jazo turi</th>
-                                    <th>Holat</th>
-                                    <th>Tugash</th>
-                                    <th>Yechilgan</th>
-                                    <th>Izoh</th>
-                                    <th>Kiritgan</th>
+                                    <th>{% sort_link 'action_date' 'Sana' %}</th>
+                                    <th>{% sort_link 'employee' 'Xodim' %}</th>
+                                    <th>{% sort_link 'action_type' 'Jazo turi' %}</th>
+                                    <th>{% sort_link 'status' 'Holat' %}</th>
+                                    <th>{% sort_link 'end_date' 'Tugash' %}</th>
+                                    <th>{% sort_link 'resolved_date' 'Yechilgan' %}</th>
+                                    <th>{% sort_link 'reason' 'Izoh' %}</th>
+                                    <th>{% sort_link 'created_by' 'Kiritgan' %}</th>
                                 </tr>
                             </thead>
                             <tbody>

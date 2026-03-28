@@ -98,6 +98,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'ishsiz_yoshlar.context_processors.task_notifications',
+                'core.context_processors.module_alert_counts',
             ],
         },
     },

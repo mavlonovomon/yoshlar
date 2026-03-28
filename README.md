@@ -1,77 +1,138 @@
 # Yoshlar
 
 Yoshlar bilan ishlash jarayonlarini yuritish uchun Django asosidagi ichki tizim.
-Loyiha bir nechta yo'nalishlarni bitta panelda boshqaradi:
+
+Loyiha quyidagi yo'nalishlarni bitta panelda boshqaradi:
 
 - yoshlar ro'yxati va profili
+- maktab o'quvchilari bo'limi (RP.xlsx dagi ma'lumotlar `Yosh` jadvaliga birlashtiriladi)
 - ishsiz yoshlar bilan ishlash
 - otaliq, migratsiya, reyd, besh tashabbus, yoqlama modullari
 - intizom-jazo va kredit-yo'naltirish sahifalari
 - bilim sinovi (test) moduli
-- KPI hisoblash va mega-loyihalar statistikasi (Mutolaa, Ustoz AI, UzChess, Qizlar akademiyasi)
+- so'rovnoma moduli
+- KPI hisoblash va mega-loyihalar statistikasi
 - E-IMZO orqali autentifikatsiya endpointlari
+
+## Joriy arxitektura
+
+Bu loyiha hozir:
+
+- Django 6.0.3
+- PostgreSQL 16.13
+- Ubuntu serverda `gunicorn + systemd + Cloudflare Tunnel`
+
+bilan ishlashga moslangan.
 
 ## Texnologiyalar
 
-- Python 3.13 (loyihadagi `.pyc` fayllariga ko'ra)
-- Django 6.x (migratsiya fayllari bo'yicha)
-- SQLite (`yoshlar.db`)
-- Qo'shimcha kutubxonalar:
-  - `cryptography` (E-IMZO verifikatsiya uchun)
-  - `pandas`, `openpyxl` (Excel import skriptlari uchun)
+- Python 3.14
+- Django 6.0.3
+- PostgreSQL 16.13
+- `psycopg[binary]`
+- `gunicorn`
+- `whitenoise`
+- `pandas`, `openpyxl`
+- `cryptography`
 
-## Tezkor ishga tushirish (local)
+## Muhim eslatma
 
-1. Loyihani clone qiling:
+Loyiha endi SQLite asosiy baza sifatida ishlamaydi.
 
-```bash
-git clone https://github.com/mavlonovomon/yoshlar.git
-cd yoshlar
-```
+- local ishlab chiqish va server ham PostgreSQL ga ulanadi
+- eski SQLite faqat migratsiya/backup uchun ishlatilishi mumkin
+- asosiy `.env` sozlamasi `DATABASE_URL=postgresql://...` bo'lishi kerak
 
-2. Virtual environment yarating va yoqing:
+## Tezkor ishga tushirish
+
+### 1. Virtual muhit
 
 ```bash
 python -m venv .venv
-.venv\Scripts\Activate.ps1
+.venv\\Scripts\\Activate.ps1
 ```
 
-3. Kerakli paketlarni o'rnating:
+### 2. Paketlar
 
 ```bash
-pip install django cryptography pandas openpyxl
+pip install -r requirements.fresh.txt
 ```
 
-4. `.env` fayl yarating:
+### 3. `.env`
 
-```bash
-copy .env.example .env
-```
+`.env.example` dan nusxa oling va quyidagilarni sozlang:
 
-5. Migratsiyalarni ishga tushiring:
+- `SECRET_KEY`
+- `DEBUG`
+- `ALLOWED_HOSTS`
+- `DATABASE_URL`
+- `CSRF_TRUSTED_ORIGINS`
+- `MEDIA_ROOT`
+- `STATIC_ROOT`
+
+### 4. Migratsiya
 
 ```bash
 python manage.py migrate
 ```
 
-6. Admin foydalanuvchi yarating:
+### 5. Tekshiruv
 
 ```bash
-python setup_admin.py
+python manage.py check
 ```
 
-7. Serverni ishga tushiring:
+### 6. Server
 
 ```bash
 python manage.py runserver
 ```
 
-8. Brauzerda oching:
+Brauzerda:
 
-- `http://127.0.0.1:8000/login/`
+- `http://127.0.0.1:8000/`
 - `http://127.0.0.1:8000/admin/`
 
-## Muhim sozlamalar (.env)
+## Production deploy
+
+Ubuntu server uchun tavsiya etilgan oqim:
+
+1. Repo'ni serverga clone qiling.
+2. `/var/www/yoshlar/current` ichida loyiha bo'lsin.
+3. `/var/www/yoshlar/shared/.env` ni to'ldiring.
+4. Virtualenv yarating va dependency'larni o'rnating.
+5. `python manage.py migrate` ishga tushiring.
+6. `python manage.py collectstatic --noinput` ishga tushiring.
+7. `gunicorn` ni `systemd` service orqali ishga tushiring.
+8. Cloudflare Tunnel ni `systemd` service orqali ulab qo'ying.
+
+Deploy uchun tayyor fayllar:
+
+- [`deploy/ubuntu/README.md`](deploy/ubuntu/README.md)
+- [`deploy/ubuntu/update.sh`](deploy/ubuntu/update.sh)
+- [`deploy/ubuntu/bootstrap.sh`](deploy/ubuntu/bootstrap.sh)
+- [`deploy/ubuntu/systemd/yoshlar.service`](deploy/ubuntu/systemd/yoshlar.service)
+- [`deploy/ubuntu/systemd/cloudflared.service`](deploy/ubuntu/systemd/cloudflared.service)
+- [`deploy/ubuntu/cloudflared/config.yml.example`](deploy/ubuntu/cloudflared/config.yml.example)
+
+## Yangilash
+
+GitHub'dan yangi commit kelganda serverda:
+
+```bash
+cd /var/www/yoshlar/current
+bash deploy/ubuntu/update.sh
+```
+
+Bu skript:
+
+- `git pull --ff-only`
+- dependency yangilash
+- migratsiya
+- static fayllarni yig'ish
+- `systemctl restart yoshlar`
+
+## Muhim sozlamalar
 
 `.env.example` ichidagi asosiy kalitlar:
 
@@ -79,12 +140,14 @@ python manage.py runserver
 - `DEBUG`
 - `ALLOWED_HOSTS`
 - `DATABASE_URL`
-- `ADMIN_PASSWORD`
-- `MUTOLAA_STATS_URL`
-- `USTOZ_AI_STATS_URL`
-- `UZCHESS_STATS_URL`
-- `QIZLAR_STATS_URL`
-- `EMAIL_BACKEND`
+- `CSRF_TRUSTED_ORIGINS`
+- `SESSION_COOKIE_SECURE`
+- `CSRF_COOKIE_SECURE`
+- `MEDIA_ROOT`
+- `STATIC_ROOT`
+- `GUNICORN_BIND`
+- `GUNICORN_WORKERS`
+- `GUNICORN_TIMEOUT`
 
 ## Management commandlar
 
@@ -111,6 +174,18 @@ python manage.py compute_kpi
 python manage.py compute_kpi --month 2026-02
 python manage.py compute_kpi --from-date 2026-02-01 --to-date 2026-02-13
 python manage.py compute_kpi --dry-run
+```
+
+SQLite -> PostgreSQL migratsiya:
+
+```bash
+python manage.py migrate_sqlite_to_postgres
+```
+
+Maktab o'quvchilari importi:
+
+```bash
+python manage.py import_maktab_oquvchilar_from_rp --file "C:\\Users\\Genius007\\Desktop\\RP.xlsx"
 ```
 
 ## E-IMZO
@@ -141,15 +216,16 @@ Asosiy app'lar:
 - `kredit_yo_naltirish`
 - `intizom_jazo`
 - `bilim_sinovi`
+- `Yosh.school_*` maydonlari orqali maktab o'quvchilari qatlami
+- `sorovnoma`
 - `auth` (E-IMZO)
 
 ## Git bo'yicha eslatma
 
-Quyidagilar `.gitignore` orqali repoga qo'shilmaydi:
+Repo uchun quyidagi qoidalar qo'llanadi:
 
-- `yoshlar.db`
-- `media/`
-- `staticfiles/`
-- `.env`
+- `.gitattributes` orqali line ending nazorat qilinadi
+- `.editorconfig` bilan LF/CRLF siyosati belgilanadi
+- dump, backup va database fayllar repoga qo'shilmaydi
 
-Bu fayllar local muhit va foydalanuvchi ma'lumotlariga bog'liq bo'lgani uchun repository'da saqlanmaydi.
+Bu Windows'da yozib, Linux serverda `git pull` qilishni barqarorlashtiradi.

@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load core_extras %}
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/list_premium.css' %}">
@@ -68,12 +69,12 @@
             <table class="premium-table">
                 <thead>
                     <tr>
-                        <th style="width: 300px;">Yosh haqida ma'lumot</th>
-                        <th>Hujjatlar</th>
-                        <th>Mahalla</th>
-                        <th>Chiqib ketgan sana</th>
-                        <th>Manzil</th>
-                        <th>Sababi</th>
+                        <th style="width: 300px;">{% sort_link 'fullname' "Yosh haqida ma'lumot" %}</th>
+                        <th>{% sort_link 'passport_number' 'Hujjatlar' %}</th>
+                        <th>{% sort_link 'mahalla' 'Mahalla' %}</th>
+                        <th>{% sort_link 'departure_date' 'Chiqib ketgan sana' %}</th>
+                        <th>{% sort_link 'destination_country' 'Manzil' %}</th>
+                        <th>{% sort_link 'reason' 'Sababi' %}</th>
                         <th class="text-center" style="width: 160px;">Amallar</th>
                     </tr>
                 </thead>

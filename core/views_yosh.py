@@ -1,6 +1,7 @@
 import re
 import requests
 import uuid
+from collections import Counter, defaultdict
 from datetime import datetime
 
 from django.conf import settings
@@ -9,10 +10,12 @@ from django.contrib.auth.decorators import login_required
 from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
 from django.db.models import BooleanField, Case, Count, Q, Sum, When
+from django.db import transaction
 from django.contrib.sessions.models import Session
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.html import escape, format_html_join, mark_safe
 
 from beshtashabbus.models import FiveInitiativeEvent
 from beshtashabbus.views_applications import (
@@ -28,8 +31,8 @@ from otaliq.models import OtaliqYouth
 from reyd.models import RaidEvent
 
 from .forms import UchrashuvForm, UserProfileForm, YoshForm
-from .models import Mahalla, Uchrashuv, User, Yosh
-from .view_helpers import is_management_user
+from .models import Mahalla, MaktabOquvchi, Uchrashuv, User, Yosh
+from .view_helpers import apply_sorting, is_active_school_class, is_management_user, normalize_sort_params
 
 
 ATHLETE_INFO_URL = "https://api.5tashabbus.uz/Account/GetAthleteInfoForRegistration"
@@ -39,6 +42,7 @@ ATHLETE_INFO_BASE_PARAMS = {
     "lang": "uz_latn",
     "initiativTypeId": "1",
 }
+PASSPORT_SUFFIXES = ("AA", "AB", "AC", "AD", "AE", "FA", "FS")
 
 
 def _request_with_proxy_fallback(method: str, url: str, session=None, **kwargs):
@@ -78,6 +82,121 @@ def _parse_passport(passport_value):
     if len(series) != 2 or not series.isalpha() or not number:
         return None, None
     return series, number
+
+
+def _school_document_type(series: str) -> str:
+    series = (series or "").upper().strip()
+    if not series:
+        return ""
+    return "Pasport" if any(series.endswith(suffix) for suffix in PASSPORT_SUFFIXES) else "Guvohnoma"
+
+
+def _school_passport_q(field_name: str = "document_series"):
+    query = Q()
+    for suffix in PASSPORT_SUFFIXES:
+        query |= Q(**{f"{field_name}__iendswith": suffix})
+    return query
+
+
+def _normalize_school_value(value):
+    return re.sub(r"\s+", "", str(value or "").strip().casefold())
+
+
+def _active_school_class_q(field_name: str):
+    return Q(**{f"{field_name}__gt": ""}) & ~Q(**{f"{field_name}__in": ["-", "—", "–"]})
+
+
+def _build_school_affinity_index():
+    index = {
+        "org": defaultdict(Counter),
+        "org_region": defaultdict(Counter),
+        "org_region_class": defaultdict(Counter),
+    }
+    rows = (
+        Yosh.objects.select_related("mahalla")
+        .filter(mahalla__isnull=False)
+        .exclude(school_organization="")
+        .filter(_active_school_class_q("school_class"))
+        .values("school_organization", "school_organization_region", "school_class", "mahalla__name")
+        .annotate(total=Count("id"))
+    )
+    for row in rows:
+        mahalla_name = row["mahalla__name"] or "Noma'lum"
+        org = _normalize_school_value(row["school_organization"])
+        region = _normalize_school_value(row["school_organization_region"])
+        klass = _normalize_school_value(row["school_class"])
+        total = int(row["total"] or 0)
+        if not org or total <= 0:
+            continue
+        index["org"][org][mahalla_name] += total
+        if region:
+            index["org_region"][(org, region)][mahalla_name] += total
+        if region and klass:
+            index["org_region_class"][(org, region, klass)][mahalla_name] += total
+    return index
+
+
+def _school_probability_payload(item, index):
+    empty_html = mark_safe("<div class='small text-muted'>Hozircha ishonchli ehtimol topilmadi.</div>")
+    org = _normalize_school_value(item.organization)
+    region = _normalize_school_value(item.organization_region)
+    klass = _normalize_school_value(item.klass)
+
+    counters = [
+        ("Tashkilot + hudud + sinf", index["org_region_class"].get((org, region, klass))),
+        ("Tashkilot + hudud", index["org_region"].get((org, region))),
+        ("Tashkilot", index["org"].get(org)),
+    ]
+
+    scope_label = ""
+    counter = None
+    for label, candidate in counters:
+        if candidate:
+            scope_label = label
+            counter = candidate
+            break
+
+    if not counter:
+        return {
+            "scope_label": "",
+            "html": empty_html,
+            "items": [],
+        }
+
+    total = sum(counter.values())
+    if total <= 0:
+        return {
+            "scope_label": scope_label,
+            "html": empty_html,
+            "items": [],
+        }
+
+    top_items = []
+    rows = []
+    for mahalla_name, count in counter.most_common(5):
+        percent = round((count / total) * 100, 1)
+        top_items.append({
+            "name": mahalla_name,
+            "count": count,
+            "percent": percent,
+        })
+        rows.append((escape(mahalla_name), percent))
+
+    rows_html = format_html_join(
+        "",
+        "<div class='d-flex justify-content-between gap-2'><span>{}</span><strong>{}%</strong></div>",
+        rows,
+    )
+    html = mark_safe(
+        "<div class='small'><div class='fw-semibold mb-1'>Ehtimoliy mahallalar</div>"
+        f"{rows_html}"
+        f"<div class='text-muted mt-1'>Asos: {escape(scope_label)}</div></div>"
+    )
+    return {
+        "scope_label": scope_label,
+        "html": html,
+        "items": top_items,
+    }
 
 
 def _get_online_users(limit: int = 20):
@@ -315,6 +434,38 @@ def yosh_list(request):
     elif status == "yoq":
         qs = qs.filter(meeting_count=0)
 
+    sort_field, sort_direction = normalize_sort_params(
+        request,
+        {
+            "fullname",
+            "birth_date",
+            "mahalla",
+            "phone_number",
+            "passport_number",
+            "guvohnoma_raqami",
+            "school_organization",
+            "school_class",
+            "jshshir",
+            "meeting_count",
+            "has_meeting",
+        },
+        "fullname",
+    )
+    sort_map = {
+        "fullname": "fullname",
+        "birth_date": "birth_date",
+        "mahalla": "mahalla__name",
+        "phone_number": "phone_number",
+        "passport_number": "passport_number",
+        "guvohnoma_raqami": "guvohnoma_raqami",
+        "school_organization": "school_organization",
+        "school_class": "school_class",
+        "jshshir": "jshshir",
+        "meeting_count": "meeting_count",
+        "has_meeting": ("meeting_count", "fullname"),
+    }
+    qs = apply_sorting(qs, sort_field, sort_direction, sort_map, "fullname")
+
     per_page = request.GET.get("per_page", "20")
     if per_page not in ["10", "20", "50", "100", "200"]:
         per_page = "20"
@@ -331,8 +482,274 @@ def yosh_list(request):
         if request.GET.get("mahalla") and request.GET.get("mahalla").isdigit()
         else None,
         "selected_status": request.GET.get("status"),
+        "sort_field": sort_field,
+        "sort_direction": sort_direction,
     }
     return render(request, "list.html", context)
+
+
+@login_required
+def maktab_oquvchi_list(request):
+    q = (request.GET.get("q") or "").strip()
+    organization = (request.GET.get("organization") or "").strip()
+    klass = (request.GET.get("klass") or "").strip()
+    doc_type = (request.GET.get("doc_type") or "").strip()
+    user = request.user
+
+    qs = Yosh.objects.select_related("mahalla").filter(
+        Q(school_external_id__isnull=False)
+        | Q(school_organization__gt="")
+        | Q(school_class__gt="")
+        | Q(school_document_number__gt="")
+    )
+    qs = qs.filter(_active_school_class_q("school_class"))
+
+    if not is_management_user(user):
+        if getattr(user, "mahalla", None):
+            qs = qs.filter(mahalla=user.mahalla)
+        else:
+            qs = qs.none()
+
+    if q:
+        qs = qs.filter(
+            Q(fullname__icontains=q)
+            | Q(jshshir__icontains=q)
+            | Q(passport_number__icontains=q)
+            | Q(guvohnoma_raqami__icontains=q)
+            | Q(school_organization__icontains=q)
+            | Q(school_class__icontains=q)
+            | Q(school_document_series__icontains=q)
+            | Q(school_document_number__icontains=q)
+            | Q(school_organization_region__icontains=q)
+        )
+    if organization:
+        qs = qs.filter(school_organization__icontains=organization)
+    if klass:
+        qs = qs.filter(school_class__icontains=klass)
+    passport_suffixes = ("AA", "AB", "AC", "AD", "AE", "FA", "FS")
+    passport_q = Q()
+    for suffix in passport_suffixes:
+        passport_q |= Q(school_document_series__iendswith=suffix)
+    if doc_type == "passport":
+        qs = qs.filter(passport_q)
+    elif doc_type == "guvohnoma":
+        qs = qs.exclude(passport_q).filter(school_document_series__gt="")
+
+    sort_field, sort_direction = normalize_sort_params(
+        request,
+        {
+            "fullname",
+            "jshshir",
+            "birth_date",
+            "mahalla",
+            "organization",
+            "organization_region",
+            "klass",
+            "document_series",
+            "document_number",
+        },
+        "fullname",
+    )
+    sort_map = {
+        "fullname": "fullname",
+        "jshshir": "jshshir",
+        "birth_date": "birth_date",
+        "mahalla": "mahalla__name",
+        "organization": "school_organization",
+        "organization_region": "school_organization_region",
+        "klass": "school_class",
+        "document_series": "school_document_series",
+        "document_number": "school_document_number",
+    }
+    qs = apply_sorting(qs, sort_field, sort_direction, sort_map, "fullname")
+
+    per_page = request.GET.get("per_page", "20")
+    if per_page not in ["10", "20", "50", "100", "200"]:
+        per_page = "20"
+
+    paginator = Paginator(qs, int(per_page))
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        "page_obj": page_obj,
+        "per_page": per_page,
+        "q": q,
+        "organization": organization,
+        "klass": klass,
+        "doc_type": doc_type,
+        "total_count": qs.count(),
+        "passport_count": qs.filter(passport_q).count(),
+        "guvohnoma_count": qs.exclude(passport_q).filter(school_document_series__gt="").count(),
+        "sort_field": sort_field,
+        "sort_direction": sort_direction,
+    }
+    return render(request, "maktab_oquvchilar/list.html", context)
+
+
+@login_required
+def maktab_oquvchi_pending_list(request):
+    q = (request.GET.get("q") or "").strip()
+    organization = (request.GET.get("organization") or "").strip()
+    klass = (request.GET.get("klass") or "").strip()
+    doc_type = (request.GET.get("doc_type") or "").strip()
+
+    qs = MaktabOquvchi.objects.filter(linked_yosh__isnull=True)
+
+    if q:
+        qs = qs.filter(
+            Q(fullname__icontains=q)
+            | Q(pinfl__icontains=q)
+            | Q(organization__icontains=q)
+            | Q(klass__icontains=q)
+            | Q(document_series__icontains=q)
+            | Q(document_number__icontains=q)
+            | Q(organization_region__icontains=q)
+        )
+    if organization:
+        qs = qs.filter(organization__icontains=organization)
+    if klass:
+        qs = qs.filter(klass__icontains=klass)
+    qs = qs.filter(_active_school_class_q("klass"))
+    passport_q = _school_passport_q()
+    if doc_type == "passport":
+        qs = qs.filter(passport_q)
+    elif doc_type == "guvohnoma":
+        qs = qs.exclude(passport_q)
+
+    sort_field, sort_direction = normalize_sort_params(
+        request,
+        {
+            "fullname",
+            "pinfl",
+            "birth_date",
+            "organization",
+            "organization_region",
+            "klass",
+            "document_series",
+            "document_number",
+        },
+        "fullname",
+    )
+    sort_map = {
+        "fullname": "fullname",
+        "pinfl": "pinfl",
+        "birth_date": "birth_date",
+        "organization": "organization",
+        "organization_region": "organization_region",
+        "klass": "klass",
+        "document_series": "document_series",
+        "document_number": "document_number",
+    }
+    qs = apply_sorting(qs, sort_field, sort_direction, sort_map, "fullname")
+
+    per_page = request.GET.get("per_page", "20")
+    if per_page not in ["10", "20", "50", "100", "200"]:
+        per_page = "20"
+
+    paginator = Paginator(qs, int(per_page))
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+    affinity_index = _build_school_affinity_index()
+    page_items = list(page_obj.object_list)
+    for item in page_items:
+        probability = _school_probability_payload(item, affinity_index)
+        item.school_probability_html = probability["html"]
+        item.school_probability_items = probability["items"]
+        item.school_probability_scope = probability["scope_label"]
+    page_obj.object_list = page_items
+
+    show_assign_action = not is_management_user(request.user) and bool(getattr(request.user, "mahalla", None))
+
+    context = {
+        "page_obj": page_obj,
+        "per_page": per_page,
+        "q": q,
+        "organization": organization,
+        "klass": klass,
+        "doc_type": doc_type,
+        "total_count": qs.count(),
+        "passport_count": qs.filter(passport_q).count(),
+        "guvohnoma_count": qs.exclude(passport_q).count(),
+        "can_assign": show_assign_action,
+        "current_mahalla": getattr(getattr(request.user, "mahalla", None), "name", ""),
+        "sort_field": sort_field,
+        "sort_direction": sort_direction,
+    }
+    return render(request, "maktab_oquvchilar/unassigned_list.html", context)
+
+
+@login_required
+def maktab_oquvchi_assign(request, pk):
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "Method noto'g'ri."}, status=405)
+
+    user = request.user
+    if not getattr(user, "mahalla", None):
+        payload = {"success": False, "error": "Sizning mahallangiz biriktirilmagan."}
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse(payload, status=400)
+        messages.error(request, payload["error"])
+        return redirect("maktab_oquvchi_pending_list")
+
+    item = get_object_or_404(MaktabOquvchi, pk=pk, linked_yosh__isnull=True)
+    if not is_active_school_class(item.klass):
+        payload = {"success": False, "error": "Bu yozuv faol o'quvchi emas."}
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse(payload, status=400)
+        messages.error(request, payload["error"])
+        return redirect("maktab_oquvchi_pending_list")
+    doc_type = _school_document_type(item.document_series)
+    doc_value = f"{item.document_series}{item.document_number}".strip()
+
+    with transaction.atomic():
+        yosh = Yosh.objects.filter(jshshir=item.pinfl).select_for_update().first()
+        if not yosh:
+            yosh = Yosh(
+                fullname=item.fullname,
+                birth_date=item.birth_date,
+                jshshir=item.pinfl,
+                address=item.organization_region or item.organization or item.fullname,
+                mahalla=user.mahalla,
+            )
+        else:
+            yosh.mahalla = user.mahalla
+
+        yosh.school_external_id = item.external_id
+        yosh.school_gender = item.gender
+        yosh.school_nationality = item.nationality
+        yosh.school_citizenship = item.citizenship
+        yosh.school_document_series = item.document_series
+        yosh.school_document_number = item.document_number
+        yosh.school_organization = item.organization
+        yosh.school_organization_region = item.organization_region
+        yosh.school_class = item.klass
+        yosh.school_imported_at = timezone.now()
+
+        if doc_value:
+            if doc_type == "Pasport":
+                yosh.passport_number = yosh.passport_number or doc_value
+            else:
+                yosh.guvohnoma_raqami = yosh.guvohnoma_raqami or doc_value
+
+        yosh.save()
+        item.delete()
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse(
+            {
+                "success": True,
+                "pk": pk,
+                "doc_type": doc_type,
+                "message": "O'quvchi sizning mahallangizga biriktirildi.",
+            }
+        )
+
+    next_url = (request.POST.get("next") or "").strip()
+    messages.success(request, "O'quvchi sizning mahallangizga biriktirildi.")
+    if next_url.startswith("/"):
+        return redirect(next_url)
+    return redirect("maktab_oquvchi_pending_list")
 
 
 @login_required
@@ -433,7 +850,21 @@ def user_list(request):
         messages.error(request, "Bu bo'lim faqat Super Admin yoki Rahbar uchun.")
         return redirect("dashboard")
 
-    users = User.objects.select_related("mahalla").all().order_by("full_name", "username")
+    sort_field, sort_direction = normalize_sort_params(
+        request,
+        {"full_name", "username", "role", "pinfl", "phone_number", "mahalla", "sector"},
+        "full_name",
+    )
+    sort_map = {
+        "full_name": "full_name",
+        "username": "username",
+        "role": "role",
+        "pinfl": "pinfl",
+        "phone_number": "phone_number",
+        "mahalla": "mahalla__name",
+        "sector": "sector",
+    }
+    users = apply_sorting(User.objects.select_related("mahalla").all(), sort_field, sort_direction, sort_map, "full_name")
 
     q = (request.GET.get("q") or "").strip()
     role = (request.GET.get("role") or "").strip()
@@ -453,6 +884,8 @@ def user_list(request):
         "users": users,
         "q": q,
         "selected_role": role,
+        "sort_field": sort_field,
+        "sort_direction": sort_direction,
     }
     return render(request, "users/list.html", context)
 

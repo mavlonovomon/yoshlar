@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load core_extras %}
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/list_premium.css' %}">
@@ -12,6 +13,12 @@
             <p>Mahalladagi jami yoshlar haqida umumiy ma'lumotlar bazasi</p>
         </div>
         <div class="d-flex gap-2">
+            <a href="{% url 'maktab_oquvchi_list' %}" class="btn btn-outline-primary shadow-sm">
+                <i class="bi bi-mortarboard-fill me-1"></i> Maktab o'quvchilari
+            </a>
+            <a href="{% url 'maktab_oquvchi_pending_list' %}" class="btn btn-outline-success shadow-sm">
+                <i class="bi bi-check2-square me-1"></i> Aniqlanmaganlar
+            </a>
             <a href="{% url 'yosh_create' %}" class="btn btn-primary shadow-sm">
                 <i class="bi bi-person-plus-fill me-1"></i> Yangi yosh qo'shish
             </a>
@@ -81,12 +88,13 @@
                 <thead>
                     <tr>
                         <th style="width: 50px;">T/r</th>
-                        {% if mahallas %}<th>Mahalla</th>{% endif %}
-                        <th>F.I.Sh va Kontakt</th>
-                        <th>Passport raqami</th>
-                        <th>Guvohnoma raqami</th>
-                        <th>JSHSHIR</th>
-                        <th>Suhbat holati</th>
+                        {% if mahallas %}<th>{% sort_link 'mahalla' 'Mahalla' %}</th>{% endif %}
+                        <th>{% sort_link 'fullname' 'F.I.Sh va Kontakt' %}</th>
+                        <th>{% sort_link 'birth_date' 'Yoshi' %}</th>
+                        <th>{% sort_link 'passport_number' 'Passport raqami' %}</th>
+                        <th>{% sort_link 'guvohnoma_raqami' 'Guvohnoma raqami' %}</th>
+                        <th>{% sort_link 'jshshir' 'JSHSHIR' %}</th>
+                        <th>{% sort_link 'meeting_count' 'Suhbat holati' %}</th>
                         <th class="text-center" style="width: 180px;">Amallar</th>
                     </tr>
                 </thead>
@@ -128,6 +136,15 @@
                             </div>
                         </td>
                         <td>
+                            <div class="fw-bold text-dark" style="font-size: 0.85rem;">
+                                {% if item.birth_date %}
+                                {{ item.age_years }} yosh
+                                {% else %}
+                                -
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
                             <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ item.passport_number|default:"-" }}</div>
                         </td>
                         <td>
@@ -166,7 +183,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="{% if mahallas %}8{% else %}7{% endif %}" class="text-center py-5">
+                        <td colspan="{% if mahallas %}9{% else %}8{% endif %}" class="text-center py-5">
                             <div class="mb-3 text-muted">
                                 <i class="bi bi-database-exclamation display-4"></i>
                             </div>
@@ -183,11 +200,11 @@
     {% if page_obj.has_other_pages %}
     <div class="pagination-premium">
         {% if page_obj.has_previous %}
-        <a href="?page=1&q={{ request.GET.q }}&status={{ request.GET.status }}&per_page={{ per_page }}&mahalla={{ request.GET.mahalla|default:'' }}"
+        <a href="?{% query_replace page=1 %}"
             class="page-num" title="Birinchi">
             <i class="bi bi-chevron-double-left"></i>
         </a>
-        <a href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}&per_page={{ per_page }}&mahalla={{ request.GET.mahalla|default:'' }}"
+        <a href="?{% query_replace page=page_obj.previous_page_number %}"
             class="page-num">
             <i class="bi bi-chevron-left"></i>
         </a>
@@ -198,11 +215,11 @@
         </div>
 
         {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}&per_page={{ per_page }}&mahalla={{ request.GET.mahalla|default:'' }}"
+        <a href="?{% query_replace page=page_obj.next_page_number %}"
             class="page-num">
             <i class="bi bi-chevron-right"></i>
         </a>
-        <a href="?page={{ page_obj.paginator.num_pages }}&q={{ request.GET.q }}&status={{ request.GET.status }}&per_page={{ per_page }}&mahalla={{ request.GET.mahalla|default:'' }}"
+        <a href="?{% query_replace page=page_obj.paginator.num_pages %}"
             class="page-num" title="Oxirgi">
             <i class="bi bi-chevron-double-right"></i>
         </a>

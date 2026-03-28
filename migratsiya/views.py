@@ -6,6 +6,7 @@ from django.db.models import Count, Q
 from django.contrib import messages
 
 from core.models import Mahalla
+from core.view_helpers import apply_sorting, normalize_sort_params
 from .models import MigrationYouth, MigrationMeeting
 from .forms import MigrationYouthForm, MigrationMeetingForm, PROVINCE_MAP
 
@@ -62,7 +63,23 @@ class MigrationYouthListView(LoginRequiredMixin, ListView):
         if reason:
             queryset = queryset.filter(reason=reason)
 
-        return queryset.order_by('yosh__fullname')
+        sort_field, sort_direction = normalize_sort_params(
+            self.request,
+            {'fullname', 'passport_number', 'mahalla', 'departure_date', 'destination_country', 'reason', 'meeting_count'},
+            'fullname',
+        )
+        self.sort_field = sort_field
+        self.sort_direction = sort_direction
+        sort_map = {
+            'fullname': 'yosh__fullname',
+            'passport_number': 'yosh__passport_number',
+            'mahalla': 'yosh__mahalla__name',
+            'departure_date': 'departure_date',
+            'destination_country': 'destination_country',
+            'reason': 'reason',
+            'meeting_count': 'meeting_count',
+        }
+        return apply_sorting(queryset, sort_field, sort_direction, sort_map, 'fullname')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -82,6 +99,8 @@ class MigrationYouthListView(LoginRequiredMixin, ListView):
             context['mahallas'] = Mahalla.objects.filter(id=user.mahalla.id) if user.mahalla else Mahalla.objects.none()
 
         context['reasons'] = MigrationYouth.REASON_CHOICES
+        context['sort_field'] = getattr(self, 'sort_field', 'fullname')
+        context['sort_direction'] = getattr(self, 'sort_direction', 'asc')
         return context
 
 

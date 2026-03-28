@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.contrib import messages
 
 from core.models import User
+from core.view_helpers import apply_sorting, normalize_sort_params
 from .models import AttendanceSession, AttendanceRecord
 from .forms import AttendanceSessionForm
 
@@ -32,12 +33,28 @@ class AttendanceListView(LoginRequiredMixin, ListView):
         if session_type:
             queryset = queryset.filter(session_type=session_type)
 
-        return queryset.order_by('-session_date')
+        sort_field, sort_direction = normalize_sort_params(
+            self.request,
+            {'session_type', 'reason', 'session_date', 'created_by'},
+            'session_date',
+            'desc',
+        )
+        self.sort_field = sort_field
+        self.sort_direction = sort_direction
+        sort_map = {
+            'session_type': 'session_type',
+            'reason': 'reason',
+            'session_date': 'session_date',
+            'created_by': 'created_by__full_name',
+        }
+        return apply_sorting(queryset, sort_field, sort_direction, sort_map, 'session_date')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['types'] = AttendanceSession.SESSION_TYPE_CHOICES
         context['selected_type'] = self.request.GET.get('session_type')
+        context['sort_field'] = getattr(self, 'sort_field', 'session_date')
+        context['sort_direction'] = getattr(self, 'sort_direction', 'desc')
         return context
 
 

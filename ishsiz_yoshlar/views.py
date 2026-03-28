@@ -16,6 +16,7 @@ from openpyxl.styles import Alignment, Border, Side, Font, PatternFill
 from .models import UnemployedYouth, ResponsibleLeader, YouthMeeting, AssistanceInfo
 from .forms import UnemployedYouthForm, MeetingForm, AssistanceForm
 from core.models import Mahalla, User, Yosh
+from core.view_helpers import apply_sorting, normalize_sort_params
 
 logger = logging.getLogger(__name__)
 
@@ -398,7 +399,29 @@ class UnemployedYouthListView(LoginRequiredMixin, ListView):
         if leader_id:
             queryset = queryset.filter(leader_id=leader_id)
 
-        return queryset.order_by('yosh__fullname')
+        sort_field, sort_direction = normalize_sort_params(
+            self.request,
+            {
+                'fullname',
+                'passport_number',
+                'mahalla',
+                'category',
+                'leader',
+                'meeting_count',
+            },
+            'fullname',
+        )
+        sort_map = {
+            'fullname': 'yosh__fullname',
+            'passport_number': 'yosh__passport_number',
+            'mahalla': 'yosh__mahalla__name',
+            'category': 'category',
+            'leader': 'leader__full_name',
+            'meeting_count': 'meeting_count',
+        }
+        self.sort_field = sort_field
+        self.sort_direction = sort_direction
+        return apply_sorting(queryset, sort_field, sort_direction, sort_map, 'fullname')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -426,6 +449,8 @@ class UnemployedYouthListView(LoginRequiredMixin, ListView):
             
         context['leaders'] = ResponsibleLeader.objects.all()
         context['categories'] = UnemployedYouth.CATEGORY_CHOICES
+        context['sort_field'] = getattr(self, 'sort_field', 'fullname')
+        context['sort_direction'] = getattr(self, 'sort_direction', 'asc')
         return context
 
 class UnemployedYouthCreateView(LoginRequiredMixin, AdminRequiredMixin, CreateView):

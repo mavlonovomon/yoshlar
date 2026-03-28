@@ -173,7 +173,7 @@
                                     <th>#</th>
                                     {% for col in table_columns %}
                                     {% with label=mega_column_labels|get_item:col %}
-                                    <th>{% if label %}{{ label }}{% else %}{{ col|capfirst }}{% endif %}</th>
+                                    <th>{% sort_link col label|default:col|capfirst %}</th>
                                     {% endwith %}
                                     {% empty %}
                                     <th>Mahalla</th>

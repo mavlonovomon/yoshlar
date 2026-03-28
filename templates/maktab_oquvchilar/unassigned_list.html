@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load core_extras %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/list_premium.css' %}">
+
+<div class="container-fluid">
+    <div class="page-header">
+        <div class="page-title-group">
+            <h2>Aniqlanmagan maktab o'quvchilari</h2>
+            <p>Mahallasi aniqlanmagan o'quvchilar ro'yxati. Yashil tugma bosilganda ular sizning mahallangizga biriktiriladi.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'maktab_oquvchi_list' %}" class="btn btn-outline-primary shadow-sm">
+                <i class="bi bi-mortarboard-fill me-1"></i> Aniqlanganlar
+            </a>
+            <a href="{% url 'yosh_list' %}" class="btn btn-outline-secondary shadow-sm">
+                <i class="bi bi-people me-1"></i> Umumiy yoshlar
+            </a>
+        </div>
+    </div>
+
+    <div class="filter-card">
+        <form method="get" class="filter-grid" id="filterForm">
+            <div class="filter-item">
+                <label class="form-label text-muted small fw-bold">QIDIRISH</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" name="q" class="form-control border-start-0" placeholder="F.I.Sh, PINFL, tashkilot, sinf..." value="{{ q }}">
+                </div>
+            </div>
+            <div class="filter-item">
+                <label class="form-label text-muted small fw-bold">TASHKILOT</label>
+                <input type="text" name="organization" class="form-control" value="{{ organization }}" placeholder="Maktab nomi">
+            </div>
+            <div class="filter-item">
+                <label class="form-label text-muted small fw-bold">SINF</label>
+                <input type="text" name="klass" class="form-control" value="{{ klass }}" placeholder="4-A">
+            </div>
+            <div class="filter-item">
+                <label class="form-label text-muted small fw-bold">HUJJAT TURI</label>
+                <select name="doc_type" class="form-select" onchange="this.form.submit()">
+                    <option value="">Barchasi</option>
+                    <option value="passport" {% if doc_type == 'passport' %}selected{% endif %}>Pasport</option>
+                    <option value="guvohnoma" {% if doc_type == 'guvohnoma' %}selected{% endif %}>Guvohnoma</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label class="form-label text-muted small fw-bold">KO'RSATISH</label>
+                <select name="per_page" class="form-select" onchange="this.form.submit()">
+                    <option value="10" {% if per_page == '10' %}selected{% endif %}>10 tadan</option>
+                    <option value="20" {% if per_page == '20' %}selected{% endif %}>20 tadan</option>
+                    <option value="50" {% if per_page == '50' %}selected{% endif %}>50 tadan</option>
+                    <option value="100" {% if per_page == '100' %}selected{% endif %}>100 tadan</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <button type="submit" class="btn btn-success px-4">
+                    <i class="bi bi-funnel-fill me-1"></i> Saralash
+                </button>
+                {% if q or organization or klass or doc_type or per_page != '20' %}
+                <a href="{% url 'maktab_oquvchi_pending_list' %}" class="btn btn-light ms-1" title="Tozalash">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Jami aniqlanmagan</div>
+                    <div class="h3 mb-0" id="pending-total-count">{{ total_count }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Pasportli</div>
+                    <div class="h3 mb-0 text-primary" id="pending-passport-count">{{ passport_count }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Guvohnomali</div>
+                    <div class="h3 mb-0 text-success" id="pending-guvohnoma-count">{{ guvohnoma_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if can_assign %}
+    <div class="alert alert-info border-0 shadow-sm">
+        Sizning mahallangiz: <strong>{{ current_mahalla }}</strong>. Yashil tugma bosilganda o'quvchi shu mahallaga biriktiriladi.
+    </div>
+    {% endif %}
+
+    <div class="premium-table-card">
+        <div class="table-responsive">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">T/r</th>
+                        <th>{% sort_link 'fullname' "F.I.Sh" %}</th>
+                        <th>{% sort_link 'pinfl' 'PINFL' %}</th>
+                        <th>{% sort_link 'birth_date' "Tug'ilgan sana" %}</th>
+                        <th>{% sort_link 'organization' 'Tashkilot' %}</th>
+                        <th>{% sort_link 'organization_region' 'Hudud' %}</th>
+                        <th>{% sort_link 'klass' 'Sinf' %}</th>
+                        <th>{% sort_link 'document_series' 'Hujjat' %}</th>
+                        <th class="text-center" style="width: 150px;">Amal</th>
+                    </tr>
+                </thead>
+                <tbody id="pending-yosh-body">
+                    {% for item in page_obj %}
+                    <tr data-row-id="{{ item.pk }}" data-doc-type="{{ item.document_type|lower }}">
+                        <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
+                        <td class="fw-medium">{{ item.fullname }}</td>
+                        <td>{{ item.pinfl }}</td>
+                        <td>{{ item.birth_date|date:"d.m.Y" }}</td>
+                        <td>{{ item.organization }}</td>
+                        <td>{{ item.organization_region|default:"-" }}</td>
+                        <td>{{ item.klass|default:"-" }}</td>
+                        <td>
+                            <div class="small">
+                                <div class="fw-semibold">{{ item.document_series|default:"-" }} {{ item.document_number|default:"" }}</div>
+                                {% if item.document_type %}
+                                <span class="badge bg-info-subtle text-info">{{ item.document_type }}</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <button type="button"
+                                class="btn btn-outline-info btn-sm shadow-sm me-1"
+                                title="Mahalla ehtimoli"
+                                data-bs-toggle="popover"
+                                data-bs-trigger="focus"
+                                data-bs-html="true"
+                                data-bs-placement="left"
+                                data-bs-container="body"
+                                data-bs-content="{{ item.school_probability_html }}">
+                                <i class="bi bi-info-circle"></i>
+                            </button>
+                            {% if can_assign %}
+                            <form method="post" action="{% url 'maktab_oquvchi_assign' item.pk %}" class="d-inline assign-school-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button type="submit" class="btn btn-success btn-sm shadow-sm" title="Mahallaga biriktirish">
+                                    <i class="bi bi-check2-circle"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5">
+                            <div class="mb-3 text-muted">
+                                <i class="bi bi-database-check display-4"></i>
+                            </div>
+                            <h5 class="text-muted">Aniqlanmagan o'quvchi yo'q</h5>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div class="pagination-premium">
+        {% if page_obj.has_previous %}
+        <a href="?{% query_replace page=1 %}"
+            class="page-num" title="Birinchi">
+            <i class="bi bi-chevron-double-left"></i>
+        </a>
+        <a href="?{% query_replace page=page_obj.previous_page_number %}"
+            class="page-num">
+            <i class="bi bi-chevron-left"></i>
+        </a>
+        {% endif %}
+
+        <div class="page-num active">
+            {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+        </div>
+
+        {% if page_obj.has_next %}
+        <a href="?{% query_replace page=page_obj.next_page_number %}"
+            class="page-num">
+            <i class="bi bi-chevron-right"></i>
+        </a>
+        <a href="?{% query_replace page=page_obj.paginator.num_pages %}"
+            class="page-num" title="Oxirgi">
+            <i class="bi bi-chevron-double-right"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+<script>
+(function () {
+    const body = document.getElementById('pending-yosh-body');
+    const totalCount = document.getElementById('pending-total-count');
+    const passportCount = document.getElementById('pending-passport-count');
+    const guvohnomaCount = document.getElementById('pending-guvohnoma-count');
+
+    function setCount(el, value) {
+        if (el) {
+            el.textContent = value;
+        }
+    }
+
+    function renderEmptyRow() {
+        const colspan = {{ can_assign|yesno:"9,8" }};
+        body.innerHTML = `
+            <tr>
+                <td colspan="${colspan}" class="text-center py-5">
+                    <div class="mb-3 text-muted">
+                        <i class="bi bi-database-check display-4"></i>
+                    </div>
+                    <h5 class="text-muted">Aniqlanmagan o'quvchi yo'q</h5>
+                </td>
+            </tr>`;
+    }
+
+    document.querySelectorAll('.assign-school-form').forEach((form) => {
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const row = form.closest('tr');
+            const docType = (row?.dataset.docType || '').toLowerCase();
+            const csrfToken = form.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: new FormData(form),
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || "So'rov bajarilmadi.");
+                }
+
+                if (row) {
+                    row.remove();
+                }
+
+                const nextTotal = Math.max(parseInt(totalCount.textContent || '0', 10) - 1, 0);
+                setCount(totalCount, nextTotal);
+                if (docType === 'pasport') {
+                    setCount(passportCount, Math.max(parseInt(passportCount.textContent || '0', 10) - 1, 0));
+                } else if (docType === 'guvohnoma') {
+                    setCount(guvohnomaCount, Math.max(parseInt(guvohnomaCount.textContent || '0', 10) - 1, 0));
+                }
+
+                if (body && body.querySelectorAll('tr').length === 0) {
+                    renderEmptyRow();
+                }
+            } catch (error) {
+                console.error(error);
+                form.submit();
+            }
+        });
+    });
+
+    document.querySelectorAll('[data-bs-toggle="popover"]').forEach((el) => {
+        new bootstrap.Popover(el, {
+            trigger: 'focus',
+            container: 'body',
+            html: true,
+        });
+    });
+})();
+</script>
+{% endblock %}

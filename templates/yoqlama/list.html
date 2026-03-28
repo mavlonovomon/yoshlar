@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load core_extras %}
 {% load static %}
 
 {% block content %}
@@ -58,9 +59,9 @@
             <table class="premium-table">
                 <thead>
                     <tr>
-                        <th>Yo'qlama turi</th>
-                        <th>Sababi/Izoh</th>
-                        <th>Sana</th>
+                        <th>{% sort_link 'session_type' "Yo'qlama turi" %}</th>
+                        <th>{% sort_link 'reason' 'Sababi/Izoh' %}</th>
+                        <th>{% sort_link 'session_date' 'Sana' %}</th>
                         <th class="text-center" style="width: 180px;">Amallar</th>
                     </tr>
                 </thead>

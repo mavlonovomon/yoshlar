@@ -6,6 +6,7 @@ from django.db.models import Count, Q
 from django.contrib import messages
 
 from core.models import Mahalla
+from core.view_helpers import apply_sorting, normalize_sort_params
 from .models import RaidEvent, RaidPhoto
 from .forms import RaidEventForm
 
@@ -53,7 +54,22 @@ class RaidEventListView(LoginRequiredMixin, ListView):
         if event_type:
             queryset = queryset.filter(event_type=event_type)
 
-        return queryset.order_by('-event_date')
+        sort_field, sort_direction = normalize_sort_params(
+            self.request,
+            {'title', 'mahalla', 'event_date', 'event_type', 'photo_count'},
+            'event_date',
+            'desc',
+        )
+        self.sort_field = sort_field
+        self.sort_direction = sort_direction
+        sort_map = {
+            'title': 'title',
+            'mahalla': 'mahalla__name',
+            'event_date': 'event_date',
+            'event_type': 'event_type',
+            'photo_count': 'photo_count',
+        }
+        return apply_sorting(queryset, sort_field, sort_direction, sort_map, 'event_date')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -69,6 +85,8 @@ class RaidEventListView(LoginRequiredMixin, ListView):
             context['mahallas'] = Mahalla.objects.filter(id=user.mahalla.id) if user.mahalla else Mahalla.objects.none()
         context['types'] = RaidEvent.TYPE_CHOICES
         context['selected_type'] = self.request.GET.get('event_type')
+        context['sort_field'] = getattr(self, 'sort_field', 'event_date')
+        context['sort_direction'] = getattr(self, 'sort_direction', 'desc')
         return context
 
 

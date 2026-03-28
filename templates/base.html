@@ -37,6 +37,12 @@
                     {% endif %}
                 </a>
 
+                <a href="{% url 'yoqlama:list' %}"
+                    class="yoqlama-link {% if '/yoqlama/' in request.path %}active{% endif %}"
+                    title="Yo'qlama">
+                    <i class="bi bi-clipboard2-data"></i>
+                </a>
+
                 <div class="profile">
                     <span class="name">{{ user.full_name|default:user.username }}</span>
                     {% if user.is_sector_coordinator %}
@@ -75,9 +81,26 @@
                     class="nav-item {% if '/hisobot/' in request.path %}active{% endif %}">
                     <i class="bi bi-file-earmark-text"></i> <span>Hisobot</span>
                 </a>
-                <a href="{% url 'yosh_list' %}" class="nav-item {% if 'yoshlar' in request.path %}active{% endif %}">
-                    <i class="bi bi-people"></i> <span>Yoshlar ro'yxati</span>
-                </a>
+                <div class="nav-dropdown {% if 'yoshlar' in request.path or 'maktab-oquvchilar' in request.path %}open active{% endif %}"
+                    id="yoshlarDropdown">
+                    <div class="nav-dropdown-toggle" onclick="toggleDropdown('yoshlarDropdown')">
+                        <i class="bi bi-people"></i> <span>Yoshlar ro'yxati</span>
+                    </div>
+                    <div class="nav-dropdown-content">
+                        <a href="{% url 'yosh_list' %}"
+                            class="nav-sub-item {% if request.path == '/yoshlar/' %}active{% endif %}">
+                            <i class="bi bi-people-fill"></i> <span>Umumiy yoshlar</span>
+                        </a>
+                        <a href="{% url 'maktab_oquvchi_list' %}"
+                            class="nav-sub-item {% if '/yoshlar/maktab-oquvchilar/' == request.path %}active{% endif %}">
+                            <i class="bi bi-mortarboard-fill"></i> <span>Maktab o'quvchilari</span>
+                        </a>
+                        <a href="{% url 'maktab_oquvchi_pending_list' %}"
+                            class="nav-sub-item {% if '/yoshlar/maktab-aniqlanmagan/' in request.path %}active{% endif %}">
+                            <i class="bi bi-check2-square"></i> <span>Aniqlanmaganlar</span>
+                        </a>
+                    </div>
+                </div>
                 {% if user.is_site_admin %}
                 <a href="{% url 'user_list' %}" class="nav-item {% if '/users/' in request.path %}active{% endif %}">
                     <i class="bi bi-person-lines-fill"></i> <span>Foydalanuvchilar</span>
@@ -157,23 +180,6 @@
                         {% endif %}
                     </div>
                 </div>
-                <div class="nav-dropdown {% if 'yoqlama' in request.path %}open active{% endif %}" id="yoqlamaDropdown">
-                    <div class="nav-dropdown-toggle" onclick="toggleDropdown('yoqlamaDropdown')">
-                        <i class="bi bi-clipboard-check"></i> <span>Yo'qlama</span>
-                    </div>
-                    <div class="nav-dropdown-content">
-                        <a href="{% url 'yoqlama:list' %}"
-                            class="nav-sub-item {% if '/yoqlama/list/' == request.path %}active{% endif %}">
-                            <i class="bi bi-list-check"></i> <span>Ro'yxat</span>
-                        </a>
-                        {% if user.is_authenticated and user.role == 'YETAKCHI' %}
-                        <a href="{% url 'yoqlama:create' %}"
-                            class="nav-sub-item {% if '/yoqlama/create/' == request.path %}active{% endif %}">
-                            <i class="bi bi-plus-circle"></i> <span>Yangi yo'qlama</span>
-                        </a>
-                        {% endif %}
-                    </div>
-                </div>
                 <div class="nav-dropdown {% if 'reyd' in request.path or 'profilaktika' in request.path %}open active{% endif %}"
                     id="profilaktikaDropdown">
                     <div class="nav-dropdown-toggle" onclick="toggleDropdown('profilaktikaDropdown')">
@@ -242,7 +248,13 @@
                 <div class="nav-dropdown {% if 'sorovnoma' in request.path %}open active{% endif %}"
                     id="sorovnomaDropdown">
                     <div class="nav-dropdown-toggle" onclick="toggleDropdown('sorovnomaDropdown')">
-                        <i class="bi bi-card-checklist"></i> <span>So'rovnomalar</span>
+                        <span class="nav-icon-wrap">
+                            <i class="bi bi-card-checklist"></i>
+                            {% if has_active_surveys %}
+                            <span class="nav-alert-dot" title="Aktiv so'rovnoma mavjud" aria-hidden="true"></span>
+                            {% endif %}
+                        </span>
+                        <span>So'rovnomalar</span>
                     </div>
                     <div class="nav-dropdown-content">
                         <a href="{% url 'sorovnoma:survey_list' %}"
@@ -255,7 +267,13 @@
                 <div class="nav-dropdown {% if 'bilim-sinovi' in request.path %}open active{% endif %}"
                     id="bilimDropdown">
                     <div class="nav-dropdown-toggle" onclick="toggleDropdown('bilimDropdown')">
-                        <i class="bi bi-journal-text"></i> <span>Bilim Sinovi</span>
+                        <span class="nav-icon-wrap">
+                            <i class="bi bi-journal-text"></i>
+                            {% if has_active_tests %}
+                            <span class="nav-alert-dot" title="Aktiv test mavjud" aria-hidden="true"></span>
+                            {% endif %}
+                        </span>
+                        <span>Bilim Sinovi</span>
                     </div>
                     <div class="nav-dropdown-content">
                         <a href="{% if user.is_site_admin %}{% url 'bilim_sinovi:test_manage_list' %}{% else %}{% url 'bilim_sinovi:test_list' %}{% endif %}"

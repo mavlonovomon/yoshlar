@@ -1,4 +1,5 @@
-﻿{% extends 'base.html' %}
+{% extends 'base.html' %}
+{% load core_extras %}
 
 {% block content %}
 <div class="content-header">
@@ -30,8 +31,7 @@
                         <select name="status" class="form-select">
                             <option value="">Barchasi</option>
                             {% for value, label in status_choices %}
-                            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}
-                            </option>
+                            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -40,8 +40,7 @@
                         <select name="priority" class="form-select">
                             <option value="">Barchasi</option>
                             {% for value, label in priority_choices %}
-                            <option value="{{ value }}" {% if priority_filter == value %}selected{% endif %}>{{ label }}
-                            </option>
+                            <option value="{{ value }}" {% if priority_filter == value %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -82,13 +81,13 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Topshiriq</th>
-                            <th>Ijrochilar</th>
-                            <th>Berilgan sana</th>
-                            <th>Oxirgi muddat</th>
-                            <th>Qolgan vaqt</th>
-                            <th>Muhimlik</th>
-                            <th>Bajarilish</th>
+                            <th>{% sort_link 'title' 'Topshiriq' %}</th>
+                            <th>{% sort_link 'assignees_count' 'Ijrochilar' %}</th>
+                            <th>{% sort_link 'created_at' 'Berilgan sana' %}</th>
+                            <th>{% sort_link 'due_date' 'Oxirgi muddat' %}</th>
+                            <th>{% sort_link 'remaining' 'Qolgan vaqt' %}</th>
+                            <th>{% sort_link 'priority' 'Muhimlik' %}</th>
+                            <th>{% sort_link 'completed_percent' 'Bajarilish' %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -230,8 +229,7 @@
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link"
-                        href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if assigned_to_filter %}&assigned_to={{ assigned_to_filter }}{% endif %}{% if task_q %}&task_q={{ task_q }}{% endif %}{% if user_q %}&user_q={{ user_q }}{% endif %}">Oldingi</a>
+                    <a class="page-link" href="?{% query_replace page=page_obj.previous_page_number %}">Oldingi</a>
                 </li>
                 {% endif %}
 
@@ -243,8 +241,7 @@
 
                 {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link"
-                        href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if assigned_to_filter %}&assigned_to={{ assigned_to_filter }}{% endif %}{% if task_q %}&task_q={{ task_q }}{% endif %}{% if user_q %}&user_q={{ user_q }}{% endif %}">Keyingi</a>
+                    <a class="page-link" href="?{% query_replace page=page_obj.next_page_number %}">Keyingi</a>
                 </li>
                 {% endif %}
             </ul>

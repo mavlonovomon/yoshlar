@@ -5,6 +5,7 @@ from django.shortcuts import redirect, render
 
 from .forms import DisciplineActionForm
 from .models import DisciplineAction
+from core.view_helpers import apply_sorting, normalize_sort_params
 
 
 def _can_manage(user):
@@ -44,6 +45,24 @@ def list_create(request):
     if action_type:
         items = items.filter(action_type=action_type)
 
+    sort_field, sort_direction = normalize_sort_params(
+        request,
+        {'action_date', 'employee', 'action_type', 'status', 'end_date', 'resolved_date', 'reason', 'created_by'},
+        'action_date',
+        'desc',
+    )
+    sort_map = {
+        'action_date': 'action_date',
+        'employee': 'employee__full_name',
+        'action_type': 'action_type',
+        'status': 'status',
+        'end_date': 'end_date',
+        'resolved_date': 'resolved_date',
+        'reason': 'reason',
+        'created_by': 'created_by__full_name',
+    }
+    items = apply_sorting(items, sort_field, sort_direction, sort_map, 'action_date')
+
     context = {
         'form': form,
         'items': items,
@@ -51,5 +70,7 @@ def list_create(request):
         'action_type': action_type,
         'action_choices': DisciplineAction.ACTION_CHOICES,
         'can_manage': can_manage,
+        'sort_field': sort_field,
+        'sort_direction': sort_direction,
     }
     return render(request, 'intizom_jazo/list.html', context)

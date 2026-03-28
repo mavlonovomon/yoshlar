@@ -1,3 +1,5 @@
+import re
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
@@ -20,6 +22,7 @@ from .ustoz_ai import fetch_and_store_ustoz_ai_snapshot
 from .uzchess import build_table as build_uzchess_table
 from .uzchess import fetch_and_store_uzchess_snapshot
 from .view_helpers import is_management_user
+from .view_helpers import normalize_sort_params
 
 
 def _to_number(value):
@@ -27,6 +30,15 @@ def _to_number(value):
         return float(int(value))
     if isinstance(value, (int, float)):
         return float(value)
+    if isinstance(value, str):
+        text = value.strip()
+        if not text or text in {"-", "—", "–"}:
+            return None
+        if not re.fullmatch(r"[-+]?\d[\d\s,]*(?:\.\d+)?%?", text):
+            return None
+        normalized = re.sub(r"[\s,%]", "", text)
+        if normalized and re.fullmatch(r"-?\d+(?:\.\d+)?", normalized):
+            return float(normalized)
     return None
 
 
@@ -50,6 +62,19 @@ def _build_mega_view_context(request, snapshot_model, table_builder, compare_fie
 
     columns, rows, total_row = table_builder(latest_snapshot, mahallas=mahallas, youth_counts=youth_counts)
 
+    allowed_sort_fields = set(columns) | {"mahalla_name"}
+    sort_field, sort_direction = normalize_sort_params(request, allowed_sort_fields, "mahalla_name")
+
+    def _row_sort_value(row):
+        value = row.get(sort_field)
+        numeric_value = _to_number(value)
+        if numeric_value is not None:
+            return numeric_value
+        return ("" if value is None else str(value)).casefold()
+
+    if rows and sort_field in allowed_sort_fields:
+        rows = sorted(rows, key=_row_sort_value, reverse=sort_direction == "desc")
+
     context = {
         "snapshot": latest_snapshot,
         "snapshot_history": snapshot_history,
@@ -64,6 +89,8 @@ def _build_mega_view_context(request, snapshot_model, table_builder, compare_fie
         "compare_right_snapshot": None,
         "selected_left_snapshot_id": None,
         "selected_right_snapshot_id": None,
+        "mega_sort_field": sort_field,
+        "mega_sort_direction": sort_direction,
     }
 
     if len(snapshot_history) >= 2:

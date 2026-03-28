@@ -158,6 +158,7 @@
 {% endblock %}
 
 {% block extra_js %}
+{% if yosh and yosh.pk %}
 <script>
 (function () {
     const btn = document.getElementById("refreshPassportPhotoBtn");
@@ -214,4 +215,5 @@
     });
 })();
 </script>
+{% endif %}
 {% endblock %}

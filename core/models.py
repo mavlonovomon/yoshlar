@@ -2,6 +2,7 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
 from PIL import Image
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -120,6 +121,16 @@ class Yosh(models.Model):
     photo = models.ImageField(upload_to='yoshlar_photos/', verbose_name="Rasm", blank=True, null=True)
     phone_number = models.CharField(max_length=20, verbose_name="Telefon raqami", blank=True)
     mahalla = models.ForeignKey(Mahalla, on_delete=models.CASCADE, related_name='yoshlar', verbose_name="Mahalla")
+    school_external_id = models.BigIntegerField(null=True, blank=True, unique=True, db_index=True, verbose_name="Maktab ID")
+    school_gender = models.CharField(max_length=20, blank=True, default="", verbose_name="Maktab jinsi")
+    school_nationality = models.CharField(max_length=100, blank=True, default="", verbose_name="Maktab millati")
+    school_citizenship = models.CharField(max_length=100, blank=True, default="", verbose_name="Maktab fuqaroligi")
+    school_document_series = models.CharField(max_length=10, blank=True, default="", verbose_name="Maktab seriyasi")
+    school_document_number = models.CharField(max_length=20, blank=True, default="", verbose_name="Maktab hujjat raqami")
+    school_organization = models.CharField(max_length=255, blank=True, default="", verbose_name="Maktab tashkiloti", db_index=True)
+    school_organization_region = models.CharField(max_length=255, blank=True, default="", verbose_name="Maktab hududi", db_index=True)
+    school_class = models.CharField(max_length=50, blank=True, default="", verbose_name="Maktab sinfi", db_index=True)
+    school_imported_at = models.DateTimeField(null=True, blank=True, verbose_name="Maktab ma'lumoti yuklangan vaqt")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -164,6 +175,74 @@ class Yosh(models.Model):
     @property
     def last_meeting(self):
         return self.uchrashuvlar.order_by('-meeting_date').first()
+
+    @property
+    def school_is_student(self):
+        return bool(
+            self.school_external_id
+            or self.school_organization
+            or self.school_class
+            or self.school_document_series
+            or self.school_document_number
+        )
+
+    @property
+    def school_document_type(self):
+        series = (self.school_document_series or "").upper().strip()
+        passport_suffixes = {"AA", "AB", "AC", "AD", "AE", "FA", "FS"}
+        if not series:
+            return ""
+        return "Pasport" if any(series.endswith(suffix) for suffix in passport_suffixes) else "Guvohnoma"
+
+    @property
+    def age_years(self):
+        if not self.birth_date:
+            return None
+        today = timezone.localdate()
+        return today.year - self.birth_date.year - (
+            (today.month, today.day) < (self.birth_date.month, self.birth_date.day)
+        )
+
+
+class MaktabOquvchi(models.Model):
+    external_id = models.BigIntegerField(unique=True, db_index=True, verbose_name="Source ID")
+    fullname = models.CharField(max_length=255, verbose_name="F.I.Sh", db_index=True)
+    birth_date = models.DateField(verbose_name="Tug'ilgan sana")
+    gender = models.CharField(max_length=20, verbose_name="Jinsi", blank=True)
+    nationality = models.CharField(max_length=100, verbose_name="Millati", blank=True)
+    citizenship = models.CharField(max_length=100, verbose_name="Fuqaroligi", blank=True)
+    pinfl = models.CharField(max_length=14, verbose_name="PINFL", unique=True, db_index=True)
+    document_series = models.CharField(max_length=10, verbose_name="Seriya", blank=True)
+    document_number = models.CharField(max_length=20, verbose_name="Hujjat raqami", blank=True)
+    organization = models.CharField(max_length=255, verbose_name="Tashkilot", db_index=True)
+    organization_region = models.CharField(max_length=255, verbose_name="Tashkilot hududi", blank=True, db_index=True)
+    klass = models.CharField(max_length=50, verbose_name="Sinf", blank=True, db_index=True)
+    linked_yosh = models.OneToOneField(
+        "Yosh",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="school_student",
+        verbose_name="Bog'langan yosh",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["fullname"]
+        verbose_name = "Maktab o'quvchisi"
+        verbose_name_plural = "Maktab o'quvchilari"
+
+    def __str__(self):
+        return self.fullname
+
+    @property
+    def document_type(self):
+        series = (self.document_series or "").upper().strip()
+        passport_suffixes = {"AA", "AB", "AC", "AD", "AE", "FA", "FS"}
+        if not series:
+            return ""
+        return "Pasport" if any(series.endswith(suffix) for suffix in passport_suffixes) else "Guvohnoma"
 
 class Uchrashuv(models.Model):
     yosh = models.ForeignKey(Yosh, on_delete=models.CASCADE, related_name='uchrashuvlar')

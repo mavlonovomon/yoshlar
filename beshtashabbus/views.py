@@ -6,6 +6,7 @@ from django.views.generic import CreateView, DetailView, ListView, UpdateView
 import json
 
 from core.models import Mahalla
+from core.view_helpers import apply_sorting, normalize_sort_params
 from .forms import FiveInitiativeEventForm
 from .models import FiveInitiativeEvent, FiveInitiativePhoto
 
@@ -53,7 +54,23 @@ class FiveInitiativeListView(LoginRequiredMixin, ListView):
         if direction:
             queryset = queryset.filter(direction=direction)
 
-        return queryset.order_by("-event_date")
+        sort_field, sort_direction = normalize_sort_params(
+            self.request,
+            {"title", "direction", "mahalla", "event_date", "coverage", "photo_count"},
+            "event_date",
+            "desc",
+        )
+        self.sort_field = sort_field
+        self.sort_direction = sort_direction
+        sort_map = {
+            "title": "title",
+            "direction": "direction",
+            "mahalla": "mahalla__name",
+            "event_date": "event_date",
+            "coverage": "coverage",
+            "photo_count": "photo_count",
+        }
+        return apply_sorting(queryset, sort_field, sort_direction, sort_map, "event_date")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -73,6 +90,8 @@ class FiveInitiativeListView(LoginRequiredMixin, ListView):
 
         context["directions"] = FiveInitiativeEvent.DIRECTION_CHOICES
         context["selected_direction"] = self.request.GET.get("direction")
+        context["sort_field"] = getattr(self, "sort_field", "event_date")
+        context["sort_direction"] = getattr(self, "sort_direction", "desc")
         return context
 
 

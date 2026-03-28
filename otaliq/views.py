@@ -6,6 +6,7 @@ from django.db.models import Count, Q
 from .models import OtaliqYouth, OtaliqLeader, OtaliqMeeting
 from .forms import OtaliqYouthForm, OtaliqMeetingForm, OtaliqAssistanceForm, OtaliqLeaderForm
 from core.models import Mahalla, Yosh
+from core.view_helpers import apply_sorting, normalize_sort_params
 from django.contrib import messages
 import openpyxl
 from openpyxl.styles import Alignment, Border, Side, Font, PatternFill
@@ -32,12 +33,29 @@ class OtaliqListView(LoginRequiredMixin, ListView):
         category = self.request.GET.get('category')
         if category:
             qs = qs.filter(category=category)
-            
-        return qs.order_by('yosh__fullname')
+
+        sort_field, sort_direction = normalize_sort_params(
+            self.request,
+            {'fullname', 'mahalla', 'category', 'leader', 'status', 'assistance'},
+            'fullname',
+        )
+        self.sort_field = sort_field
+        self.sort_direction = sort_direction
+        sort_map = {
+            'fullname': 'yosh__fullname',
+            'mahalla': 'yosh__mahalla__name',
+            'category': 'category',
+            'leader': 'leader__full_name',
+            'status': 'assistance__provided',
+            'assistance': 'assistance__provided',
+        }
+        return apply_sorting(qs, sort_field, sort_direction, sort_map, 'fullname')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['categories'] = OtaliqYouth.CATEGORY_CHOICES
+        context['sort_field'] = getattr(self, 'sort_field', 'fullname')
+        context['sort_direction'] = getattr(self, 'sort_direction', 'asc')
         return context
 
 class OtaliqDetailView(LoginRequiredMixin, DetailView):

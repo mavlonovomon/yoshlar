@@ -12,6 +12,7 @@ from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
 from core.models import User
+from core.view_helpers import apply_sorting, normalize_sort_params
 from .forms import TaskForm, TaskResponseForm
 from .models import Task, TaskGroup, TaskNotification, TaskResponse
 
@@ -83,6 +84,14 @@ class TaskListView(LoginRequiredMixin, ListView):
                 Q(title__icontains=task_q) | Q(description__icontains=task_q)
             )
         
+        sort_field, sort_direction = normalize_sort_params(
+            self.request,
+            {'title', 'assignees_count', 'created_at', 'due_date', 'remaining', 'priority', 'status', 'completed_percent'},
+            'created_at',
+            'desc',
+        )
+        self.sort_field = sort_field
+        self.sort_direction = sort_direction
         return queryset.order_by('-created_at')
 
     def get_context_data(self, **kwargs):
@@ -161,6 +170,34 @@ class TaskListView(LoginRequiredMixin, ListView):
             else:
                 group["completed_percent"] = 0
 
+        sort_field = getattr(self, 'sort_field', 'created_at')
+        sort_direction = getattr(self, 'sort_direction', 'desc')
+
+        def _group_sort_key(group):
+            task = group["representative"]
+            value_map = {
+                "title": (task.title or "").lower(),
+                "assignees_count": group["assignees_count"],
+                "created_at": task.created_at,
+                "due_date": task.due_date,
+                "remaining": task.due_date,
+                "priority": group["priority"] or "",
+                "status": group["status"] or "",
+                "completed_percent": group["completed_percent"],
+            }
+            value = value_map.get(sort_field)
+            if value is None:
+                value = group["latest_created_at"]
+            return value
+
+        reverse = sort_direction == 'desc'
+        if sort_field in {'title', 'priority', 'status'}:
+            group_list.sort(key=lambda g: (_group_sort_key(g) or ""), reverse=reverse)
+        elif sort_field in {'assignees_count', 'completed_percent'}:
+            group_list.sort(key=lambda g: (_group_sort_key(g) or 0), reverse=reverse)
+        else:
+            group_list.sort(key=lambda g: (_group_sort_key(g) or timezone.now()), reverse=reverse)
+
         paginator = Paginator(group_list, self.page_size)
         page_number = self.request.GET.get('page')
         page_obj = paginator.get_page(page_number)
@@ -169,6 +206,8 @@ class TaskListView(LoginRequiredMixin, ListView):
         context['page_obj'] = page_obj
         context['paginator'] = paginator
         context['is_paginated'] = page_obj.has_other_pages()
+        context['sort_field'] = sort_field
+        context['sort_direction'] = sort_direction
 
         return context
 

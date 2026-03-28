@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import (
     Mahalla,
+    MaktabOquvchi,
     User,
     Yosh,
     Uchrashuv,
@@ -60,9 +61,35 @@ class MahallaAdmin(admin.ModelAdmin):
 
 @admin.register(Yosh)
 class YoshAdmin(admin.ModelAdmin):
-    search_fields = ('fullname', 'passport_number', 'guvohnoma_raqami', 'jshshir')
-    list_display = ('fullname', 'passport_number', 'guvohnoma_raqami', 'mahalla')
-    list_filter = ('mahalla',)
+    search_fields = (
+        'fullname',
+        'passport_number',
+        'guvohnoma_raqami',
+        'jshshir',
+        'school_organization',
+        'school_class',
+        'school_document_series',
+        'school_document_number',
+    )
+    list_display = (
+        'fullname',
+        'jshshir',
+        'mahalla',
+        'school_class',
+        'school_organization',
+        'school_document_type',
+        'school_is_student',
+    )
+    list_filter = ('mahalla', 'school_organization_region', 'school_class')
+    list_select_related = ('mahalla',)
+    readonly_fields = ('school_document_type', 'school_is_student')
+
+@admin.register(MaktabOquvchi)
+class MaktabOquvchiAdmin(admin.ModelAdmin):
+    search_fields = ('fullname', 'pinfl', 'organization', 'klass', 'document_series', 'document_number')
+    list_display = ('fullname', 'pinfl', 'organization', 'klass', 'document_type')
+    list_filter = ('organization_region', 'klass')
+    readonly_fields = ('document_type', 'created_at', 'updated_at')
 
 admin.site.register(Uchrashuv)
 

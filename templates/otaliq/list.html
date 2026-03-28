@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load humanize %}
+{% load core_extras %}
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/list_premium.css' %}">
@@ -48,11 +49,11 @@
                 <thead>
                     <tr>
                         <th style="width: 50px;">№</th>
-                        <th style="width: 300px;">Yosh (F.I.Sh, Pasport)</th>
-                        <th>Mahalla</th>
-                        <th>Toifasi</th>
-                        <th>Mas'ul Rahbar</th>
-                        <th class="text-center">Holati</th>
+                        <th style="width: 300px;">{% sort_link 'fullname' "Yosh (F.I.Sh, Pasport)" %}</th>
+                        <th>{% sort_link 'mahalla' 'Mahalla' %}</th>
+                        <th>{% sort_link 'category' 'Toifasi' %}</th>
+                        <th>{% sort_link 'leader' "Mas'ul Rahbar" %}</th>
+                        <th class="text-center">{% sort_link 'status' 'Holati' %}</th>
                         <th class="text-center" style="width: 150px;">Harakat</th>
                     </tr>
                 </thead>
@@ -135,11 +136,11 @@
     {% if is_paginated %}
     <div class="pagination-premium">
         {% if page_obj.has_previous %}
-        <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}"
+        <a href="?{% query_replace page=1 %}"
             class="page-num" title="Birinchi">
             <i class="bi bi-chevron-double-left"></i>
         </a>
-        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}"
+        <a href="?{% query_replace page=page_obj.previous_page_number %}"
             class="page-num">
             <i class="bi bi-chevron-left"></i>
         </a>
@@ -150,11 +151,11 @@
         </div>
 
         {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}"
+        <a href="?{% query_replace page=page_obj.next_page_number %}"
             class="page-num">
             <i class="bi bi-chevron-right"></i>
         </a>
-        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}"
+        <a href="?{% query_replace page=page_obj.paginator.num_pages %}"
             class="page-num" title="Oxirgi">
             <i class="bi bi-chevron-double-right"></i>
         </a>
