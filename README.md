@@ -5,7 +5,8 @@ Yoshlar bilan ishlash jarayonlarini yuritish uchun Django asosidagi ichki tizim.
 Loyiha quyidagi yo'nalishlarni bitta panelda boshqaradi:
 
 - yoshlar ro'yxati va profili
-- maktab o'quvchilari bo'limi (RP.xlsx dagi ma'lumotlar `Yosh` jadvaliga birlashtiriladi)
+- maktab o'quvchilari qatlami
+- mahallasi aniqlanmagan o'quvchilarni biriktirish oqimi
 - ishsiz yoshlar bilan ishlash
 - otaliq, migratsiya, reyd, besh tashabbus, yoqlama modullari
 - intizom-jazo va kredit-yo'naltirish sahifalari
@@ -19,17 +20,16 @@ Loyiha quyidagi yo'nalishlarni bitta panelda boshqaradi:
 Bu loyiha hozir:
 
 - Django 6.0.3
-- PostgreSQL 16.13
+- SQLite 3 (`yoshlar.db`)
 - Ubuntu serverda `gunicorn + systemd + Cloudflare Tunnel`
 
-bilan ishlashga moslangan.
+bilan ishlashga moslangan. Asosiy ma'lumotlar bazasi `yoshlar.db`.
 
 ## Texnologiyalar
 
 - Python 3.14
 - Django 6.0.3
-- PostgreSQL 16.13
-- `psycopg[binary]`
+- SQLite 3
 - `gunicorn`
 - `whitenoise`
 - `pandas`, `openpyxl`
@@ -37,11 +37,11 @@ bilan ishlashga moslangan.
 
 ## Muhim eslatma
 
-Loyiha endi SQLite asosiy baza sifatida ishlamaydi.
+Loyiha asosiy baza sifatida bitta lokal SQLite faylidan foydalanadi.
 
-- local ishlab chiqish va server ham PostgreSQL ga ulanadi
-- eski SQLite faqat migratsiya/backup uchun ishlatilishi mumkin
-- asosiy `.env` sozlamasi `DATABASE_URL=postgresql://...` bo'lishi kerak
+- ma'lumotlar bazasi fayli: `yoshlar.db`
+- fayl loyiha ildiz papkasida joylashadi
+- boshqa DB ulanishlari ishlatilmaydi
 
 ## Tezkor ishga tushirish
 
@@ -65,7 +65,6 @@ pip install -r requirements.fresh.txt
 - `SECRET_KEY`
 - `DEBUG`
 - `ALLOWED_HOSTS`
-- `DATABASE_URL`
 - `CSRF_TRUSTED_ORIGINS`
 - `MEDIA_ROOT`
 - `STATIC_ROOT`
@@ -98,13 +97,15 @@ Brauzerda:
 Ubuntu server uchun tavsiya etilgan oqim:
 
 1. Repo'ni serverga clone qiling.
-2. `/var/www/yoshlar/current` ichida loyiha bo'lsin.
-3. `/var/www/yoshlar/shared/.env` ni to'ldiring.
-4. Virtualenv yarating va dependency'larni o'rnating.
-5. `python manage.py migrate` ishga tushiring.
-6. `python manage.py collectstatic --noinput` ishga tushiring.
-7. `gunicorn` ni `systemd` service orqali ishga tushiring.
-8. Cloudflare Tunnel ni `systemd` service orqali ulab qo'ying.
+2. Git kodi `/home/genius/yoshlar/repo` ichida bo'lsin.
+3. `/home/genius/yoshlar/current` ni `repo` ga ko'rsatadigan symlink qilib qo'ying.
+4. `/home/genius/yoshlar/shared/.env` ni to'ldiring.
+5. Virtualenv yarating va dependency'larni o'rnating.
+6. `python manage.py migrate` ishga tushiring.
+7. `python manage.py collectstatic --noinput` ishga tushiring.
+8. `gunicorn` ni `systemd` service orqali ishga tushiring.
+9. Cloudflare Tunnel ni `systemd` service orqali ulab qo'ying.
+10. Yangilash uchun `git pull --ff-only` va `deploy/ubuntu/update.sh` oqimidan foydalaning.
 
 Deploy uchun tayyor fayllar:
 
@@ -120,7 +121,7 @@ Deploy uchun tayyor fayllar:
 GitHub'dan yangi commit kelganda serverda:
 
 ```bash
-cd /var/www/yoshlar/current
+cd /home/genius/yoshlar/repo
 bash deploy/ubuntu/update.sh
 ```
 
@@ -132,6 +133,8 @@ Bu skript:
 - static fayllarni yig'ish
 - `systemctl restart yoshlar`
 
+`deploy/ubuntu/update.sh` serverdagi pull va restart oqimini bir joyga jamlaydi. Bu Windows'da yozib, Linux serverda `git pull` qilishni barqarorlashtirish uchun kerak.
+
 ## Muhim sozlamalar
 
 `.env.example` ichidagi asosiy kalitlar:
@@ -139,7 +142,6 @@ Bu skript:
 - `SECRET_KEY`
 - `DEBUG`
 - `ALLOWED_HOSTS`
-- `DATABASE_URL`
 - `CSRF_TRUSTED_ORIGINS`
 - `SESSION_COOKIE_SECURE`
 - `CSRF_COOKIE_SECURE`
@@ -174,12 +176,6 @@ python manage.py compute_kpi
 python manage.py compute_kpi --month 2026-02
 python manage.py compute_kpi --from-date 2026-02-01 --to-date 2026-02-13
 python manage.py compute_kpi --dry-run
-```
-
-SQLite -> PostgreSQL migratsiya:
-
-```bash
-python manage.py migrate_sqlite_to_postgres
 ```
 
 Maktab o'quvchilari importi:
@@ -217,6 +213,8 @@ Asosiy app'lar:
 - `intizom_jazo`
 - `bilim_sinovi`
 - `Yosh.school_*` maydonlari orqali maktab o'quvchilari qatlami
+- `Yosh.age_years` orqali yosh ustuni
+- `MaktabOquvchi` staging qatlami orqali mahallasi aniqlanmagan o'quvchilar oqimi
 - `sorovnoma`
 - `auth` (E-IMZO)
 

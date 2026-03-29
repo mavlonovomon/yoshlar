@@ -5,8 +5,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 APP_DIR="${APP_DIR:-$PROJECT_DIR}"
-VENV_DIR="${VENV_DIR:-/var/www/yoshlar/venv}"
-ENV_FILE="${ENV_FILE:-/var/www/yoshlar/shared/.env}"
+CURRENT_LINK="${CURRENT_LINK:-/home/genius/yoshlar/current}"
+VENV_DIR="${VENV_DIR:-/home/genius/yoshlar/venv}"
+ENV_FILE="${ENV_FILE:-/home/genius/yoshlar/shared/.env}"
 SERVICE_NAME="${SERVICE_NAME:-yoshlar}"
 BRANCH="${BRANCH:-main}"
 
@@ -29,6 +30,10 @@ cd "$APP_DIR"
 
 git fetch origin "$BRANCH"
 git pull --ff-only origin "$BRANCH"
+
+if [[ -L "$CURRENT_LINK" ]]; then
+  ln -sfn "$APP_DIR" "$CURRENT_LINK"
+fi
 
 set -a
 source "$ENV_FILE"

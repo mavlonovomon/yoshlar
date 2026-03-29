@@ -5,12 +5,12 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=yoshlar
-Group=www-data
-WorkingDirectory=/var/www/yoshlar/current
-EnvironmentFile=/var/www/yoshlar/shared/.env
+User=genius
+Group=genius
+WorkingDirectory=/home/genius/yoshlar/repo
+EnvironmentFile=/home/genius/yoshlar/shared/.env
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/var/www/yoshlar/venv/bin/gunicorn config.wsgi:application --bind 127.0.0.1:8000 --workers 3 --timeout 120 --access-logfile /var/www/yoshlar/shared/logs/gunicorn-access.log --error-logfile /var/www/yoshlar/shared/logs/gunicorn-error.log --capture-output
+ExecStart=/home/genius/yoshlar/venv/bin/gunicorn config.wsgi:application --bind 127.0.0.1:8000 --workers 3 --timeout 120 --access-logfile /home/genius/yoshlar/shared/logs/gunicorn-access.log --error-logfile /home/genius/yoshlar/shared/logs/gunicorn-error.log --capture-output
 Restart=on-failure
 RestartSec=5
 PrivateTmp=true

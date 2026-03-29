@@ -3,6 +3,15 @@
 from django.db import migrations, models
 
 
+def fill_blank_jshshir(apps, schema_editor):
+    Yosh = apps.get_model('core', 'Yosh')
+    blanks = Yosh.objects.filter(jshshir='').order_by('id')
+
+    for yosh in blanks.iterator(chunk_size=1000):
+        yosh.jshshir = f"U{yosh.pk:013d}"
+        yosh.save(update_fields=['jshshir'])
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,6 +19,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(fill_blank_jshshir, migrations.RunPython.noop),
         migrations.AddField(
             model_name='yosh',
             name='school_citizenship',

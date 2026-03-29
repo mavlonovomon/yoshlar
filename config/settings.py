@@ -1,7 +1,6 @@
 
 from pathlib import Path
 import os
-from urllib.parse import parse_qs, unquote, urlparse
 
 
 def _load_env_file(path: Path) -> None:
@@ -106,66 +105,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-def _database_config_from_url(database_url: str) -> dict:
-    parsed = urlparse(database_url)
-    scheme = (parsed.scheme or '').lower()
-
-    if scheme in {'sqlite', 'sqlite3'}:
-        raw_path = unquote(parsed.path or '')
-        if raw_path in {'', '/', '/:memory:'}:
-            name = ':memory:'
-        else:
-            if parsed.netloc:
-                name = Path(f"//{parsed.netloc}{raw_path}")
-            elif raw_path.startswith(('/', '\\')) or (len(raw_path) >= 2 and raw_path[1] == ':'):
-                name = Path(raw_path)
-            else:
-                name = BASE_DIR / raw_path
-        return {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': str(name),
-        }
-
-    if scheme in {'postgres', 'postgresql', 'postgresql+psycopg', 'postgresql_psycopg'}:
-        query = parse_qs(parsed.query)
-        sslmode = query.get('sslmode', [None])[0]
-        config = {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': unquote(parsed.path.lstrip('/')),
-            'USER': unquote(parsed.username or ''),
-            'PASSWORD': unquote(parsed.password or ''),
-            'HOST': parsed.hostname or '',
-            'PORT': parsed.port or '',
-        }
-        if sslmode:
-            config['OPTIONS'] = {'sslmode': sslmode}
-        return config
-
-    raise ValueError(f"Qo'llab-quvvatlanmagan DATABASE_URL sxemasi: {scheme}")
-
-
-def _build_database_config() -> dict:
-    database_url = (
-        os.environ.get('DATABASE_URL')
-        or os.environ.get('DB_URL')
-        or ''
-    ).strip()
-    if database_url:
-        return _database_config_from_url(database_url)
-
-    sqlite_path = Path(
-        os.environ.get('SQLITE_PATH')
-        or os.environ.get('DB_PATH')
-        or (BASE_DIR / 'yoshlar.db')
-    )
-    return {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': sqlite_path,
-    }
-
+SQLITE_PATH = Path(os.environ.get('SQLITE_PATH', str(BASE_DIR / 'yoshlar.db')))
 
 DATABASES = {
-    'default': _build_database_config(),
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': SQLITE_PATH,
+    }
 }
 
 # User Model
