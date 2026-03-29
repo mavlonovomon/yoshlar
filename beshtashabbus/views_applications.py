@@ -1495,10 +1495,10 @@ class FiveInitiativeApplicationSubmitView(LoginRequiredMixin, View):
 
         date_of_birth = yosh.birth_date.strftime("%d.%m.%Y")
 
-        phone_number = _format_phone_number(yosh.phone_number)
+        submitted_phone_number = request.POST.get("phone_number", "")
+        phone_number = _format_phone_number(submitted_phone_number) or _format_phone_number(yosh.phone_number)
         if not phone_number:
             return JsonResponse({"success": False, "error": f"{error_prefix}: Telefon raqam formati noto'g'ri."}, status=400)
-
         session = requests.Session()
         request_id = uuid.uuid4().hex.upper()
         logger.info(

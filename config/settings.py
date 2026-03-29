@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'bilim_sinovi',
     'hisobot',
     'sorovnoma',
+    'ekin_yerlari',
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header">
+        <div class="page-title-group">
+            <h2>Yoshlar uchun ekin yerlari</h2>
+            <p>Fermer snapshoti asosida yoshlar bilan F.I.Sh va tug'ilgan sana bo'yicha moslashtirilgan ro'yxat</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'ekin_yerlari:list' %}" class="btn btn-outline-primary shadow-sm">
+                <i class="bi bi-list-ul me-1"></i> Ro'yxat
+            </a>
+            {% if user.is_site_admin %}
+            <form method="post" action="{% url 'ekin_yerlari:import' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary shadow-sm">
+                    <i class="bi bi-arrow-repeat me-1"></i> `fermer.json` dan import
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if snapshot %}
+    <div class="row g-3 mb-4">
+        <div class="col-md-2"><div class="card shadow-sm border-0"><div class="card-body"><div class="text-muted small">Snapshot</div><div class="fw-bold">{{ snapshot.created_at|date:"d.m.Y H:i" }}</div></div></div></div>
+        <div class="col-md-2"><div class="card shadow-sm border-0"><div class="card-body"><div class="text-muted small">Jami yozuv</div><div class="fw-bold">{{ summary.total_rows|default:0 }}</div></div></div></div>
+        <div class="col-md-2"><div class="card shadow-sm border-0"><div class="card-body"><div class="text-muted small">Topildi</div><div class="fw-bold text-success">{{ summary.matched_count|default:0 }}</div></div></div></div>
+        <div class="col-md-2"><div class="card shadow-sm border-0"><div class="card-body"><div class="text-muted small">Noaniq</div><div class="fw-bold text-warning">{{ summary.ambiguous_count|default:0 }}</div></div></div></div>
+        <div class="col-md-2"><div class="card shadow-sm border-0"><div class="card-body"><div class="text-muted small">Topilmadi</div><div class="fw-bold text-danger">{{ summary.not_found_count|default:0 }}</div></div></div></div>
+        <div class="col-md-2"><div class="card shadow-sm border-0"><div class="card-body"><div class="text-muted small">Jami maydon</div><div class="fw-bold">{{ summary.total_area|default:"0" }}</div></div></div></div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="mb-3">Yer joylashgan mahalla bo'yicha</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Mahalla</th>
+                                    <th class="text-center">Jami</th>
+                                    <th class="text-center">Topildi</th>
+                                    <th class="text-center">Noaniq</th>
+                                    <th class="text-center">Topilmadi</th>
+                                    <th class="text-end">Maydon</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in land_rows %}
+                                <tr>
+                                    <td>{{ row.land_neighborhood_name|default:"-" }}</td>
+                                    <td class="text-center">{{ row.total }}</td>
+                                    <td class="text-center text-success">{{ row.matched }}</td>
+                                    <td class="text-center text-warning">{{ row.ambiguous }}</td>
+                                    <td class="text-center text-danger">{{ row.not_found }}</td>
+                                    <td class="text-end">{{ row.total_area|default:"0" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="6" class="text-center text-muted py-4">Ma'lumot topilmadi</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="mb-3">Tizimdagi yosh mahallasi bo'yicha</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Mahalla</th>
+                                    <th class="text-center">Jami</th>
+                                    <th class="text-end">Maydon</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in system_rows %}
+                                <tr>
+                                    <td>{{ row.linked_yosh__mahalla__name }}</td>
+                                    <td class="text-center">{{ row.total }}</td>
+                                    <td class="text-end">{{ row.total_area|default:"0" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="text-center text-muted py-4">Moslashgan yozuvlar yo'q</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card shadow-sm border-0">
+        <div class="card-body py-5 text-center">
+            <h5 class="mb-2">Snapshot hali yaratilmagan</h5>
+            <p class="text-muted mb-3">Birinchi importdan keyin svod va ro'yxat shu yerda ko'rinadi.</p>
+            {% if user.is_site_admin %}
+            <form method="post" action="{% url 'ekin_yerlari:import' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-upload me-1"></i> `fermer.json` dan import
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

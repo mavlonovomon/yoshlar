@@ -184,7 +184,7 @@
                     </td>
                     {% if can_submit_application %}
                     <td class="text-center cell-action">
-                        <button type="button" class="btn btn-sm btn-outline-primary js-apply-btn" data-yosh-id="{{ yosh.id }}" data-yosh-name="{{ yosh.fullname|escape }}">
+                        <button type="button" class="btn btn-sm btn-outline-primary js-apply-btn" data-yosh-id="{{ yosh.id }}" data-yosh-name="{{ yosh.fullname|escape }}" data-yosh-phone="{{ yosh.phone_number|default:''|escape }}">
                             Ariza yuborish
                         </button>
                     </td>
@@ -223,6 +223,14 @@
                     <select id="applyDirectionSelect" class="form-select" disabled>
                         <option value="">Avval kategoriya tanlang...</option>
                     </select>
+                    <div class="mt-3 d-none" id="applyPhoneWrap">
+                        <div class="mb-2 small fw-semibold">Telefon raqami</div>
+                        <div class="input-group">
+                            <input type="text" id="applyPhoneInput" class="form-control" placeholder="+998-90-123-45-67">
+                            <button type="button" class="btn btn-outline-secondary" id="applyPhoneGenerate">Generatsiya</button>
+                        </div>
+                        <div class="form-text">Telefon raqami yo'q yoki noto'g'ri bo'lsa, shu yerda kiriting.</div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Bekor qilish</button>
@@ -363,8 +371,12 @@
     const submitBtn = document.getElementById("applyModalSubmit");
     const categorySelect = document.getElementById("applyCategorySelect");
     const directionSelect = document.getElementById("applyDirectionSelect");
+    const phoneWrap = document.getElementById("applyPhoneWrap");
+    const phoneInput = document.getElementById("applyPhoneInput");
+    const phoneGenerateBtn = document.getElementById("applyPhoneGenerate");
     let currentYoshId = null;
     let currentRow = null;
+    let currentYoshPhone = "";
 
     function getCsrfToken() {
         const match = document.cookie.match(/csrftoken=([^;]+)/);
@@ -376,18 +388,62 @@
         errorEl.classList.add("d-none");
     }
 
+    function normalizePhone(rawValue) {
+        const digits = String(rawValue || "").replace(/\D+/g, "");
+        if (!digits) {
+            return "";
+        }
+        let core = "";
+        if (digits.startsWith("998") && digits.length === 12) {
+            core = digits.slice(3);
+        } else if (digits.length === 9) {
+            core = digits;
+        } else {
+            return "";
+        }
+        return `+998-${core.slice(0, 2)}-${core.slice(2, 5)}-${core.slice(5, 7)}-${core.slice(7, 9)}`;
+    }
+
+    function generatePhone() {
+        const prefixes = ["90", "91", "93", "94", "95", "97", "98", "99", "33", "88"];
+        const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+        const body = Math.floor(Math.random() * 10000000).toString().padStart(7, "0");
+        return `+998-${prefix}-${body.slice(0, 3)}-${body.slice(3, 5)}-${body.slice(5, 7)}`;
+    }
+
+    function syncPhoneVisibility() {
+        const normalized = normalizePhone(currentYoshPhone);
+        if (normalized) {
+            phoneWrap.classList.add("d-none");
+            phoneInput.value = normalized;
+        } else {
+            phoneWrap.classList.remove("d-none");
+            if (!normalizePhone(phoneInput.value)) {
+                phoneInput.value = "";
+            }
+        }
+    }
+
     applyButtons.forEach((btn) => {
         btn.addEventListener("click", () => {
             currentYoshId = btn.getAttribute("data-yosh-id");
             currentRow = btn.closest("tr");
+            currentYoshPhone = btn.getAttribute("data-yosh-phone") || "";
             const name = btn.getAttribute("data-yosh-name") || "";
             subtitleEl.textContent = name ? `${name} uchun yo'nalish tanlang` : "Yo'nalish tanlang";
             clearError();
             categorySelect.value = "";
             directionSelect.innerHTML = "<option value=\"\">Avval kategoriya tanlang...</option>";
             directionSelect.disabled = true;
+            phoneInput.value = normalizePhone(currentYoshPhone);
+            syncPhoneVisibility();
             modal.show();
         });
+    });
+
+    phoneGenerateBtn.addEventListener("click", () => {
+        phoneInput.value = generatePhone();
+        clearError();
     });
 
     categorySelect.addEventListener("change", async () => {
@@ -457,6 +513,15 @@
 
         const sporttypeId = directionSelect.value;
         const sporttypeName = directionSelect.options[directionSelect.selectedIndex]?.textContent || "";
+        const normalizedPhone = normalizePhone(phoneInput.value || currentYoshPhone);
+
+        if (!normalizedPhone) {
+            errorEl.textContent = "Telefon raqam kiriting yoki generatsiya qiling.";
+            errorEl.classList.remove("d-none");
+            phoneWrap.classList.remove("d-none");
+            phoneInput.focus();
+            return;
+        }
 
         submitBtn.disabled = true;
         submitBtn.textContent = "Yuborilmoqda...";
@@ -467,6 +532,7 @@
             formData.append("category_name", categoryName);
             formData.append("sporttype_id", sporttypeId);
             formData.append("sporttype_name", sporttypeName);
+            formData.append("phone_number", normalizedPhone);
 
             const response = await fetch("{% url 'beshtashabbus:application_submit' %}", {
                 method: "POST",
@@ -477,6 +543,11 @@
             });
             const data = await response.json();
             if (response.ok && data.success) {
+                currentYoshPhone = normalizedPhone;
+                const triggerButton = currentRow ? currentRow.querySelector(".js-apply-btn") : null;
+                if (triggerButton) {
+                    triggerButton.setAttribute("data-yosh-phone", normalizedPhone);
+                }
                 if (currentRow) {
                     const statusCell = currentRow.querySelector(".cell-status");
                     const countCell = currentRow.querySelector(".cell-count");

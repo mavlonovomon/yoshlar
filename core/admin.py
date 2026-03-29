@@ -73,6 +73,7 @@ class YoshAdmin(admin.ModelAdmin):
     )
     list_display = (
         'fullname',
+        'birth_date',
         'jshshir',
         'mahalla',
         'school_class',

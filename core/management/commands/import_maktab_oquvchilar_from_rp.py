@@ -90,10 +90,10 @@ def _document_type_from_series(series: str) -> str:
 
 
 class Command(BaseCommand):
-    help = "RP.xlsx faylidagi maktab ma'lumotlarini Yosh jadvaliga birlashtiradi."
+    help = "RP.xlsx faylidagi ma'lumotlarni PINFL bo'yicha Yosh bilan birlashtiradi, qolganlarini aniqlanmaganlarga yuboradi."
 
     def add_arguments(self, parser):
-        parser.add_argument("--file", type=str, default="RP.xlsx", help="Excel fayl yo'li")
+        parser.add_argument("--file", type=str, default=r"C:\Users\Genius007\Desktop\RP.xlsx", help="Excel fayl yo'li")
         parser.add_argument("--sheet", type=str, default="", help="Sheet nomi")
         parser.add_argument("--dry-run", action="store_true", help="DBga yozmaydi")
         parser.add_argument("--clear", action="store_true", help="Avval yoshlar maktab ma'lumotlarini tozalaydi")
@@ -209,6 +209,9 @@ class Command(BaseCommand):
             if yosh:
                 matched_rows += 1
                 matched_pinfls.add(item["pinfl"])
+                yosh.fullname = item["fullname"] or yosh.fullname
+                if item["birth_date"]:
+                    yosh.birth_date = item["birth_date"]
                 yosh.school_external_id = item["external_id"]
                 yosh.school_gender = item["gender"]
                 yosh.school_nationality = item["nationality"]
@@ -277,6 +280,8 @@ class Command(BaseCommand):
                 Yosh.objects.bulk_update(
                     changed_yoshes,
                     [
+                        "fullname",
+                        "birth_date",
                         "school_external_id",
                         "school_gender",
                         "school_nationality",
@@ -333,4 +338,4 @@ class Command(BaseCommand):
         self.stdout.write(f"Stagingga tushganlar: {len(staging_items)}")
         self.stdout.write(f"Yangilandi: {len(changed_yoshes)}")
         self.stdout.write(f"O'tkazib yuborildi: {skipped_rows}")
-        self.stdout.write(self.style.SUCCESS("Maktab ma'lumotlari Yosh jadvaliga birlashtirildi."))
+        self.stdout.write(self.style.SUCCESS("RP ma'lumotlari Yosh jadvaliga birlashtirildi, qolganlari aniqlanmaganlarga yuborildi."))

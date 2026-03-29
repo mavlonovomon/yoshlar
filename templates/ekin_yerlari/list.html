@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header">
+        <div class="page-title-group">
+            <h2>Ekin yerlari ro'yxati</h2>
+            <p>F.I.Sh va tug'ilgan sana orqali yoshlar ro'yxati bilan moslashtirilgan yozuvlar</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'ekin_yerlari:index' %}" class="btn btn-outline-secondary shadow-sm">
+                <i class="bi bi-speedometer2 me-1"></i> Svod
+            </a>
+            <a href="?{% query_replace unresolved=1 page=None %}" class="btn btn-outline-warning shadow-sm">
+                <i class="bi bi-person-check me-1"></i> Moslanmaganlar
+            </a>
+            {% if user.is_site_admin %}
+            <form method="post" action="{% url 'ekin_yerlari:import' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary shadow-sm">
+                    <i class="bi bi-arrow-repeat me-1"></i> Importni yangilash
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-lg-3">
+                    <label class="form-label small text-muted">Qidirish</label>
+                    <input type="text" name="q" class="form-control" value="{{ request.GET.q }}" placeholder="F.I.Sh, tel, mahalla, ekin turi...">
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label small text-muted">Holat</label>
+                    <select name="status" class="form-select" onchange="this.form.submit()">
+                        <option value="">Barchasi</option>
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-1">
+                    <div class="form-check mt-4 pt-2">
+                        <input class="form-check-input" type="checkbox" value="1" id="unresolvedOnly" name="unresolved" {% if unresolved_only %}checked{% endif %} onchange="this.form.submit()">
+                        <label class="form-check-label small" for="unresolvedOnly">Faqat moslanmagan</label>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <label class="form-label small text-muted">Yer mahallasi</label>
+                    <select name="mahalla" class="form-select" onchange="this.form.submit()">
+                        <option value="">Barchasi</option>
+                        {% for name in land_mahallas %}
+                        <option value="{{ name }}" {% if selected_mahalla == name %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-1">
+                    <label class="form-label small text-muted">Snapshot</label>
+                    <select name="snapshot" class="form-select" onchange="this.form.submit()">
+                        {% for item in snapshots %}
+                        <option value="{{ item.id }}" {% if snapshot and snapshot.id == item.id %}selected{% endif %}>{{ item.created_at|date:"d.m H:i" }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <button type="submit" class="btn btn-primary w-100">Filtrlash</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>{% sort_link 'winner_name' 'F.I.Sh' %}</th>
+                        <th>{% sort_link 'winner_birth_date' "Tug'ilgan sana" %}</th>
+                        <th>{% sort_link 'land_neighborhood_name' 'Yer mahallasi' %}</th>
+                        <th>Ekin</th>
+                        <th>{% sort_link 'area' 'Maydon' %}</th>
+                        <th>{% sort_link 'match_status' 'Holat' %}</th>
+                        <th>Tizimdagi yosh</th>
+                        <th>Amal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in page_obj %}
+                    <tr>
+                        <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
+                        <td>
+                            <div class="fw-semibold">{{ entry.winner_name }}</div>
+                            <div class="small text-muted">{{ entry.winner_phone|default:"-" }}</div>
+                        </td>
+                        <td>{{ entry.winner_birth_date|date:"d.m.Y"|default:"-" }}</td>
+                        <td>{{ entry.land_neighborhood_name|default:"-" }}</td>
+                        <td>
+                            <div>{{ entry.specialty_type|default:"-" }}</div>
+                            <div class="small text-muted">{{ entry.specialty_category|default:"-" }}</div>
+                        </td>
+                        <td>{{ entry.area|default:"-" }}</td>
+                        <td>
+                            {% if entry.match_status == 'MATCHED' %}
+                            <span class="badge text-bg-success">Topildi</span>
+                            {% elif entry.match_status == 'AMBIGUOUS' %}
+                            <span class="badge text-bg-warning">Noaniq</span>
+                            {% else %}
+                            <span class="badge text-bg-danger">Topilmadi</span>
+                            {% endif %}
+                            <div class="small text-muted mt-1">{{ entry.match_note }}</div>
+                        </td>
+                        <td>
+                            {% if entry.linked_yosh %}
+                            <div class="fw-semibold">{{ entry.linked_yosh.fullname }}</div>
+                            <div class="small text-muted">{{ entry.linked_yosh.mahalla.name }}</div>
+                            {% elif entry.possible_matches %}
+                            <div class="small text-muted">{{ entry.possible_matches|length }} ta ehtimoliy moslik</div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_site_admin %}
+                            <a href="{% url 'ekin_yerlari:resolve' entry.pk %}" class="btn btn-sm btn-outline-primary">
+                                Biriktirish
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="9" class="text-center text-muted py-5">Ma'lumot topilmadi</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <nav class="mt-3">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?{% query_replace page=page_obj.previous_page_number %}">Oldingi</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+            {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?{% query_replace page=page_obj.next_page_number %}">Keyingi</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
