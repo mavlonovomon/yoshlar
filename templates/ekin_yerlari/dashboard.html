@@ -11,14 +11,6 @@
             <a href="{% url 'ekin_yerlari:list' %}" class="btn btn-outline-primary shadow-sm">
                 <i class="bi bi-list-ul me-1"></i> Ro'yxat
             </a>
-            {% if user.is_site_admin %}
-            <form method="post" action="{% url 'ekin_yerlari:import' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-primary shadow-sm">
-                    <i class="bi bi-arrow-repeat me-1"></i> `fermer.json` dan import
-                </button>
-            </form>
-            {% endif %}
         </div>
     </div>
 
@@ -103,17 +95,8 @@
         <div class="card-body py-5 text-center">
             <h5 class="mb-2">Snapshot hali yaratilmagan</h5>
             <p class="text-muted mb-3">Birinchi importdan keyin svod va ro'yxat shu yerda ko'rinadi.</p>
-            {% if user.is_site_admin %}
-            <form method="post" action="{% url 'ekin_yerlari:import' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-upload me-1"></i> `fermer.json` dan import
-                </button>
-            </form>
-            {% endif %}
         </div>
     </div>
     {% endif %}
 </div>
 {% endblock %}
-

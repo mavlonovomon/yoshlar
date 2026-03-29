@@ -15,14 +15,6 @@
             <a href="?{% query_replace unresolved=1 page=None %}" class="btn btn-outline-warning shadow-sm">
                 <i class="bi bi-person-check me-1"></i> Moslanmaganlar
             </a>
-            {% if user.is_site_admin %}
-            <form method="post" action="{% url 'ekin_yerlari:import' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-primary shadow-sm">
-                    <i class="bi bi-arrow-repeat me-1"></i> Importni yangilash
-                </button>
-            </form>
-            {% endif %}
         </div>
     </div>
 
