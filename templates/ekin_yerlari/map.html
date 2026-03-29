@@ -1,0 +1,338 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header">
+        <div class="page-title-group">
+            <h2>Ekin yerlari xaritasi</h2>
+            <p>Yer konturlari va markerlar orqali yoshlar uchun ajratilgan ekin maydonlarini ko'rish</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'ekin_yerlari:index' %}" class="btn btn-outline-secondary shadow-sm">
+                <i class="bi bi-speedometer2 me-1"></i> Svod
+            </a>
+            <a href="{% url 'ekin_yerlari:list' %}" class="btn btn-outline-primary shadow-sm">
+                <i class="bi bi-list-ul me-1"></i> Ro'yxat
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-lg-2">
+                    <label class="form-label small text-muted">Snapshot</label>
+                    <select name="snapshot" class="form-select" onchange="this.form.submit()">
+                        {% for item in snapshots %}
+                        <option value="{{ item.id }}" {% if snapshot and snapshot.id == item.id %}selected{% endif %}>{{ item.created_at|date:"d.m H:i" }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label small text-muted">Holat</label>
+                    <select name="status" class="form-select" onchange="this.form.submit()">
+                        <option value="">Barchasi</option>
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-3">
+                    <label class="form-label small text-muted">Yer mahallasi</label>
+                    <select name="mahalla" class="form-select" onchange="this.form.submit()">
+                        <option value="">Barchasi</option>
+                        {% for name in land_mahallas %}
+                        <option value="{{ name }}" {% if selected_mahalla == name %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-3">
+                    <label class="form-label small text-muted">Ekin turi</label>
+                    <select name="specialty" class="form-select" onchange="this.form.submit()">
+                        <option value="">Barchasi</option>
+                        {% for name in specialties %}
+                        <option value="{{ name }}" {% if selected_specialty == name %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label small text-muted">Ko'rsatish</label>
+                    <select name="mode" class="form-select" onchange="this.form.submit()">
+                        <option value="all" {% if show_mode == 'all' %}selected{% endif %}>Marker + kontur</option>
+                        <option value="markers" {% if show_mode == 'markers' %}selected{% endif %}>Faqat markerlar</option>
+                        <option value="polygons" {% if show_mode == 'polygons' %}selected{% endif %}>Faqat konturlar</option>
+                    </select>
+                </div>
+            </form>
+            {% if show_mode == 'markers' %}
+            <div class="alert alert-warning mt-3 mb-0 py-2 small">
+                Hozir `Faqat markerlar` rejimi tanlangan. Konturlarni ko'rish uchun `Ko'rsatish` dan `Marker + kontur` yoki `Faqat konturlar` ni tanlang.
+            </div>
+            {% elif show_mode == 'polygons' %}
+            <div class="alert alert-info mt-3 mb-0 py-2 small">
+                Hozir faqat konturlar ko'rsatiladi. Markerlarni ham ko'rish uchun `Marker + kontur` ni tanlang.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-9">
+            <div class="card shadow-sm border-0 overflow-hidden">
+                <div id="ekinMap"></div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">Legenda</h6>
+                    <div class="map-legend-item"><span class="map-dot dot-green"></span> Topildi</div>
+                    <div class="map-legend-item"><span class="map-dot dot-yellow"></span> Noaniq</div>
+                    <div class="map-legend-item"><span class="map-dot dot-red"></span> Topilmadi</div>
+                </div>
+            </div>
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">Joriy filter</h6>
+                    <div class="small mb-2"><strong>Snapshot:</strong> {{ snapshot.created_at|date:"d.m.Y H:i"|default:"-" }}</div>
+                    <div class="small mb-2"><strong>Holat:</strong> {{ selected_status|default:"Barchasi" }}</div>
+                    <div class="small mb-2"><strong>Mahalla:</strong> {{ selected_mahalla|default:"Barchasi" }}</div>
+                    <div class="small mb-2"><strong>Ekin:</strong> {{ selected_specialty|default:"Barchasi" }}</div>
+                    <div class="small mb-0"><strong>Rejim:</strong> {{ show_mode }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+(function () {
+    const mapEl = document.getElementById("ekinMap");
+    if (!mapEl) {
+        return;
+    }
+
+    const dataUrl = "{{ map_data_url|escapejs }}";
+    const mode = "{{ show_mode|escapejs }}";
+    const map = L.map("ekinMap").setView([41.25, 61.15], 11);
+    const polygonRenderer = L.svg();
+    const polygonLayer = L.featureGroup().addTo(map);
+    const markerLayer = L.featureGroup().addTo(map);
+    const loading = document.createElement("div");
+    loading.className = "map-loading";
+    loading.textContent = "Xarita ma'lumotlari yuklanmoqda...";
+    mapEl.appendChild(loading);
+
+    const baseLayers = [
+        {
+            name: "Oddiy xarita",
+            url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+            options: {
+                subdomains: "abcd",
+                maxZoom: 20,
+                attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+            },
+        },
+        {
+            name: "OSM",
+            url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            options: {
+                maxZoom: 19,
+                attribution: "&copy; OpenStreetMap contributors",
+            },
+        },
+        {
+            name: "Sputnik",
+            url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            options: {
+                maxZoom: 20,
+                attribution: "Tiles &copy; Esri",
+            },
+        },
+    ];
+
+    const renderedBaseLayers = {};
+    baseLayers.forEach((config) => {
+        renderedBaseLayers[config.name] = L.tileLayer(config.url, config.options);
+    });
+    renderedBaseLayers["Oddiy xarita"].addTo(map);
+    L.control.layers(renderedBaseLayers, null, { position: "topright" }).addTo(map);
+
+    function getColor(status) {
+        if (status === "MATCHED") return "#198754";
+        if (status === "AMBIGUOUS") return "#f59f00";
+        return "#dc3545";
+    }
+
+    function markerIcon(status) {
+        const color = getColor(status);
+        return L.divIcon({
+            className: "custom-map-marker",
+            html: `<span style="background:${color}"></span>`,
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
+        });
+    }
+
+    function polygonStyle(status) {
+        const color = getColor(status);
+        return {
+            renderer: polygonRenderer,
+            color,
+            weight: 5,
+            opacity: 1,
+            fillColor: color,
+            fillOpacity: 0.38,
+        };
+    }
+
+    function applyBestView(markerBounds, polygonBounds) {
+        map.invalidateSize(true);
+        if (markerBounds.isValid()) {
+            const southWest = markerBounds.getSouthWest();
+            const northEast = markerBounds.getNorthEast();
+            const samePoint = southWest.lat === northEast.lat && southWest.lng === northEast.lng;
+            if (samePoint) {
+                map.setView(markerBounds.getCenter(), 16, { animate: false });
+            } else {
+                map.fitBounds(markerBounds.pad(0.12), { maxZoom: 16, animate: false });
+            }
+            return;
+        }
+        if (polygonBounds.isValid()) {
+            map.fitBounds(polygonBounds.pad(0.08), { maxZoom: 16, animate: false });
+        }
+    }
+
+    fetch(`${dataUrl}${window.location.search || ""}`, {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+    })
+        .then((response) => response.json())
+        .then((payload) => {
+            const items = Array.isArray(payload.items) ? payload.items : [];
+            const markerBounds = L.latLngBounds([]);
+            const polygonBounds = L.latLngBounds([]);
+
+            items.forEach((item) => {
+                const color = getColor(item.status);
+                const popupHtml = item.popup_html || item.name || "";
+
+                if (mode !== "markers" && item.geometry && item.geometry.type && item.geometry.coordinates) {
+                    try {
+                        const polygon = L.geoJSON(item.geometry, {
+                            style: polygonStyle(item.status),
+                            onEachFeature: function (_feature, layer) {
+                                layer.on("mouseover", function () {
+                                    layer.setStyle({
+                                        weight: 6,
+                                        fillOpacity: 0.4,
+                                    });
+                                });
+                                layer.on("mouseout", function () {
+                                    layer.setStyle(polygonStyle(item.status));
+                                });
+                            },
+                        }).addTo(polygonLayer);
+                        polygon.bindPopup(popupHtml);
+                        const layerBounds = polygon.getBounds();
+                        if (layerBounds.isValid()) {
+                            polygonBounds.extend(layerBounds);
+                        }
+                    } catch (error) {
+                        console.warn("Polygon chizilmadi", item.id, error);
+                    }
+                }
+
+                const lat = Number(item.location && item.location.lat);
+                const lng = Number(item.location && item.location.lng);
+                if (mode !== "polygons" && Number.isFinite(lat) && Number.isFinite(lng)) {
+                    const point = L.latLng(lat, lng);
+                    const marker = L.marker(point, {
+                        icon: markerIcon(item.status),
+                    }).addTo(markerLayer);
+                    marker.bindPopup(popupHtml);
+                    markerBounds.extend(point);
+                }
+            });
+
+            polygonLayer.bringToFront();
+            markerLayer.bringToFront();
+
+            requestAnimationFrame(() => {
+                applyBestView(markerBounds, polygonBounds);
+                setTimeout(() => applyBestView(markerBounds, polygonBounds), 120);
+            });
+        })
+        .catch((error) => {
+            loading.textContent = "Xarita ma'lumotlarini yuklashda xatolik yuz berdi.";
+            console.error(error);
+            return;
+        })
+        .finally(() => {
+            loading.remove();
+        });
+})();
+</script>
+<style>
+#ekinMap {
+    height: 72vh;
+    min-height: 520px;
+    position: relative;
+}
+.map-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+}
+.map-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.dot-green { background: #198754; }
+.dot-yellow { background: #f59f00; }
+.dot-red { background: #dc3545; }
+.custom-map-marker {
+    background: transparent;
+    border: 0;
+}
+.custom-map-marker span {
+    width: 16px;
+    height: 16px;
+    display: block;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.18);
+}
+.map-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.85);
+    z-index: 500;
+    font-weight: 600;
+    color: #334155;
+}
+@media (max-width: 992px) {
+    #ekinMap {
+        height: 60vh;
+        min-height: 420px;
+    }
+}
+</style>
+{% endblock %}

@@ -222,6 +222,10 @@
                             class="nav-sub-item {% if '/ekin-yerlari/list/' == request.path %}active{% endif %}">
                             <i class="bi bi-list-ul"></i> <span>Ro'yxat</span>
                         </a>
+                        <a href="{% url 'ekin_yerlari:map' %}"
+                            class="nav-sub-item {% if '/ekin-yerlari/map/' == request.path %}active{% endif %}">
+                            <i class="bi bi-geo-alt"></i> <span>Xarita</span>
+                        </a>
                     </div>
                 </div>
                 <div class="nav-dropdown {% if 'intizom-jazo' in request.path %}open active{% endif %}"

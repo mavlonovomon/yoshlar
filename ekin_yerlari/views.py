@@ -11,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.db.models import Count, Q, Sum
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -242,6 +242,74 @@ class EkinYerAccessMixin:
         return qs
 
 
+def _build_map_payload(entries, mode="all"):
+    include_geometry = mode in {"all", "polygons"}
+    include_location = mode in {"all", "markers"}
+    items = []
+    for entry in entries:
+        popup_lines = [
+            f"<div class='fw-semibold'>{entry.winner_name}</div>",
+            f"<div class='small text-muted'>{entry.winner_birth_date.strftime('%d.%m.%Y') if entry.winner_birth_date else '-'}</div>",
+            f"<div class='small'><strong>Ekin:</strong> {entry.specialty_type or '-'}</div>",
+            f"<div class='small'><strong>Kategoriya:</strong> {entry.specialty_category or '-'}</div>",
+            f"<div class='small'><strong>Maydon:</strong> {entry.area or '-'}</div>",
+            f"<div class='small'><strong>Yer mahallasi:</strong> {entry.land_neighborhood_name or '-'}</div>",
+            f"<div class='small'><strong>Holat:</strong> {entry.get_match_status_display()}</div>",
+        ]
+        if entry.linked_yosh_id and entry.linked_yosh:
+            popup_lines.append(
+                f"<div class='small'><strong>Tizimdagi yosh:</strong> {entry.linked_yosh.fullname} ({entry.linked_yosh.mahalla.name})</div>"
+            )
+
+        items.append(
+            {
+                "id": entry.id,
+                "name": entry.winner_name,
+                "status": entry.match_status,
+                "status_label": entry.get_match_status_display(),
+                "mahalla": entry.land_neighborhood_name or "",
+                "specialty": entry.specialty_type or "",
+                "category": entry.specialty_category or "",
+                "area": float(entry.area) if entry.area is not None else None,
+                "location": (entry.location or {}) if include_location else {},
+                "geometry": (entry.geometry or {}) if include_geometry else {},
+                "popup_html": "".join(popup_lines),
+            }
+        )
+    return items
+
+
+def _resolve_map_snapshot(request):
+    snapshot_id = (request.GET.get("snapshot") or "").strip()
+    if snapshot_id.isdigit():
+        snapshot = EkinYerSnapshot.objects.filter(pk=snapshot_id).first()
+        if snapshot:
+            return snapshot
+    return EkinYerSnapshot.objects.order_by("-created_at").first()
+
+
+def _filtered_map_queryset(request):
+    snapshot = _resolve_map_snapshot(request)
+    if not snapshot:
+        return snapshot, EkinYerEntry.objects.none()
+
+    qs = EkinYerEntry.objects.select_related("linked_yosh", "linked_yosh__mahalla", "snapshot").filter(snapshot=snapshot)
+    user = request.user
+    if not getattr(user, "is_site_admin", False) and getattr(user, "mahalla", None):
+        qs = qs.filter(Q(linked_yosh__mahalla=user.mahalla) | Q(land_neighborhood_name=user.mahalla.name))
+
+    status = (request.GET.get("status") or "").strip()
+    if status:
+        qs = qs.filter(match_status=status)
+    mahalla = (request.GET.get("mahalla") or "").strip()
+    if mahalla:
+        qs = qs.filter(land_neighborhood_name=mahalla)
+    specialty = (request.GET.get("specialty") or "").strip()
+    if specialty:
+        qs = qs.filter(specialty_type=specialty)
+    return snapshot, qs
+
+
 class EkinYerDashboardView(LoginRequiredMixin, EkinYerAccessMixin, TemplateView):
     template_name = "ekin_yerlari/dashboard.html"
 
@@ -362,6 +430,55 @@ class EkinYerListView(LoginRequiredMixin, EkinYerAccessMixin, ListView):
         else:
             context["land_mahallas"] = []
         return context
+
+
+class EkinYerMapView(LoginRequiredMixin, EkinYerAccessMixin, TemplateView):
+    template_name = "ekin_yerlari/map.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        snapshot, qs = _filtered_map_queryset(self.request)
+        context["snapshot"] = snapshot
+        context["snapshots"] = EkinYerSnapshot.objects.order_by("-created_at")[:10]
+        context["status_choices"] = EkinYerEntry.MATCH_STATUS_CHOICES
+        context["selected_status"] = (self.request.GET.get("status") or "").strip()
+        context["selected_mahalla"] = (self.request.GET.get("mahalla") or "").strip()
+        context["selected_specialty"] = (self.request.GET.get("specialty") or "").strip()
+        context["show_mode"] = (self.request.GET.get("mode") or "all").strip()
+        context["map_data_url"] = reverse("ekin_yerlari:map_data")
+
+        if not snapshot:
+            context["land_mahallas"] = []
+            context["specialties"] = []
+            return context
+
+        context["land_mahallas"] = (
+            EkinYerEntry.objects.filter(snapshot=snapshot)
+            .exclude(land_neighborhood_name="")
+            .values_list("land_neighborhood_name", flat=True)
+            .distinct()
+            .order_by("land_neighborhood_name")
+        )
+        context["specialties"] = (
+            EkinYerEntry.objects.filter(snapshot=snapshot)
+            .exclude(specialty_type="")
+            .values_list("specialty_type", flat=True)
+            .distinct()
+            .order_by("specialty_type")
+        )
+        return context
+
+
+@login_required
+def ekin_yer_map_data(request):
+    snapshot, qs = _filtered_map_queryset(request)
+    if not snapshot:
+        return JsonResponse({"success": True, "items": [], "count": 0})
+
+    mode = (request.GET.get("mode") or "all").strip()
+    entries = list(qs)
+    items = _build_map_payload(entries, mode=mode)
+    return JsonResponse({"success": True, "items": items, "count": len(items)})
 
 
 class EkinYerResolveView(LoginRequiredMixin, EkinYerAccessMixin, TemplateView):
