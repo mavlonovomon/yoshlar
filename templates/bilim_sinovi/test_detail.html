@@ -31,7 +31,16 @@
                         style="width: 40px; height: 40px; min-width: 40px;">
                         {{ forloop.counter }}
                     </span>
-                    <h5 class="card-text mb-0 pt-2" style="line-height: 1.6;">{{ question.text }}</h5>
+                    <div class="flex-grow-1 pt-1">
+                        {% if question.package %}
+                        <div class="mb-2">
+                            <span class="badge question-package-badge">
+                                Paket: {{ question.package.name }}
+                            </span>
+                        </div>
+                        {% endif %}
+                        <h5 class="card-text mb-0" style="line-height: 1.6;">{{ question.text }}</h5>
+                    </div>
                 </div>
 
                 <div class="options-list ps-5 ms-2">
@@ -106,6 +115,15 @@
 
     .shadow-primary {
         box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
+    }
+
+    .question-package-badge {
+        background: #eef6ff;
+        color: #0b5ed7;
+        border: 1px solid #cfe2ff;
+        font-weight: 600;
+        padding: 0.45rem 0.75rem;
+        border-radius: 999px;
     }
 
     .animate-in {
