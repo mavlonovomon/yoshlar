@@ -74,6 +74,13 @@ class FiveInitiativeEventForm(forms.ModelForm):
     def get_title_options(cls):
         return cls.TITLE_OPTIONS
 
+    @classmethod
+    def _all_title_options(cls):
+        titles = []
+        for options in cls.TITLE_OPTIONS.values():
+            titles.extend(options)
+        return titles
+
     def _selected_direction(self):
         if self.is_bound:
             return self.data.get('direction')
@@ -82,7 +89,7 @@ class FiveInitiativeEventForm(forms.ModelForm):
         return None
 
     def _title_choices_for_direction(self, direction, current_title=None):
-        options = self.TITLE_OPTIONS.get(direction, [])
+        options = self.TITLE_OPTIONS.get(direction, []) if direction else self._all_title_options()
         if current_title is None:
             current_title = self._selected_title()
         if current_title and current_title not in options:

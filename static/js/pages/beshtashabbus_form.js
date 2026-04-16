@@ -1,12 +1,24 @@
 (function () {
     "use strict";
 
+    function getAllTitles(titleOptionsByDirection) {
+        var titles = [];
+        Object.keys(titleOptionsByDirection || {}).forEach(function (direction) {
+            (titleOptionsByDirection[direction] || []).forEach(function (name) {
+                titles.push(name);
+            });
+        });
+        return titles;
+    }
+
     function refillTitles(directionSelect, titleSelect, titleOptionsByDirection) {
         if (!directionSelect || !titleSelect) return;
 
         var selectedDirection = directionSelect.value;
         var previousValue = titleSelect.value;
-        var options = titleOptionsByDirection[selectedDirection] || [];
+        var options = selectedDirection
+            ? (titleOptionsByDirection[selectedDirection] || [])
+            : getAllTitles(titleOptionsByDirection);
 
         titleSelect.innerHTML = "";
 
