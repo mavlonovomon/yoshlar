@@ -25,6 +25,11 @@ Bu loyiha hozir:
 
 bilan ishlashga moslangan. Asosiy ma'lumotlar bazasi `yoshlar.db`.
 
+Production serverda esa tavsiya etilgan DB joylashuvi:
+
+- `SQLITE_PATH=/var/www/yoshlar/shared/db/yoshlar.db`
+- kod `repo` ichida, doimiy fayllar esa `shared/` ichida saqlanadi
+
 ## Texnologiyalar
 
 - Python 3.14
@@ -42,6 +47,8 @@ Loyiha asosiy baza sifatida bitta lokal SQLite faylidan foydalanadi.
 - ma'lumotlar bazasi fayli: `yoshlar.db`
 - fayl loyiha ildiz papkasida joylashadi
 - boshqa DB ulanishlari ishlatilmaydi
+
+Ubuntu productionda bu fayl odatda `shared/db/yoshlar.db` ga ko'chiriladi va `.env` orqali ulanadi.
 
 ## Tezkor ishga tushirish
 
@@ -97,15 +104,20 @@ Brauzerda:
 Ubuntu server uchun tavsiya etilgan oqim:
 
 1. Repo'ni serverga clone qiling.
-2. Git kodi `/home/genius/yoshlar/repo` ichida bo'lsin.
-3. `/home/genius/yoshlar/current` ni `repo` ga ko'rsatadigan symlink qilib qo'ying.
-4. `/home/genius/yoshlar/shared/.env` ni to'ldiring.
+2. Git kodi `/var/www/yoshlar/repo` ichida bo'lsin.
+3. `/var/www/yoshlar/current` ni `repo` ga ko'rsatadigan symlink qilib qo'ying.
+4. `/var/www/yoshlar/shared/.env` ni to'ldiring.
 5. Virtualenv yarating va dependency'larni o'rnating.
 6. `python manage.py migrate` ishga tushiring.
 7. `python manage.py collectstatic --noinput` ishga tushiring.
 8. `gunicorn` ni `systemd` service orqali ishga tushiring.
 9. Cloudflare Tunnel ni `systemd` service orqali ulab qo'ying.
 10. Yangilash uchun `git pull --ff-only` va `deploy/ubuntu/update.sh` oqimidan foydalaning.
+
+Tavsiya etilgan service nomlari:
+
+- `yoshlar` - Django/Gunicorn
+- `cloudflared` - tunnel
 
 Deploy uchun tayyor fayllar:
 
@@ -121,7 +133,7 @@ Deploy uchun tayyor fayllar:
 GitHub'dan yangi commit kelganda serverda:
 
 ```bash
-cd /home/genius/yoshlar/repo
+cd /var/www/yoshlar/repo
 bash deploy/ubuntu/update.sh
 ```
 
@@ -134,6 +146,22 @@ Bu skript:
 - `systemctl restart yoshlar`
 
 `deploy/ubuntu/update.sh` serverdagi pull va restart oqimini bir joyga jamlaydi. Bu Windows'da yozib, Linux serverda `git pull` qilishni barqarorlashtirish uchun kerak.
+
+Agar siz faqat servisni qayta ishga tushirmoqchi bo'lsangiz:
+
+```bash
+sudo systemctl restart yoshlar
+sudo systemctl status yoshlar --no-pager -l
+```
+
+Cloudflare Tunnel ham alohida qayta ishga tushirilishi mumkin:
+
+```bash
+sudo systemctl restart cloudflared
+sudo systemctl status cloudflared --no-pager -l
+```
+
+Brauzer cache sababli front-end o'zgarishlar darhol ko'rinmasa, hard refresh qiling.
 
 ## Muhim sozlamalar
 
@@ -150,6 +178,12 @@ Bu skript:
 - `GUNICORN_BIND`
 - `GUNICORN_WORKERS`
 - `GUNICORN_TIMEOUT`
+
+`beshtashabbus` formasi uchun qo'shimcha xulq:
+
+- avval `Tadbir yo'nalishi` tanlanadi
+- `Tadbir nomi` ro'yxati shu yo'nalishga mos holda to'ladi
+- agar JS keshdan yoki brauzer tomondan kechiksa, service restart va hard refresh tavsiya qilinadi
 
 ## Management commandlar
 

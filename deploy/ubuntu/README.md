@@ -4,10 +4,10 @@ Bu loyiha Ubuntu serverda `gunicorn + systemd + Cloudflare Tunnel` bilan ishlash
 
 Serverdagi tavsiya etilgan tuzilma:
 
-- `/home/genius/yoshlar/repo` - Git'dan keladigan kod
-- `/home/genius/yoshlar/current` - `repo` ga ko'rsatadigan symlink
-- `/home/genius/yoshlar/shared` - muqim fayllar: `.env`, `db`, `media`, `staticfiles`, `logs`
-- `/home/genius/yoshlar/venv` - virtual muhit
+- `/var/www/yoshlar/repo` - Git'dan keladigan kod
+- `/var/www/yoshlar/current` - `repo` ga ko'rsatadigan symlink
+- `/var/www/yoshlar/shared` - muqim fayllar: `.env`, `db`, `media`, `staticfiles`, `logs`
+- `/var/www/yoshlar/venv` - virtual muhit
 
 ## Bir martalik o'rnatish
 
@@ -21,29 +21,29 @@ sudo apt install -y python3 python3-venv python3-pip git
 2. Repo'ni serverga clone qiling:
 
 ```bash
-mkdir -p /home/genius/yoshlar
-git clone https://github.com/mavlonovomon/yoshlar.git /home/genius/yoshlar/repo
-ln -sfn /home/genius/yoshlar/repo /home/genius/yoshlar/current
+mkdir -p /var/www/yoshlar
+git clone https://github.com/mavlonovomon/yoshlar.git /var/www/yoshlar/repo
+ln -sfn /var/www/yoshlar/repo /var/www/yoshlar/current
 ```
 
 3. Bootstrap skriptini ishga tushiring:
 
 ```bash
-cd /home/genius/yoshlar/repo
+cd /var/www/yoshlar/repo
 bash deploy/ubuntu/bootstrap.sh
 ```
 
-4. `/home/genius/yoshlar/shared/.env` faylini to'ldiring:
+4. `/var/www/yoshlar/shared/.env` faylini to'ldiring:
 
 - `ALLOWED_HOSTS=example.com,www.example.com`
 - `CSRF_TRUSTED_ORIGINS=https://example.com,https://www.example.com`
-- `SQLITE_PATH=/home/genius/yoshlar/shared/db/yoshlar.db`
-- `MEDIA_ROOT=/home/genius/yoshlar/shared/media`
-- `STATIC_ROOT=/home/genius/yoshlar/shared/staticfiles`
+- `SQLITE_PATH=/var/www/yoshlar/shared/db/yoshlar.db`
+- `MEDIA_ROOT=/var/www/yoshlar/shared/media`
+- `STATIC_ROOT=/var/www/yoshlar/shared/staticfiles`
 
 Ma'lumotlar bazasi endi alohida servisga ulanmaydi:
 
-- Django `SQLITE_PATH` orqali `/home/genius/yoshlar/shared/db/yoshlar.db` faylidan foydalanadi
+- Django `SQLITE_PATH` orqali `/var/www/yoshlar/shared/db/yoshlar.db` faylidan foydalanadi
 - serverda `shared/db` papkasiga yozish huquqi bo'lishi kerak
 
 5. Systemd unitlarni joylang:
@@ -68,7 +68,7 @@ sudo systemctl enable --now cloudflared
 Repo'ga yangi commit push qilingandan keyin serverda:
 
 ```bash
-cd /home/genius/yoshlar/repo
+cd /var/www/yoshlar/repo
 bash deploy/ubuntu/update.sh
 ```
 

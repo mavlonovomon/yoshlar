@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO_URL="${REPO_URL:-https://github.com/mavlonovomon/yoshlar.git}"
-APP_ROOT="${APP_ROOT:-/home/genius/yoshlar}"
+APP_ROOT="${APP_ROOT:-/var/www/yoshlar}"
 REPO_DIR="${REPO_DIR:-$APP_ROOT/repo}"
 CURRENT_LINK="${CURRENT_LINK:-$APP_ROOT/current}"
 VENV_DIR="${VENV_DIR:-$APP_ROOT/venv}"
