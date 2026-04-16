@@ -3,7 +3,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Count, Q
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
-import json
 
 from core.models import Mahalla
 from core.view_helpers import apply_sorting, normalize_sort_params
@@ -118,7 +117,7 @@ class FiveInitiativeCreateView(LoginRequiredMixin, LeaderRequiredMixin, CreateVi
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["title_options_json"] = json.dumps(self.form_class.get_title_options())
+        context["title_options"] = self.form_class.get_title_options()
         return context
 
 
@@ -145,7 +144,7 @@ class FiveInitiativeUpdateView(LoginRequiredMixin, LeaderRequiredMixin, MahallaR
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["title_options_json"] = json.dumps(self.form_class.get_title_options())
+        context["title_options"] = self.form_class.get_title_options()
         return context
 
 
