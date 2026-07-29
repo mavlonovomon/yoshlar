@@ -15,17 +15,30 @@
         </div>
     </div>
 
-    <!-- Mega Map Section -->
+    <!-- Mega Map Section with Navigation -->
     <div class="mega-map-section">
         <h3 class="mb-3">Mahallalar bo'yicha bajarilish xaritasi</h3>
-        <div id="mega-map-container">
-            <svg id="mega-svg-map" 
-                 width="100%" 
-                 height="564" 
-                 viewBox="0 0 1000 800" 
-                 preserveAspectRatio="xMidYMid meet">
-                <!-- Polygons rendered by JavaScript -->
-            </svg>
+        <div class="mega-map-wrapper">
+            <a href="{{ prev_url }}" class="mega-nav-arrow mega-nav-prev" title="{{ prev_name }}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+            <div id="mega-map-container">
+                <svg id="mega-svg-map" 
+                     width="100%" 
+                     height="564" 
+                     viewBox="0 0 1000 800" 
+                     preserveAspectRatio="xMidYMid meet">
+                    <!-- Polygons rendered by JavaScript -->
+                </svg>
+            </div>
+            <a href="{{ next_url }}" class="mega-nav-arrow mega-nav-next" title="{{ next_name }}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
+        <div class="mega-map-nav-label">
+            <span>{{ prev_name }}</span>
+            <span class="mega-nav-current">{{ mega_title }}</span>
+            <span>{{ next_name }}</span>
         </div>
     </div>
 

@@ -262,11 +262,32 @@ def _render_mega_stats_page(
     column_labels,
 ):
     context = _build_mega_view_context(request, snapshot_model, table_builder, compare_fields)
+
+    mega_projects = [
+        {"key": "mutolaa", "name": "Mutolaa", "url": "/mega-loyihalar/mutolaa/"},
+        {"key": "ustoz-ai", "name": "Ustoz AI", "url": "/mega-loyihalar/ustoz-ai/"},
+        {"key": "uzchess", "name": "UzChess", "url": "/mega-loyihalar/uzchess/"},
+        {"key": "qizlar-akademiyasi", "name": "Qizlar akademiyasi", "url": "/mega-loyihalar/qizlar-akademiyasi/"},
+    ]
+
+    current_index = 0
+    for i, p in enumerate(mega_projects):
+        if p["name"] == page_title:
+            current_index = i
+            break
+
+    prev_index = (current_index - 1) % len(mega_projects)
+    next_index = (current_index + 1) % len(mega_projects)
+
     context.update(
         {
             "mega_title": page_title,
             "mega_refresh_url_name": refresh_url_name,
             "mega_column_labels": column_labels,
+            "prev_url": mega_projects[prev_index]["url"],
+            "prev_name": mega_projects[prev_index]["name"],
+            "next_url": mega_projects[next_index]["url"],
+            "next_name": mega_projects[next_index]["name"],
         }
     )
     return render(request, "mega_loyihalar/stats_common.html", context)
