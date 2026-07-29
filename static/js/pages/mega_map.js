@@ -160,16 +160,28 @@
 
     function findPercent(mahallaName, percentMap) {
         if (!percentMap) return null;
-        if (percentMap[mahallaName] !== undefined) return percentMap[mahallaName];
-
-        var normalized = normalizeName(mahallaName);
-        var keys = Object.keys(percentMap);
-        for (var i = 0; i < keys.length; i++) {
-            if (normalizeName(keys[i]) === normalized) {
-                return percentMap[keys[i]];
+        var raw = null;
+        if (percentMap[mahallaName] !== undefined) {
+            raw = percentMap[mahallaName];
+        } else {
+            var normalized = normalizeName(mahallaName);
+            var keys = Object.keys(percentMap);
+            for (var i = 0; i < keys.length; i++) {
+                if (normalizeName(keys[i]) === normalized) {
+                    raw = percentMap[keys[i]];
+                    break;
+                }
             }
         }
-        return null;
+        if (raw === null || raw === undefined) return null;
+        var n = typeof raw === 'number' ? raw : parseFloat(String(raw).replace('%', ''));
+        return isNaN(n) ? null : n;
+    }
+
+    function parsePercent(val) {
+        if (val === null || val === undefined) return null;
+        var n = typeof val === 'number' ? val : parseFloat(String(val).replace('%', ''));
+        return isNaN(n) ? null : n;
     }
 
     function showTooltip(name, percent, event) {
@@ -180,9 +192,8 @@
             tooltip.className = 'mega-tooltip';
             document.body.appendChild(tooltip);
         }
-        var percentText = (percent !== null && percent !== undefined)
-            ? parseFloat(percent).toFixed(1) + '%'
-            : 'Ma\'lumot yo\'q';
+        var num = parsePercent(percent);
+        var percentText = num !== null ? num.toFixed(1) + '%' : 'Ma\'lumot yo\'q';
         tooltip.innerHTML = '<strong>' + name + '</strong><br>Bajarilish: ' + percentText;
         tooltip.style.display = 'block';
         tooltip.style.left = (event.pageX + 10) + 'px';
