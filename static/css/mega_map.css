@@ -1,0 +1,78 @@
+/* Mega Map Container */
+.mega-map-section {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+#mega-map-container {
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #f9fafb;
+}
+
+#mega-svg-map {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* Polygon Styles */
+.mega-polygon {
+    cursor: pointer;
+    transition: opacity 0.2s ease, stroke-width 0.2s ease;
+}
+
+.mega-polygon:hover {
+    opacity: 1 !important;
+    stroke-width: 2 !important;
+}
+
+/* Tooltip */
+.mega-tooltip {
+    position: absolute;
+    display: none;
+    background: rgba(0, 0, 0, 0.9);
+    color: #ffffff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 1000;
+    white-space: nowrap;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.mega-tooltip strong {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .mega-map-section {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    #mega-svg-map {
+        height: 400px;
+    }
+}
+
+@media (max-width: 480px) {
+    .mega-map-section {
+        padding: 10px;
+        border-radius: 6px;
+    }
+    
+    .mega-tooltip {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+}

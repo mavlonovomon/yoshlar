@@ -75,6 +75,14 @@ def _build_mega_view_context(request, snapshot_model, table_builder, compare_fie
     if rows and sort_field in allowed_sort_fields:
         rows = sorted(rows, key=_row_sort_value, reverse=sort_direction == "desc")
 
+    # Extract percent map from table rows for polygon visualization
+    percent_map = {}
+    for row in rows:
+        mahalla_name = row.get('mahalla_name')
+        percent = row.get('users_ratio_percent', 0)
+        if mahalla_name:
+            percent_map[mahalla_name] = percent
+
     context = {
         "snapshot": latest_snapshot,
         "snapshot_history": snapshot_history,
@@ -91,6 +99,9 @@ def _build_mega_view_context(request, snapshot_model, table_builder, compare_fie
         "selected_right_snapshot_id": None,
         "mega_sort_field": sort_field,
         "mega_sort_direction": sort_direction,
+        # NEW: Add polygon data
+        "mahalla_percent_map": percent_map,
+        "mahalla_names": list(Mahalla.objects.values('id', 'name')),
     }
 
     if len(snapshot_history) >= 2:

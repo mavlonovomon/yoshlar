@@ -4,6 +4,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/mega_projects.css' %}?v=20260301a">
+<link rel="stylesheet" href="{% static 'css/mega_map.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -11,6 +12,20 @@
     <div class="mega-hero">
         <div>
             <div class="mega-title">{{ mega_title }}</div>
+        </div>
+    </div>
+
+    <!-- Mega Map Section -->
+    <div class="mega-map-section">
+        <h3 class="mb-3">Mahallalar bo'yicha bajarilish xaritasi</h3>
+        <div id="mega-map-container">
+            <svg id="mega-svg-map" 
+                 width="100%" 
+                 height="500" 
+                 viewBox="0 0 1000 800" 
+                 preserveAspectRatio="xMidYMid meet">
+                <!-- Polygons rendered by JavaScript -->
+            </svg>
         </div>
     </div>
 
@@ -219,4 +234,12 @@
         </div>
     </div>
 </div>
+
+<!-- Data for JavaScript -->
+{{ mahalla_percent_map|json_script:"mahalla-percent-data" }}
+{{ mahalla_names|json_script:"mahalla-names-data" }}
+
+<!-- Scripts -->
+<script src="{% static 'js/data/mahalla_polygons.js' %}"></script>
+<script src="{% static 'js/pages/mega_map.js' %}"></script>
 {% endblock %}
