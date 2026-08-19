@@ -76,6 +76,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form id="editForm">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
                 <div class="modal-header">
                     <h5 class="modal-title">
                         <i class="bi bi-pencil-square"></i> <span id="modalMahallaName"></span>
@@ -149,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             body: formData,
             headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}'
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
             }
         })
         .then(r => r.json())
@@ -159,6 +160,10 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 alert(data.error || 'Xatolik yuz berdi');
             }
+        })
+        .catch(err => {
+            alert('Tarmoq xatosi yuz berdi. Internet aloqasini tekshiring.');
+            console.error('Fetch error:', err);
         });
     });
 });
