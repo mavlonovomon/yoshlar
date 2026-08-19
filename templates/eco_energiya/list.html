@@ -51,17 +51,28 @@
     <div class="card shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0" style="table-layout: fixed;">
+                    <colgroup>
+                        <col style="width: 50px;">
+                        <col style="width: 150px;">
+                        <col>
+                        <col>
+                        <col>
+                        <col>
+                        {% if is_editor %}
+                        <col style="width: 70px;">
+                        {% endif %}
+                    </colgroup>
                     <thead class="table-light">
                         <tr>
-                            <th width="50">#</th>
-                            <th width="150">Mahalla nomi</th>
-                            <th class="w-100">Sektor</th>
-                            <th class="w-100">Holat</th>
-                            <th class="w-100">Quvvat (kVt)</th>
-                            <th class="w-100">Sana</th>
+                            <th>#</th>
+                            <th>Mahalla nomi</th>
+                            <th>Sektor</th>
+                            <th>Holat</th>
+                            <th>Quvvat (kVt)</th>
+                            <th>Sana</th>
                             {% if is_editor %}
-                            <th width="70">Amallar</th>
+                            <th>Amallar</th>
                             {% endif %}
                         </tr>
                     </thead>
