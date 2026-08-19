@@ -16,7 +16,7 @@ class EcoEnergiyaListView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        panels = SolarPanel.objects.select_related("mahalla").all()
+        panels = SolarPanel.objects.select_related("mahalla").prefetch_related("mahalla__leaders").all()
         context["panels"] = panels
         context["is_editor"] = getattr(self.request.user, "is_site_admin", False)
         context["total_count"] = panels.count()
