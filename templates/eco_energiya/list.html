@@ -55,7 +55,8 @@
                     <thead class="table-light">
                         <tr>
                             <th width="60">#</th>
-                            <th>Mahalla nomi / Sektor</th>
+                            <th>Mahalla nomi</th>
+                            <th width="120">Sektor</th>
                             <th width="150">Holat</th>
                             <th width="130">Quvvat (kVt)</th>
                             <th width="140">Sana</th>
@@ -68,11 +69,13 @@
                         {% for panel in panels %}
                         <tr>
                             <td class="text-muted">{{ forloop.counter }}</td>
+                            <td class="fw-semibold">{{ panel.mahalla.name }}</td>
                             <td>
-                                <div class="fw-semibold">{{ panel.mahalla.name }}</div>
                                 {% with leader=panel.mahalla.leaders.first %}
                                 {% if leader and leader.sector %}
-                                <small class="text-muted">{{ leader.get_sector_display }}</small>
+                                {{ leader.get_sector_display }}
+                                {% else %}
+                                —
                                 {% endif %}
                                 {% endwith %}
                             </td>
@@ -105,7 +108,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="{% if is_editor %}6{% else %}5{% endif %}" class="text-center text-muted py-4">
+                            <td colspan="{% if is_editor %}7{% else %}6{% endif %}" class="text-center text-muted py-4">
                                 Ma'lumotlar topilmadi
                             </td>
                         </tr>
