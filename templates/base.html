@@ -114,12 +114,12 @@
                     </div>
                     <div class="nav-dropdown-content">
                         <a href="{% url 'ishsiz_yoshlar:svod' %}"
-                            class="nav-sub-item {% if '/ishsiz_yoshlar/svod/' in request.path or '/ishsiz_yoshlar/leader-svod/' in request.path or '/ishsiz_yoshlar/professional-svod/' in request.path %}active{% endif %}">
+                            class="nav-sub-item {% if '/ishsiz_yoshlar/svod/' == request.path or '/ishsiz_yoshlar/leader-svod/' == request.path or '/ishsiz_yoshlar/professional-svod/' == request.path %}active{% endif %}">
                             <i class="bi bi-table"></i> <span>Svodlar</span>
                         </a>
                         <a href="{% url 'ishsiz_yoshlar:list' %}"
-                            class="nav-sub-item {% if '/ishsiz_yoshlar/list/' in request.path or '/ishsiz_yoshlar/20' in request.path %}active{% endif %}">
-                            <i class="bi bi-list-check"></i> <span>Ro'yxat</span>
+                            class="nav-sub-item {% if '/ishsiz_yoshlar/list/' == request.path %}active{% endif %}">
+                            <i class="bi bi-list-check"></i> <span>Ishsizlar Ro'yxati</span>
                         </a>
                     </div>
                 </div>
