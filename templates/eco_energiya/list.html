@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">
+            <i class="bi bi-sun text-warning"></i> Eco Energiya — Quyosh Panellari
+        </h4>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="60">#</th>
+                            <th>Mahalla nomi</th>
+                            <th width="150">Holat</th>
+                            <th width="130">Quvvat (kVt)</th>
+                            <th width="140">Sana</th>
+                            {% if is_editor %}
+                            <th width="80">Amallar</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for panel in panels %}
+                        <tr>
+                            <td class="text-muted">{{ forloop.counter }}</td>
+                            <td class="fw-semibold">{{ panel.mahalla.name }}</td>
+                            <td>
+                                {% if panel.is_installed %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle-fill"></i> O'rnatilgan
+                                </span>
+                                {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-x-circle-fill"></i> O'natmagan
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>{{ panel.capacity_kw|default:"—" }}</td>
+                            <td>{{ panel.installed_date|date:"d.m.Y"|default:"—" }}</td>
+                            {% if is_editor %}
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary edit-btn"
+                                    data-id="{{ panel.id }}"
+                                    data-mahalla="{{ panel.mahalla.name }}"
+                                    data-installed="{{ panel.is_installed|yesno:'true,false' }}"
+                                    data-capacity="{{ panel.capacity_kw|default:'' }}"
+                                    data-date="{{ panel.installed_date|date:'Y-m-d'|default:'' }}"
+                                    title="Tahrirlash">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="{% if is_editor %}6{% else %}5{% endif %}" class="text-center text-muted py-4">
+                                Ma'lumotlar topilmadi
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil-square"></i> <span id="modalMahallaName"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3 form-check form-switch">
+                        <input type="checkbox" class="form-check-input" id="editInstalled" name="is_installed">
+                        <label class="form-check-label" for="editInstalled">Quyosh paneli o'rnatilgan</label>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCapacity" class="form-label">Quvvat (kVt)</label>
+                        <input type="number" step="0.01" class="form-control" id="editCapacity" name="capacity_kw" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDate" class="form-label">O'rnatilgan sana</label>
+                        <input type="date" class="form-control" id="editDate" name="installed_date" disabled>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Yopish</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg"></i> Saqlash
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+    const form = document.getElementById('editForm');
+    const installedCheck = document.getElementById('editInstalled');
+    const capacityInput = document.getElementById('editCapacity');
+    const dateInput = document.getElementById('editDate');
+    let currentId = null;
+
+    function toggleFields() {
+        const enabled = installedCheck.checked;
+        capacityInput.disabled = !enabled;
+        dateInput.disabled = !enabled;
+        if (!enabled) {
+            capacityInput.value = '';
+            dateInput.value = '';
+        }
+    }
+
+    installedCheck.addEventListener('change', toggleFields);
+
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            currentId = this.dataset.id;
+            document.getElementById('modalMahallaName').textContent = this.dataset.mahalla;
+            installedCheck.checked = this.dataset.installed === 'true';
+            capacityInput.value = this.dataset.capacity || '';
+            dateInput.value = this.dataset.date || '';
+            toggleFields();
+            editModal.show();
+        });
+    });
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(form);
+        fetch(`/eco-energiya/${currentId}/update/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}'
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || 'Xatolik yuz berdi');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
