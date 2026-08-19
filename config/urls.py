@@ -19,5 +19,6 @@ urlpatterns = [
     path('hisobot/', include('hisobot.urls')),
     path('sorovnoma/', include('sorovnoma.urls')),
     path('ekin-yerlari/', include('ekin_yerlari.urls')),
+    path('eco-energiya/', include('eco_energiya.urls')),
     path('', include('core.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
