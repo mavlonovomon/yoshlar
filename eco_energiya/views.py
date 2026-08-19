@@ -1,4 +1,6 @@
-from django.contrib import messages
+from datetime import datetime
+from decimal import Decimal, InvalidOperation
+
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
@@ -32,11 +34,31 @@ def solar_panel_update(request, pk):
     capacity_kw = request.POST.get("capacity_kw", "").strip()
     installed_date = request.POST.get("installed_date", "").strip()
 
+    if capacity_kw:
+        try:
+            capacity_kw = Decimal(capacity_kw)
+        except (InvalidOperation, ValueError):
+            return JsonResponse({"success": False, "error": "Noto'g'ri quvvat qiymati"}, status=400)
+    else:
+        capacity_kw = None
+
+    if installed_date:
+        try:
+            installed_date = datetime.strptime(installed_date, "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            return JsonResponse({"success": False, "error": "Noto'g'ri sana formati"}, status=400)
+    else:
+        installed_date = None
+
     panel.is_installed = is_installed
-    panel.capacity_kw = capacity_kw if capacity_kw else None
-    panel.installed_date = installed_date if installed_date else None
+    panel.capacity_kw = capacity_kw
+    panel.installed_date = installed_date
     panel.updated_by = request.user
-    panel.save()
+
+    try:
+        panel.save()
+    except Exception as e:
+        return JsonResponse({"success": False, "error": "Saqlashda xatolik yuz berdi"}, status=500)
 
     return JsonResponse({
         "success": True,
