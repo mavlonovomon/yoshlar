@@ -3,6 +3,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Count, Sum, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView
@@ -15,8 +16,15 @@ class EcoEnergiyaListView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["panels"] = SolarPanel.objects.select_related("mahalla").all()
+        panels = SolarPanel.objects.select_related("mahalla").all()
+        context["panels"] = panels
         context["is_editor"] = getattr(self.request.user, "is_site_admin", False)
+        context["total_count"] = panels.count()
+        context["installed_count"] = panels.filter(is_installed=True).count()
+        context["not_installed_count"] = panels.filter(is_installed=False).count()
+        context["total_capacity"] = panels.filter(is_installed=True).aggregate(
+            total=Sum("capacity_kw")
+        )["total"] or 0
         return context
 
 

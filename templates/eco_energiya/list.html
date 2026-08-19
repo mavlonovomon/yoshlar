@@ -9,6 +9,45 @@
         </h4>
     </div>
 
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-grid-3x3-gap fs-1"></i>
+                    <h3 class="mb-0 mt-2">{{ total_count }}</h3>
+                    <small>Jami mahallalar</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle-fill fs-1"></i>
+                    <h3 class="mb-0 mt-2">{{ installed_count }}</h3>
+                    <small>O'rnatilgan</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-danger text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-x-circle-fill fs-1"></i>
+                    <h3 class="mb-0 mt-2">{{ not_installed_count }}</h3>
+                    <small>O'natmagan</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-warning text-dark">
+                <div class="card-body text-center">
+                    <i class="bi bi-lightning-charge-fill fs-1"></i>
+                    <h3 class="mb-0 mt-2">{{ total_capacity }} kVt</h3>
+                    <small>Jami quvvat</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
