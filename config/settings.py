@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'hisobot',
     'sorovnoma',
     'ekin_yerlari',
+    'eco_energiya',
 ]
 
 MIDDLEWARE = [
