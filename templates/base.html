@@ -228,10 +228,6 @@
                         </a>
                     </div>
                 </div>
-                <a href="{% url 'eco_energiya:list' %}"
-                    class="nav-item {% if '/eco-energiya/' in request.path %}active{% endif %}">
-                    <i class="bi bi-sun"></i> <span>Eco Energiya</span>
-                </a>
                 <div class="nav-dropdown {% if 'intizom-jazo' in request.path %}open active{% endif %}"
                     id="intizomJazoDropdown">
                     <div class="nav-dropdown-toggle" onclick="toggleDropdown('intizomJazoDropdown')">
@@ -317,6 +313,10 @@
                         {% endif %}
                     </div>
                 </div>
+                <a href="{% url 'eco_energiya:list' %}"
+                    class="nav-item {% if '/eco-energiya/' in request.path %}active{% endif %}">
+                    <i class="bi bi-sun"></i> <span>Eco Energiya</span>
+                </a>
             </nav>
         </aside>
         {% endif %}
