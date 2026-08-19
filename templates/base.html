@@ -114,12 +114,12 @@
                     </div>
                     <div class="nav-dropdown-content">
                         <a href="{% url 'ishsiz_yoshlar:svod' %}"
-                            class="nav-sub-item {% if '/ishsiz_yoshlar/svod/' == request.path or '/ishsiz_yoshlar/leader-svod/' == request.path or '/ishsiz_yoshlar/professional-svod/' == request.path %}active{% endif %}">
+                            class="nav-sub-item {% if '/ishsiz_yoshlar/svod/' in request.path or '/ishsiz_yoshlar/leader-svod/' in request.path or '/ishsiz_yoshlar/professional-svod/' in request.path %}active{% endif %}">
                             <i class="bi bi-table"></i> <span>Svodlar</span>
                         </a>
                         <a href="{% url 'ishsiz_yoshlar:list' %}"
-                            class="nav-sub-item {% if '/ishsiz_yoshlar/list/' == request.path %}active{% endif %}">
-                            <i class="bi bi-list-check"></i> <span>Ishsizlar Ro'yxati</span>
+                            class="nav-sub-item {% if '/ishsiz_yoshlar/list/' in request.path or '/ishsiz_yoshlar/20' in request.path %}active{% endif %}">
+                            <i class="bi bi-list-check"></i> <span>Ro'yxat</span>
                         </a>
                     </div>
                 </div>
@@ -228,6 +228,10 @@
                         </a>
                     </div>
                 </div>
+                <a href="{% url 'eco_energiya:list' %}"
+                    class="nav-item {% if '/eco-energiya/' in request.path %}active{% endif %}">
+                    <i class="bi bi-sun"></i> <span>Eco Energiya</span>
+                </a>
                 <div class="nav-dropdown {% if 'intizom-jazo' in request.path %}open active{% endif %}"
                     id="intizomJazoDropdown">
                     <div class="nav-dropdown-toggle" onclick="toggleDropdown('intizomJazoDropdown')">
