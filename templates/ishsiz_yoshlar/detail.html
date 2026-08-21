@@ -73,6 +73,20 @@
                         <span class="fw-bold text-dark">{{ youth.yosh.mahalla.name }}</span>
                     </div>
                 </div>
+                {% if youth.otm_name %}
+                <div class="col-md-3 col-6">
+                    <div class="p-3 bg-light rounded-4 text-center">
+                        <small class="text-muted d-block text-uppercase smaller fw-bold mb-1">TA'LIM TASHKILOTI</small>
+                        <span class="fw-bold text-dark">{{ youth.otm_name }}</span>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="p-3 bg-light rounded-4 text-center">
+                        <small class="text-muted d-block text-uppercase smaller fw-bold mb-1">YO'NALISHI</small>
+                        <span class="fw-bold text-dark">{{ youth.direction }}</span>
+                    </div>
+                </div>
+                {% endif %}
                 <div class="col-md-3 col-12">
                     <div class="p-3 bg-light rounded-4 text-center cursor-pointer" onclick="openLeaderModal(this)"
                         data-name="{{ youth.leader.full_name|default:'Biriktirilmagan' }}"

@@ -39,6 +39,11 @@ class SoftDeleteManager(models.Manager):
         return super().get_queryset().filter(is_deleted=False)
 
 class UnemployedYouth(models.Model):
+    YEAR_CHOICES = [
+        (2025, '2025'),
+        (2026, '2026'),
+    ]
+
     CATEGORY_CHOICES = [
         ('MIGRATSIYA', "Migratsiyadan qaytgan ishsizlar"),
         ('MAKTAB', 'Maktab'),
@@ -48,9 +53,12 @@ class UnemployedYouth(models.Model):
     ]
 
     yosh = models.OneToOneField(Yosh, on_delete=models.CASCADE, related_name='unemployed_profile', verbose_name="Yosh")
+    year = models.PositiveSmallIntegerField(choices=YEAR_CHOICES, default=2025, verbose_name="Yil", db_index=True)
     category = models.CharField(max_length=100, choices=CATEGORY_CHOICES, verbose_name="Toifa", db_index=True)
     leader = models.ForeignKey(ResponsibleLeader, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_youths', verbose_name="Mas'ul rahbar")
-    
+    otm_name = models.CharField(max_length=500, blank=True, default='', verbose_name="Ta'lim tashkiloti")
+    direction = models.CharField(max_length=500, blank=True, default='', verbose_name="Yo'nalish")
+
     # Audit fields
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Qo'shilgan vaqti")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Tahrirlangan vaqti")
@@ -69,6 +77,7 @@ class UnemployedYouth(models.Model):
         indexes = [
             models.Index(fields=['category']),
             models.Index(fields=['leader']),
+            models.Index(fields=['year']),
         ]
 
     def __str__(self):

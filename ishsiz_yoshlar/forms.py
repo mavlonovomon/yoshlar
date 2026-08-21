@@ -29,11 +29,14 @@ class UnemployedYouthForm(forms.ModelForm):
 
     class Meta:
         model = UnemployedYouth
-        fields = ['yosh', 'category', 'leader']
+        fields = ['yosh', 'year', 'category', 'leader', 'otm_name', 'direction']
         widgets = {
             'yosh': forms.Select(attrs={'class': 'form-select js-yosh-autocomplete'}),
+            'year': forms.Select(attrs={'class': 'form-select'}),
             'category': forms.Select(attrs={'class': 'form-select'}),
             'leader': forms.Select(attrs={'class': 'form-select select2'}),
+            'otm_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Ta'lim tashkiloti"}),
+            'direction': forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Yo'nalish"}),
         }
 
 class MeetingForm(forms.ModelForm):

@@ -1,18 +1,29 @@
 from django.urls import path
+from django.shortcuts import redirect
 from . import views
 
 app_name = 'ishsiz_yoshlar'
 
 urlpatterns = [
-    path('', views.UnemployedYouthListView.as_view(), name='index'),
-    path('svod/', views.SvodTabsView.as_view(), name='svod'),
+    # Asosiy sahifalar -> 2026 ga redirect
+    path('', lambda r: redirect('ishsiz_yoshlar:year_list', year=2026), name='index'),
+    path('list/', lambda r: redirect('ishsiz_yoshlar:year_list', year=2026), name='list'),
+    path('svod/', lambda r: redirect('ishsiz_yoshlar:year_svod', year=2026), name='svod'),
+
+    # Yil bo'yicha sahifalar
+    path('<int:year>/', views.UnemployedYouthListView.as_view(), name='year_list'),
+    path('<int:year>/svod/', views.SvodTabsView.as_view(), name='year_svod'),
+    path('<int:year>/export-mahalla-svod/', views.ExportMahallaSvodView.as_view(), name='year_export_mahalla_svod'),
+    path('<int:year>/export-leader-svod/', views.ExportLeaderSvodView.as_view(), name='year_export_leader_svod'),
+    path('<int:year>/export-professional-svod/', views.ExportProfessionalSvodView.as_view(), name='year_export_professional_svod'),
+
+    # Boshqa sahifalar
     path('detailed-svod/', views.DetailedSvodView.as_view(), name='detailed_svod'),
-    path('professional-svod/', views.SvodTabsView.as_view(default_tab='professional'), name='professional_svod'),
+    path('professional-svod/', lambda r: redirect('ishsiz_yoshlar:year_svod', year=2026), name='professional_svod'),
     path('export-professional-svod/', views.ExportProfessionalSvodView.as_view(), name='export_professional_svod'),
     path('export-mahalla-svod/', views.ExportMahallaSvodView.as_view(), name='export_mahalla_svod'),
     path('export-leader-svod/', views.ExportLeaderSvodView.as_view(), name='export_leader_svod'),
-    path('leader-svod/', views.SvodTabsView.as_view(default_tab='leader'), name='leader_svod'),
-    path('list/', views.UnemployedYouthListView.as_view(), name='list'),
+    path('leader-svod/', lambda r: redirect('ishsiz_yoshlar:year_svod', year=2026), name='leader_svod'),
     path('detail/<int:pk>/', views.UnemployedYouthDetailView.as_view(), name='detail'),
     path('meeting-create/<int:pk>/', views.MeetingCreateView.as_view(), name='meeting_create'),
     path('assistance-update/<int:pk>/', views.AssistanceUpdateView.as_view(), name='assistance_update'),
@@ -21,7 +32,7 @@ urlpatterns = [
     path('edit/<int:pk>/', views.UnemployedYouthUpdateView.as_view(), name='edit'),
     path('delete/<int:pk>/', views.UnemployedYouthDeleteView.as_view(), name='delete'),
     path('meeting-update/<int:pk>/', views.MeetingUpdateView.as_view(), name='meeting_update'),
-    
+
     # Task Management URLs (Topshiriq Tizimi)
     path('tasks/', views.TaskListView.as_view(), name='task_list'),
     path('tasks/create/', views.TaskCreateView.as_view(), name='task_create'),
@@ -31,7 +42,7 @@ urlpatterns = [
     path('tasks/<int:pk>/respond/', views.TaskResponseCreateView.as_view(), name='task_respond'),
     path('tasks/<int:pk>/accept/', views.TaskAcceptView.as_view(), name='task_accept'),
     path('tasks/<int:pk>/review/', views.TaskReviewView.as_view(), name='task_review'),
-    
+
     # Notifications URLs
     path('notifications/', views.NotificationListView.as_view(), name='notification_list'),
     path('notifications/<int:pk>/read/', views.MarkNotificationReadView.as_view(), name='notification_read'),

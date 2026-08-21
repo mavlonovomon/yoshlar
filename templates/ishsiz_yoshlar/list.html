@@ -10,9 +10,15 @@
     <div class="page-header">
         <div class="page-title-group">
             <h2>Ishsiz Yoshlar</h2>
-            <p>Tizimdagi jami ishsiz yoshlar ro'yxati va monitoringi</p>
+            <p>Tizimdagi ishsiz yoshlar ro'yxati va monitoringi</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 align-items-center">
+            <div class="btn-group btn-group-sm shadow-sm" role="group" aria-label="Yil tanlash">
+                <a href="{% url 'ishsiz_yoshlar:year_list' year=2025 %}"
+                    class="btn btn-outline-secondary {% if year == 2025 %}active{% endif %}">2025</a>
+                <a href="{% url 'ishsiz_yoshlar:year_list' year=2026 %}"
+                    class="btn btn-outline-secondary {% if year == 2026 %}active{% endif %}">2026</a>
+            </div>
             <a href="{% url 'ishsiz_yoshlar:create' %}" class="btn btn-primary shadow-sm">
                 <i class="bi bi-person-plus-fill me-1"></i> Yangi qo'shish
             </a>
@@ -81,6 +87,7 @@
             <table class="premium-table">
                 <thead>
                     <tr>
+                        <th style="width: 50px;" class="text-center">#</th>
                         <th style="width: 300px;">{% sort_link 'fullname' "Yosh haqida ma'lumot" %}</th>
                         <th>{% sort_link 'passport_number' 'Hujjatlar' %}</th>
                         <th>{% sort_link 'mahalla' 'Hudud' %}</th>
@@ -92,6 +99,7 @@
                 <tbody>
                     {% for youth in youths %}
                     <tr>
+                        <td class="text-center align-middle">{{ forloop.counter0|add:page_obj.start_index }}</td>
                         <td>
                             <div class="user-cell">
                                 {% if youth.yosh.photo %}
@@ -157,15 +165,7 @@
                             <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ youth.leader.full_name }}
                             </div>
                             <div class="text-muted smaller" style="font-size: 0.75rem;">
-                                {% if youth.leader.level == 'TUMAN' %}
-                                Tuman darajasi
-                                {% elif youth.leader.level == 'VILOYAT' %}
-                                Viloyat darajasi
-                                {% elif youth.leader.level == 'RESPUBLIKA' %}
-                                Respublika darajasi
-                                {% elif youth.leader.level == 'OTM' %}
-                                OTM
-                                {% endif %}
+                                {{ youth.leader.position|default:"-" }}
                             </div>
                             {% else %}
                             <span class="text-danger small"><i class="bi bi-x-circle me-1"></i>Biriktirilmagan</span>

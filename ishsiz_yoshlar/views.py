@@ -74,17 +74,18 @@ def _build_unemployed_totals(queryset):
     return totals
 
 
-def _build_mahalla_statistics():
+def _build_mahalla_statistics(year=None):
+    year_filter = Q(yoshlar__unemployed_profile__year=year) if year else Q()
     stats = list(
         Mahalla.objects.annotate(
-            total_youth=Count('yoshlar__unemployed_profile'),
-            with_meeting=Count('yoshlar__unemployed_profile__meetings', distinct=True),
-            total_assisted=Count('yoshlar__unemployed_profile', filter=Q(yoshlar__unemployed_profile__assistance__provided=True)),
-            ish=Count('yoshlar__unemployed_profile', filter=Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='ISH')),
-            kredit=Count('yoshlar__unemployed_profile', filter=Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='KREDIT')),
-            migratsiya=Count('yoshlar__unemployed_profile', filter=Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='MIGRATSIYA')),
-            yer=Count('yoshlar__unemployed_profile', filter=Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='YER')),
-            subsidiya=Count('yoshlar__unemployed_profile', filter=Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='SUBSIDIYA')),
+            total_youth=Count('yoshlar__unemployed_profile', filter=year_filter),
+            with_meeting=Count('yoshlar__unemployed_profile__meetings', filter=year_filter, distinct=True),
+            total_assisted=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True)),
+            ish=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='ISH')),
+            kredit=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='KREDIT')),
+            migratsiya=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='MIGRATSIYA')),
+            yer=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='YER')),
+            subsidiya=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='SUBSIDIYA')),
         ).order_by('name')
     )
     for row in stats:
@@ -93,17 +94,18 @@ def _build_mahalla_statistics():
     return stats
 
 
-def _build_leader_statistics():
+def _build_leader_statistics(year=None):
+    year_filter = Q(assigned_youths__year=year) if year else Q()
     stats = list(
         ResponsibleLeader.objects.annotate(
-            total_youth=Count('assigned_youths'),
-            with_meeting=Count('assigned_youths__meetings', distinct=True),
-            total_assisted=Count('assigned_youths', filter=Q(assigned_youths__assistance__provided=True)),
-            ish=Count('assigned_youths', filter=Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='ISH')),
-            kredit=Count('assigned_youths', filter=Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='KREDIT')),
-            migratsiya=Count('assigned_youths', filter=Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='MIGRATSIYA')),
-            yer=Count('assigned_youths', filter=Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='YER')),
-            subsidiya=Count('assigned_youths', filter=Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='SUBSIDIYA')),
+            total_youth=Count('assigned_youths', filter=year_filter),
+            with_meeting=Count('assigned_youths__meetings', filter=year_filter, distinct=True),
+            total_assisted=Count('assigned_youths', filter=year_filter & Q(assigned_youths__assistance__provided=True)),
+            ish=Count('assigned_youths', filter=year_filter & Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='ISH')),
+            kredit=Count('assigned_youths', filter=year_filter & Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='KREDIT')),
+            migratsiya=Count('assigned_youths', filter=year_filter & Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='MIGRATSIYA')),
+            yer=Count('assigned_youths', filter=year_filter & Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='YER')),
+            subsidiya=Count('assigned_youths', filter=year_filter & Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='SUBSIDIYA')),
         ).filter(total_youth__gt=0).order_by('full_name')
     )
     for row in stats:
@@ -112,8 +114,10 @@ def _build_leader_statistics():
     return stats
 
 
-def _build_professional_statistics():
+def _build_professional_statistics(year=None):
     queryset = UnemployedYouth.objects.select_related('leader', 'yosh__mahalla', 'assistance')
+    if year:
+        queryset = queryset.filter(year=year)
     raw_stats = queryset.values(
         'leader_id', 'leader__full_name', 'leader__position', 'leader__sector',
         'yosh__mahalla_id', 'yosh__mahalla__name'
@@ -148,14 +152,16 @@ class SvodTabsView(LoginRequiredMixin, TemplateView):
         if active_tab not in {'mahalla', 'leader', 'professional'}:
             active_tab = 'mahalla'
 
-        queryset = UnemployedYouth.objects.all()
+        year = self.kwargs.get('year') or 2026
+        queryset = UnemployedYouth.objects.filter(year=year)
         totals = _build_unemployed_totals(queryset)
 
         context.update({
             'active_tab': active_tab,
-            'mahalla_statistics': _build_mahalla_statistics(),
-            'leader_statistics': _build_leader_statistics(),
-            'professional_statistics': _build_professional_statistics(),
+            'year': year,
+            'mahalla_statistics': _build_mahalla_statistics(year),
+            'leader_statistics': _build_leader_statistics(year),
+            'professional_statistics': _build_professional_statistics(year),
             'totals': totals,
             'current_time': datetime.now(),
         })
@@ -348,13 +354,18 @@ class UnemployedYouthListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         user = self.request.user
+        year = self.kwargs.get('year') or 2026
+
         queryset = UnemployedYouth.objects.select_related(
             'yosh__mahalla', 'leader', 'assistance'
+        ).filter(
+            year=year
         ).annotate(
             meeting_count=Count('meetings', distinct=True)
         ).only(
             'id',
             'category',
+            'year',
             'yosh__id',
             'yosh__fullname',
             'yosh__photo',
@@ -373,10 +384,10 @@ class UnemployedYouthListView(LoginRequiredMixin, ListView):
             'assistance__id',
             'assistance__provided',
         )
-        
+
         if not getattr(user, 'is_site_admin', False) and user.mahalla:
             queryset = queryset.filter(yosh__mahalla=user.mahalla)
-        
+
         search = self.request.GET.get('q')
         if search:
             search = search.strip()
@@ -426,7 +437,8 @@ class UnemployedYouthListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        
+        year = self.kwargs.get('year') or 2026
+
         # Safely cast IDs to integers for template comparison
         try:
             mahalla_id = self.request.GET.get('mahalla')
@@ -441,12 +453,13 @@ class UnemployedYouthListView(LoginRequiredMixin, ListView):
             context['selected_leader'] = None
 
         context['selected_category'] = self.request.GET.get('category')
-        
+        context['year'] = year
+
         if getattr(user, 'is_site_admin', False):
             context['mahallas'] = Mahalla.objects.all()
         else:
             context['mahallas'] = Mahalla.objects.filter(id=user.mahalla.id) if user.mahalla else Mahalla.objects.none()
-            
+
         context['leaders'] = ResponsibleLeader.objects.all()
         context['categories'] = UnemployedYouth.CATEGORY_CHOICES
         context['sort_field'] = getattr(self, 'sort_field', 'fullname')
@@ -463,6 +476,10 @@ class UnemployedYouthCreateView(LoginRequiredMixin, AdminRequiredMixin, CreateVi
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         return kwargs
+
+    def get_success_url(self):
+        year = self.object.year
+        return reverse('ishsiz_yoshlar:year_list', kwargs={'year': year})
 
     def form_valid(self, form):
         user = self.request.user

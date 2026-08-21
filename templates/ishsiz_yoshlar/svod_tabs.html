@@ -6,18 +6,26 @@
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div>
             <h2 class="fw-bold mb-1 text-dark">Ishsiz Yoshlar Svodkasi</h2>
-            <p class="text-muted small mb-0">Mahalla, rahbar va professional kesimlar bir sahifada.</p>
+            <p class="text-muted small mb-0">Mahalla, rahbar va professional kesimlar.</p>
         </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="{% url 'ishsiz_yoshlar:export_mahalla_svod' %}" class="btn btn-sm btn-success">
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+            <div class="btn-group btn-group-sm shadow-sm" role="group" aria-label="Yil tanlash">
+                <a href="{% url 'ishsiz_yoshlar:year_svod' year=2025 %}"
+                    class="btn btn-outline-secondary {% if year == 2025 %}active{% endif %}">2025</a>
+                <a href="{% url 'ishsiz_yoshlar:year_svod' year=2026 %}"
+                    class="btn btn-outline-secondary {% if year == 2026 %}active{% endif %}">2026</a>
+            </div>
+            {% if year %}
+            <a href="{% url 'ishsiz_yoshlar:year_export_mahalla_svod' year=year %}" class="btn btn-sm btn-success">
                 <i class="bi bi-file-earmark-excel me-1"></i> Mahalla Excel
             </a>
-            <a href="{% url 'ishsiz_yoshlar:export_leader_svod' %}" class="btn btn-sm btn-success">
+            <a href="{% url 'ishsiz_yoshlar:year_export_leader_svod' year=year %}" class="btn btn-sm btn-success">
                 <i class="bi bi-file-earmark-excel me-1"></i> Rahbar Excel
             </a>
-            <a href="{% url 'ishsiz_yoshlar:export_professional_svod' %}" class="btn btn-sm btn-success">
+            <a href="{% url 'ishsiz_yoshlar:year_export_professional_svod' year=year %}" class="btn btn-sm btn-success">
                 <i class="bi bi-file-earmark-excel me-1"></i> Professional Excel
             </a>
+            {% endif %}
         </div>
     </div>
 

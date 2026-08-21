@@ -568,18 +568,6 @@ def _read_4_letters_from_png(image_text: str) -> str:
     if len(png_bytes) < 24 or png_bytes[:8] != b"\x89PNG\r\n\x1a\n":
         raise ValueError("Captcha PNG formatda emas.")
 
-    letters = _read_4_letters_with_local_ocr(png_bytes)
-    if letters:
-        return letters
-    letters = _read_4_letters_with_external_ocr(image_b64)
-    if letters:
-        return letters
-    if not _USE_OPENAI_OCR:
-        if _LOCAL_OCR_INIT_ERROR:
-            raise ValueError(f"Lokal OCR ishlamadi: {_LOCAL_OCR_INIT_ERROR}")
-        raise ValueError("Captcha lokal OCR bilan o'qilmadi.")
-    if _LOCAL_OCR_INIT_ERROR and not getattr(settings, "OPENAI_API_KEY", ""):
-        raise ValueError(f"Lokal OCR ishlamadi: {_LOCAL_OCR_INIT_ERROR}")
     return _read_4_letters_with_gpt(image_b64)
 
 
