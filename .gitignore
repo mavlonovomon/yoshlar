@@ -46,6 +46,12 @@ dist/
 .DS_Store
 Thumbs.db
 
+# Tool-generated directories
+.superpowers/
+.codegraph/
+.codebase/
+docs/
+
 # Project temp and archives
 *.tmp
 *.zip

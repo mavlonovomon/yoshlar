@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -115,6 +116,7 @@
 {% block extra_js %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="{% static 'js/data/mahalla_polygons.js' %}"></script>
 <script>
 (function () {
     const mapEl = document.getElementById("ekinMap");
@@ -124,8 +126,10 @@
 
     const dataUrl = "{{ map_data_url|escapejs }}";
     const mode = "{{ show_mode|escapejs }}";
+    const selectedMahalla = "{{ selected_mahalla|escapejs }}";
     const map = L.map("ekinMap").setView([41.25, 61.15], 11);
     const polygonRenderer = L.svg();
+    const mahallaLayer = L.featureGroup();
     const polygonLayer = L.featureGroup().addTo(map);
     const markerLayer = L.featureGroup().addTo(map);
     const loading = document.createElement("div");
@@ -166,7 +170,8 @@
         renderedBaseLayers[config.name] = L.tileLayer(config.url, config.options);
     });
     renderedBaseLayers["Oddiy xarita"].addTo(map);
-    L.control.layers(renderedBaseLayers, null, { position: "topright" }).addTo(map);
+    var overlays = { "Mahalla chegaralari": mahallaLayer };
+    L.control.layers(renderedBaseLayers, overlays, { position: "topright" }).addTo(map);
 
     function getColor(status) {
         if (status === "MATCHED") return "#198754";
@@ -194,6 +199,59 @@
             fillColor: color,
             fillOpacity: 0.38,
         };
+    }
+
+    function findMahallaName(sectionId) {
+        if (window.SECTION_ID_TO_MAHALLA_NAME && window.SECTION_ID_TO_MAHALLA_NAME[sectionId]) {
+            return window.SECTION_ID_TO_MAHALLA_NAME[sectionId];
+        }
+        if (!window.MAHALLA_NAMES) return "Noma'lum";
+        var match = window.MAHALLA_NAMES.find(function (m) {
+            return m.id && m.id.slice(-6) === sectionId;
+        });
+        return match ? match.name : "Noma'lum";
+    }
+
+    function extractMahallaPolygonCoords(obekt) {
+        var allParts = [];
+        try {
+            if (obekt.area && obekt.area[0] && obekt.area[0].geometry && obekt.area[0].geometry.coordinates) {
+                var rawCoords = obekt.area[0].geometry.coordinates;
+                if (Array.isArray(rawCoords[0][0][0])) {
+                    rawCoords.forEach(function (polygon) {
+                        if (polygon[0]) {
+                            allParts.push(polygon[0].map(function (c) { return [c[1], c[0]]; }));
+                        }
+                    });
+                } else if (Array.isArray(rawCoords[0][0])) {
+                    allParts.push(rawCoords[0].map(function (c) { return [c[1], c[0]]; }));
+                }
+            }
+        } catch (e) { /* skip */ }
+        return allParts;
+    }
+
+    function renderMahallaBoundaries() {
+        if (!window.MAHALLA_POLYGONS) return;
+        mahallaLayer.clearLayers();
+
+        window.MAHALLA_POLYGONS.forEach(function (obekt) {
+            var sectionId = obekt.section_id;
+            var name = findMahallaName(sectionId);
+            var isSelected = selectedMahalla && name === selectedMahalla;
+            var allParts = extractMahallaPolygonCoords(obekt);
+            if (allParts.length === 0) return;
+
+            var style = isSelected
+                ? { color: '#3b82f6', weight: 2, opacity: 0.9, fillColor: '#3b82f6', fillOpacity: 0.25 }
+                : { color: '#6b7280', weight: 1, opacity: 0.6, fillColor: '#6b7280', fillOpacity: 0.08 };
+
+            allParts.forEach(function (partCoords) {
+                L.polygon(partCoords, style).addTo(mahallaLayer);
+            });
+        });
+
+        mahallaLayer.addTo(map);
     }
 
     function applyBestView(markerBounds, polygonBounds) {
@@ -267,6 +325,7 @@
 
             polygonLayer.bringToFront();
             markerLayer.bringToFront();
+            renderMahallaBoundaries();
 
             requestAnimationFrame(() => {
                 applyBestView(markerBounds, polygonBounds);
