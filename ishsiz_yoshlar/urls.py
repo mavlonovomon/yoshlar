@@ -25,6 +25,7 @@ urlpatterns = [
     path('export-leader-svod/', views.ExportLeaderSvodView.as_view(), name='export_leader_svod'),
     path('leader-svod/', lambda r: redirect('ishsiz_yoshlar:year_svod', year=2026), name='leader_svod'),
     path('detail/<int:pk>/', views.UnemployedYouthDetailView.as_view(), name='detail'),
+    path('detail/<int:pk>/pdf/', views.UnemployedYouthPDFView.as_view(), name='youth_pdf'),
     path('meeting-create/<int:pk>/', views.MeetingCreateView.as_view(), name='meeting_create'),
     path('assistance-update/<int:pk>/', views.AssistanceUpdateView.as_view(), name='assistance_update'),
     path('yosh-autocomplete/', views.YoshAutocompleteView.as_view(), name='yosh_autocomplete'),

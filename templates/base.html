@@ -317,6 +317,25 @@
                     class="nav-item {% if '/eco-energiya/' in request.path %}active{% endif %}">
                     <i class="bi bi-sun"></i> <span>Eco Energiya</span>
                 </a>
+                {% if user.is_superuser %}
+                <hr>
+                <div class="nav-dropdown {% if 'bulk-refresh' in request.path %}open active{% endif %}"
+                    id="qoshimchalarDropdown">
+                    <div class="nav-dropdown-toggle" onclick="toggleDropdown('qoshimchalarDropdown')">
+                        <i class="bi bi-tools"></i> <span>Qo'shimchalar</span>
+                    </div>
+                    <div class="nav-dropdown-content">
+                        <a href="{% url 'yosh_bulk_refresh_photos' %}"
+                            class="nav-sub-item {% if '/yoshlar/bulk-refresh-photos/' in request.path %}active{% endif %}">
+                            <i class="bi bi-arrow-repeat"></i> <span>Ishsizlar rasmi yangilash</span>
+                        </a>
+                        <a href="{% url 'yosh_all_bulk_refresh_photos' %}"
+                            class="nav-sub-item {% if '/yoshlar/all-bulk-refresh-photos/' in request.path %}active{% endif %}">
+                            <i class="bi bi-arrow-repeat"></i> <span>Barcha yoshlar rasmi</span>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
             </nav>
         </aside>
         {% endif %}

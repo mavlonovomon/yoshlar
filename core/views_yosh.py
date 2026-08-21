@@ -1,3 +1,4 @@
+import os
 import re
 import requests
 import uuid
@@ -1071,6 +1072,208 @@ def yosh_bulk_refresh_photos(request):
 
         for idx, uy in enumerate(youths, 1):
             yosh = uy.yosh
+            fio = yosh.fullname or "ID-{}".format(yosh.pk)
+
+            document_series, document_number = _parse_passport(yosh.passport_number)
+            if not document_series or not document_number:
+                errors += 1
+                msg = "Pasport noto'g'ri"
+                yield "data: " + json.dumps({"type": "progress", "idx": idx, "total": total, "fio": fio, "status": "error", "msg": msg}) + "\n\n"
+                if idx < total:
+                    _time.sleep(12)
+                continue
+
+            if not yosh.birth_date:
+                errors += 1
+                msg = "Tug'ilgan sana yo'q"
+                yield "data: " + json.dumps({"type": "progress", "idx": idx, "total": total, "fio": fio, "status": "error", "msg": msg}) + "\n\n"
+                if idx < total:
+                    _time.sleep(12)
+                continue
+
+            phone_number = _format_phone_number(yosh.phone_number)
+            if not phone_number:
+                errors += 1
+                msg = "Telefon raqam noto'g'ri"
+                yield "data: " + json.dumps({"type": "progress", "idx": idx, "total": total, "fio": fio, "status": "error", "msg": msg}) + "\n\n"
+                if idx < total:
+                    _time.sleep(12)
+                continue
+
+            session = requests.Session()
+            request_id = uuid.uuid4().hex.upper()
+            last_error = "Captcha olinmadi."
+            athlete_result = None
+
+            for attempt in range(1, DEFAULT_ATTEMPTS + 1):
+                captcha_json, captcha_error = _get_captcha(phone_number, session=session, request_id=request_id)
+                if captcha_error:
+                    last_error = captcha_error
+                if not captcha_json:
+                    _wait_before_next_attempt(attempt, DEFAULT_ATTEMPTS)
+                    continue
+
+                captcha_b64 = captcha_json.get("captcha") or captcha_json.get("result")
+                if not captcha_b64:
+                    last_error = "Captcha topilmadi"
+                    _wait_before_next_attempt(attempt, DEFAULT_ATTEMPTS)
+                    continue
+
+                try:
+                    captcha_text = _read_4_letters_from_png(captcha_b64)
+                except Exception as exc:
+                    last_error = "Captcha o'qishda xatolik: {}".format(exc)
+                    _wait_before_next_attempt(attempt, DEFAULT_ATTEMPTS)
+                    continue
+
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "X-Request-Id": request_id,
+                }
+                params = dict(ATHLETE_INFO_BASE_PARAMS)
+                params.update({
+                    "identityDocumentId": "2",
+                    "DocumentSeries": document_series,
+                    "DocumentNumber": document_number,
+                    "DateOfBirth": yosh.birth_date.strftime("%d.%m.%Y"),
+                    "captchaText": captcha_text,
+                    "phoneNumber": phone_number,
+                })
+
+                try:
+                    response = _request_with_proxy_fallback(
+                        "POST", ATHLETE_INFO_URL, headers=headers,
+                        data=params, session=session, timeout=15,
+                    )
+                    try:
+                        athlete_info = response.json()
+                    except ValueError:
+                        response.raise_for_status()
+                        last_error = "Javob JSON emas"
+                        _wait_before_next_attempt(attempt, DEFAULT_ATTEMPTS)
+                        continue
+                except requests.exceptions.RequestException as e:
+                    last_error = "Internet xatoligi: {}".format(e)
+                    _wait_before_next_attempt(attempt, DEFAULT_ATTEMPTS)
+                    continue
+
+                if response.status_code >= 400 and isinstance(athlete_info, dict):
+                    last_error = _extract_message(athlete_info) or "API xatoligi"
+                    _wait_before_next_attempt(attempt, DEFAULT_ATTEMPTS)
+                    continue
+
+                if not athlete_info or athlete_info.get("success") is not True:
+                    last_error = _extract_message(athlete_info) or "API xatoligi"
+                    _wait_before_next_attempt(attempt, DEFAULT_ATTEMPTS)
+                    continue
+
+                athlete_result = athlete_info.get("result")
+                if not isinstance(athlete_result, dict):
+                    last_error = "Natija noto'g'ri"
+                    _wait_before_next_attempt(attempt, DEFAULT_ATTEMPTS)
+                    continue
+
+                break
+
+            if athlete_result is None:
+                errors += 1
+                yield "data: " + json.dumps({"type": "progress", "idx": idx, "total": total, "fio": fio, "status": "error", "msg": last_error}) + "\n\n"
+                if idx < total:
+                    _time.sleep(12)
+                continue
+
+            photo = athlete_result.get("photo") if isinstance(athlete_result.get("photo"), dict) else {}
+            attachment_file_id = photo.get("attachmentfileid")
+            if not attachment_file_id:
+                errors += 1
+                msg = "Rasm topilmadi"
+                yield "data: " + json.dumps({"type": "progress", "idx": idx, "total": total, "fio": fio, "status": "error", "msg": msg}) + "\n\n"
+                if idx < total:
+                    _time.sleep(12)
+                continue
+
+            try:
+                file_response = _request_with_proxy_fallback(
+                    "GET", FILE_GET_URL, headers=headers,
+                    params={"id": attachment_file_id}, timeout=20,
+                )
+                file_response.raise_for_status()
+                image_bytes = file_response.content
+            except requests.exceptions.RequestException as e:
+                errors += 1
+                msg = "Rasm yuklab bo'lmadi: {}".format(e)
+                yield "data: " + json.dumps({"type": "progress", "idx": idx, "total": total, "fio": fio, "status": "error", "msg": msg}) + "\n\n"
+                if idx < total:
+                    _time.sleep(12)
+                continue
+
+            if not image_bytes:
+                errors += 1
+                msg = "Rasm bo'sh"
+                yield "data: " + json.dumps({"type": "progress", "idx": idx, "total": total, "fio": fio, "status": "error", "msg": msg}) + "\n\n"
+                if idx < total:
+                    _time.sleep(12)
+                continue
+
+            filename = str(attachment_file_id).split("/")[-1]
+            if "." not in filename:
+                filename = "{}.jpg".format(filename)
+            yosh.photo.save(filename, ContentFile(image_bytes), save=True)
+            updated += 1
+
+            yield "data: " + json.dumps({"type": "progress", "idx": idx, "total": total, "fio": fio, "status": "ok", "msg": "Yangilandi"}) + "\n\n"
+
+            if idx < total:
+                _time.sleep(12)
+
+        yield "data: " + json.dumps({"type": "done", "total": total, "updated": updated, "errors": errors}) + "\n\n"
+
+    return StreamingHttpResponse(generate(), content_type="text/event-stream")
+
+
+@login_required
+def yosh_all_bulk_refresh_photos(request):
+    if not is_management_user(request.user):
+        messages.error(request, "Bu bo'lim faqat Super Admin yoki Rahbar uchun.")
+        return redirect("dashboard")
+
+    if request.method != "POST":
+        total_count = Yosh.objects.count()
+        no_photo_count = Yosh.objects.filter(photo__isnull=True).count() + Yosh.objects.filter(photo='').count()
+        missing_file_count = 0
+        for y in Yosh.objects.exclude(photo__isnull=True).exclude(photo=''):
+            try:
+                if not y.photo or not os.path.exists(y.photo.path):
+                    missing_file_count += 1
+            except Exception:
+                missing_file_count += 1
+        no_photo_count += missing_file_count
+        return render(request, "bulk_refresh_all.html", {"total": 0, "total_count": total_count, "no_photo_count": no_photo_count})
+
+    only_no_photo = request.POST.get("only_no_photo") == "on"
+    youths = Yosh.objects.all().order_by("id")
+    if only_no_photo:
+        # Get IDs of youths with photo file that actually exists
+        valid_photo_ids = []
+        for y in youths.exclude(photo__isnull=True).exclude(photo=''):
+            try:
+                if y.photo and os.path.exists(y.photo.path):
+                    valid_photo_ids.append(y.pk)
+            except Exception:
+                pass
+        youths = youths.exclude(pk__in=valid_photo_ids)
+    total = youths.count()
+
+    import time as _time
+    import json
+
+    def generate():
+        updated = 0
+        errors = 0
+
+        yield "data: " + json.dumps({"type": "start", "total": total, "mode": "only_no_photo" if only_no_photo else "all"}) + "\n\n"
+
+        for idx, yosh in enumerate(youths, 1):
             fio = yosh.fullname or "ID-{}".format(yosh.pk)
 
             document_series, document_number = _parse_passport(yosh.passport_number)

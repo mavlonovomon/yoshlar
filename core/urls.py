@@ -20,6 +20,7 @@ urlpatterns = [
     path('yoshlar/<int:pk>/', views_yosh.yosh_detail, name='yosh_detail'),
     path('yoshlar/<int:pk>/refresh-photo/', views_yosh.yosh_refresh_photo, name='yosh_refresh_photo'),
     path('yoshlar/bulk-refresh-photos/', views_yosh.yosh_bulk_refresh_photos, name='yosh_bulk_refresh_photos'),
+    path('yoshlar/all-bulk-refresh-photos/', views_yosh.yosh_all_bulk_refresh_photos, name='yosh_all_bulk_refresh_photos'),
     path('meeting/<int:pk>/edit/', views_yosh.meeting_edit, name='meeting_edit'),
     path('profile/', views_yosh.user_profile, name='user_profile'),
     path('users/', views_yosh.user_list, name='user_list'),

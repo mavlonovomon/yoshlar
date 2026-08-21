@@ -1011,3 +1011,19 @@ from .views_tasks import (
     TaskReviewView,
     TaskUpdateView,
 )
+
+
+class UnemployedYouthPDFView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        youth = get_object_or_404(UnemployedYouth, pk=pk)
+        user = request.user
+        if not getattr(user, 'is_site_admin', False) and user.mahalla and youth.yosh.mahalla != user.mahalla:
+            return HttpResponse("Ruxsat yo'q", status=403)
+
+        from .pdf_generator import generate_youth_pdf
+        pdf_buffer = generate_youth_pdf(youth)
+
+        response = HttpResponse(pdf_buffer, content_type='application/pdf')
+        filename = f"anketa_{youth.yosh.fullname.replace(' ', '_')}_{youth.year}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
