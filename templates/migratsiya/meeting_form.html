@@ -24,29 +24,9 @@
 
                     <!-- Umumiy ma'lumotlar -->
                     <div class="row g-4 mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.meeting_date.label }}</label>
-                            {{ form.meeting_date }}
-                            {% if form.meeting_date.errors %}
-                            <div class="text-danger smaller mt-1 fw-bold">{{ form.meeting_date.errors|striptags }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.return_date.label }}</label>
-                            {{ form.return_date }}
-                            {% if form.return_date.errors %}
-                            <div class="text-danger smaller mt-1 fw-bold">{{ form.return_date.errors|striptags }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.photo.label }}</label>
-                            {{ form.photo }}
-                            <div class="form-text smaller text-muted">Suhbat jarayonidan rasm yoki skrinshot yuklang.
-                            </div>
-                            {% if form.photo.errors %}
-                            <div class="text-danger smaller mt-1 fw-bold">{{ form.photo.errors|striptags }}</div>
-                            {% endif %}
-                        </div>
+                        {% include 'components/form_group.html' with label=form.meeting_date.label field=form.meeting_date errors=form.meeting_date.errors col_class="col-md-6" %}
+                        {% include 'components/form_group.html' with label=form.return_date.label field=form.return_date errors=form.return_date.errors col_class="col-md-6" %}
+                        {% include 'components/form_group.html' with label=form.photo.label field=form.photo help_text="Suhbat jarayonidan rasm yoki skrinshot yuklang." errors=form.photo.errors col_class="col-12" %}
                     </div>
 
                     <div class="row g-3 mb-4">
@@ -162,15 +142,9 @@
                         {% endif %}
                     </div>
 
-                    <div class="d-flex gap-2 mt-5 pt-3 border-top">
-                        <button type="submit" class="btn btn-primary px-5 py-2 fw-bold shadow-sm rounded-3">
-                            <i class="bi bi-check-lg me-1"></i> Saqlash
-                        </button>
-                        <a href="{% url 'migratsiya:detail' youth.pk %}"
-                            class="btn btn-light px-4 py-2 rounded-3 text-muted fw-bold border">
-                            Bekor qilish
-                        </a>
-                    </div>
+                    {% with cancel_url="/migratsiya/" show_delete=false %}
+                    {% include 'components/form_actions.html' %}
+                    {% endwith %}
                 </form>
             </div>
         </div>
