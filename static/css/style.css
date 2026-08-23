@@ -149,6 +149,8 @@ img {
 .layout {
     position: relative;
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* ========================================
@@ -160,14 +162,13 @@ img {
     padding: 24px;
     min-height: calc(100vh - var(--header-height));
     transition: var(--transition);
-    max-width: 100%;
-    overflow-x: hidden;
-    width: calc(100% - var(--sidebar-width));
+    box-sizing: border-box;
+    width: auto;
+    flex: 1;
 }
 
 body.sidebar-collapsed .main-content {
     margin-left: var(--sidebar-collapsed);
-    width: calc(100% - var(--sidebar-collapsed));
 }
 
 /* ========================================
