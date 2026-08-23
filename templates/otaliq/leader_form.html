@@ -9,41 +9,19 @@
                 <h3 class="fw-bold mb-4 text-center">Mas'ul rahbar ma'lumotlari</h3>
                 <form method="POST">
                     {% csrf_token %}
-                    <div class="row g-3">
-                        <div class="col-md-12">
-                            <label class="form-label fw-bold">F.I.Sh</label>
-                            {{ form.full_name }}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Tashkilot turi</label>
-                            {{ form.organization_type }}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Darajasi</label>
-                            {{ form.level }}
-                        </div>
-                        <div class="col-md-12">
-                            <label class="form-label fw-bold">Tashkilot nomi</label>
-                            {{ form.organization_name }}
-                        </div>
-                        <div class="col-md-12">
-                            <label class="form-label fw-bold">Lavozimi</label>
-                            {{ form.position }}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Telefon</label>
-                            {{ form.phone_number }}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Soha</label>
-                            {{ form.sector }}
-                        </div>
+                    <div class="row g-4">
+                        {% include 'components/form_group.html' with label="F.I.Sh" field=form.full_name col_class="col-md-12" %}
+                        {% include 'components/form_group.html' with label="Tashkilot turi" field=form.organization_type col_class="col-md-6" %}
+                        {% include 'components/form_group.html' with label="Darajasi" field=form.level col_class="col-md-6" %}
+                        {% include 'components/form_group.html' with label="Tashkilot nomi" field=form.organization_name col_class="col-md-12" %}
+                        {% include 'components/form_group.html' with label="Lavozimi" field=form.position col_class="col-md-12" %}
+                        {% include 'components/form_group.html' with label="Telefon" field=form.phone_number col_class="col-md-6" %}
+                        {% include 'components/form_group.html' with label="Soha" field=form.sector col_class="col-md-6" %}
                     </div>
-                    <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary py-3 fw-bold rounded-pill">Saqlash</button>
-                        <a href="{% url 'otaliq:leader_list' %}" class="btn btn-light py-3 fw-bold rounded-pill">Bekor
-                            qilish</a>
-                    </div>
+
+                    {% with cancel_url="/otaliq/leaders/" show_delete=false %}
+                    {% include 'components/form_actions.html' %}
+                    {% endwith %}
                 </form>
             </div>
         </div>

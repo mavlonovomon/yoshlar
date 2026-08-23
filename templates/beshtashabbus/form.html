@@ -30,48 +30,12 @@
                     {% endif %}
 
                     <div class="row g-4">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.direction.label }}</label>
-                            {{ form.direction }}
-                            {% if form.direction.errors %}
-                            <div class="text-danger smaller mt-1 fw-bold">{{ form.direction.errors|striptags }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.title.label }}</label>
-                            {{ form.title }}
-                            {% if form.title.errors %}
-                            <div class="text-danger smaller mt-1 fw-bold">{{ form.title.errors|striptags }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.event_date.label }}</label>
-                            {{ form.event_date }}
-                            {% if form.event_date.errors %}
-                            <div class="text-danger smaller mt-1 fw-bold">{{ form.event_date.errors|striptags }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.mahalla.label }}</label>
-                            {{ form.mahalla }}
-                            {% if form.mahalla.errors %}
-                            <div class="text-danger smaller mt-1 fw-bold">{{ form.mahalla.errors|striptags }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.coverage.label }}</label>
-                            {{ form.coverage }}
-                            {% if form.coverage.errors %}
-                            <div class="text-danger smaller mt-1 fw-bold">{{ form.coverage.errors|striptags }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.description.label }}</label>
-                            {{ form.description }}
-                            {% if form.description.errors %}
-                            <div class="text-danger smaller mt-1 fw-bold">{{ form.description.errors|striptags }}</div>
-                            {% endif %}
-                        </div>
+                        {% include 'components/form_group.html' with label=form.direction.label field=form.direction errors=form.direction.errors col_class="col-md-6" %}
+                        {% include 'components/form_group.html' with label=form.title.label field=form.title errors=form.title.errors col_class="col-md-6" %}
+                        {% include 'components/form_group.html' with label=form.event_date.label field=form.event_date errors=form.event_date.errors col_class="col-md-6" %}
+                        {% include 'components/form_group.html' with label=form.mahalla.label field=form.mahalla errors=form.mahalla.errors col_class="col-md-6" %}
+                        {% include 'components/form_group.html' with label=form.coverage.label field=form.coverage errors=form.coverage.errors col_class="col-md-6" %}
+                        {% include 'components/form_group.html' with label=form.description.label field=form.description errors=form.description.errors col_class="col-12" %}
                     </div>
 
                     <hr class="my-4">
@@ -84,14 +48,9 @@
                         </div>
                     </div>
 
-                    <div class="d-flex gap-2 mt-5 pt-3 border-top">
-                        <button type="submit" class="btn btn-primary px-5 py-2 fw-bold shadow-sm">
-                            <i class="bi bi-save me-1"></i> Saqlash
-                        </button>
-                        <a href="{% url 'beshtashabbus:list' %}" class="btn btn-light px-4 py-2">
-                            Bekor qilish
-                        </a>
-                    </div>
+                    {% with cancel_url="/beshtashabbus/" show_delete=false %}
+                    {% include 'components/form_actions.html' %}
+                    {% endwith %}
                 </form>
             </div>
         </div>

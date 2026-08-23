@@ -22,40 +22,21 @@
                 <form method="POST">
                     {% csrf_token %}
 
-                    <div class="mb-4">
-                        <label class="form-label fw-bold small text-uppercase tracking-wider">Yoshni tanlang</label>
-                        {{ form.yosh }}
-                        <div class="form-text smaller">Umumiy yoshlar ro'yxatidan tanlang</div>
-                        {% if form.yosh.errors %}
-                        <div class="text-danger small mt-1">{{ form.yosh.errors }}</div>
-                        {% endif %}
-                    </div>
+                    {% with label="Yoshni tanlang" field=form.yosh help_text="Umumiy yoshlar ro'yxatidan tanlang" errors=form.yosh.errors col_class="col-12" %}
+                    {% include 'components/form_group.html' %}
+                    {% endwith %}
 
-                    <div class="mb-4">
-                        <label class="form-label fw-bold small text-uppercase tracking-wider">Toifasi</label>
-                        {{ form.category }}
-                        {% if form.category.errors %}
-                        <div class="text-danger small mt-1">{{ form.category.errors }}</div>
-                        {% endif %}
-                    </div>
+                    {% with label="Toifasi" field=form.category errors=form.category.errors col_class="col-12" %}
+                    {% include 'components/form_group.html' %}
+                    {% endwith %}
 
-                    <div class="mb-4">
-                        <label class="form-label fw-bold small text-uppercase tracking-wider">Mas'ul rahbar
-                            (Biriktiriladigan)</label>
-                        {{ form.leader }}
-                        {% if form.leader.errors %}
-                        <div class="text-danger small mt-1">{{ form.leader.errors }}</div>
-                        {% endif %}
-                    </div>
+                    {% with label="Mas'ul rahbar (Biriktiriladigan)" field=form.leader errors=form.leader.errors col_class="col-12" %}
+                    {% include 'components/form_group.html' %}
+                    {% endwith %}
 
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary py-3 fw-bold rounded-pill">
-                            Saqlash va davom etish
-                        </button>
-                        <a href="{% url 'otaliq:list' %}" class="btn btn-light py-3 fw-bold rounded-pill">
-                            Bekor qilish
-                        </a>
-                    </div>
+                    {% with cancel_url="/otaliq/" show_delete=false %}
+                    {% include 'components/form_actions.html' %}
+                    {% endwith %}
                 </form>
             </div>
         </div>

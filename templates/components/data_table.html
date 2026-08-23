@@ -15,6 +15,9 @@
                 </tr>
             </thead>
             <tbody>
+                {% if content %}
+                    {{ content }}
+                {% else %}
                 {% for item in items %}
                 <tr>
                     {% if show_row_number %}
@@ -54,6 +57,7 @@
                     </td>
                 </tr>
                 {% endfor %}
+                {% endif %}
             </tbody>
         </table>
     </div>
