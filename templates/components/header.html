@@ -1,0 +1,49 @@
+{% load static %}
+<header class="header">
+    <div class="header-inner">
+        <div class="logo">
+            <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="/">
+                <img src="{% static 'img/logo.png' %}?v=20260329-2" alt="Logo">
+            </a>
+        </div>
+        <div class="user-info">
+            {% if user.is_authenticated %}
+            <!-- Tasks Link -->
+            <a href="{% url 'ishsiz_yoshlar:task_list' %}" class="task-link">
+                <i class="bi bi-clipboard-check"></i>
+                {% if unread_notifications %}
+                <span class="badge bg-danger">{{ unread_notifications }}</span>
+                {% endif %}
+            </a>
+
+            <a href="{% url 'yoqlama:list' %}"
+                class="yoqlama-link {% if '/yoqlama/' in request.path %}active{% endif %}"
+                title="Yo'qlama">
+                <i class="bi bi-clipboard2-data"></i>
+            </a>
+
+            <div class="profile">
+                <span class="name">{{ user.full_name|default:user.username }}</span>
+                {% if user.is_sector_coordinator %}
+                <span class="badge bg-warning-subtle text-warning border ms-2">Koordinator</span>
+                {% endif %}
+                {% if user.profile_image %}
+                <a href="{% url 'user_profile' %}" title="Hodim anketasi">
+                    <img src="{{ user.profile_image.url }}" alt="Profile" class="avatar cursor-pointer">
+                </a>
+                {% else %}
+                <a href="{% url 'user_profile' %}" title="Hodim anketasi" class="text-decoration-none">
+                    <div class="avatar-placeholder cursor-pointer">
+                        {{ user.username|first|upper }}
+                    </div>
+                </a>
+                {% endif %}
+            </div>
+            <a href="{% url 'logout' %}" class="logout-link">Chiqish</a>
+            {% endif %}
+        </div>
+    </div>
+</header>

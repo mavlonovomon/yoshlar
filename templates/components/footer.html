@@ -1,0 +1,12 @@
+<footer class="footer">
+    <div class="footer-inner">
+        <div class="footer-links">
+            <a href="{% url 'info' %}" class="footer-link {% if 'info' in request.path %}active{% endif %}">
+                <i class="bi bi-info-circle me-1"></i> Tizim haqida ma'lumot (Info)
+            </a>
+        </div>
+        <div class="footer-copyright">
+            &copy; {% now "Y" %} Yoshlar Tizimi. Barcha huquqlar himoyalangan.
+        </div>
+    </div>
+</footer>
