@@ -2,270 +2,338 @@
 <aside class="sidebar">
     <nav class="nav-menu">
         <a href="{% url 'kpi_dashboard' %}" class="nav-item {% if request.path == '/kpi/' %}active{% endif %}">
-            <i class="bi bi-graph-up-arrow"></i> <span>KPI</span>
+            <span class="material-symbols-outlined">monitoring</span>
+            <span>KPI</span>
         </a>
         <a href="{% url 'dashboard' %}"
             class="nav-item {% if request.path == '/' or request.path == '/dashboard/' %}active{% endif %}">
-            <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+            <span class="material-symbols-outlined">dashboard</span>
+            <span>Dashboard</span>
         </a>
         <a href="{% url 'hisobot:index' %}"
             class="nav-item {% if '/hisobot/' in request.path %}active{% endif %}">
-            <i class="bi bi-file-earmark-text"></i> <span>Hisobot</span>
+            <span class="material-symbols-outlined">description</span>
+            <span>Hisobot</span>
         </a>
+
+        <!-- Yoshlar ro'yxati -->
         <div class="nav-dropdown {% if 'yoshlar' in request.path or 'maktab-oquvchilar' in request.path %}open active{% endif %}"
             id="yoshlarDropdown">
             <div class="nav-dropdown-toggle" onclick="toggleDropdown('yoshlarDropdown')">
-                <i class="bi bi-people"></i> <span>Yoshlar ro'yxati</span>
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">group</span>
+                <span>Yoshlar ro'yxati</span>
+                <span class="material-symbols-outlined chevron">expand_more</span>
             </div>
             <div class="nav-dropdown-content">
                 <a href="{% url 'yosh_list' %}"
                     class="nav-sub-item {% if request.path == '/yoshlar/' %}active{% endif %}">
-                    <i class="bi bi-people-fill"></i> <span>Umumiy yoshlar</span>
+                    <span>Umumiy yoshlar</span>
                 </a>
                 <a href="{% url 'maktab_oquvchi_list' %}"
                     class="nav-sub-item {% if '/yoshlar/maktab-oquvchilar/' == request.path %}active{% endif %}">
-                    <i class="bi bi-mortarboard-fill"></i> <span>Maktab o'quvchilari</span>
+                    <span>Maktab o'quvchilari</span>
                 </a>
                 <a href="{% url 'maktab_oquvchi_pending_list' %}"
                     class="nav-sub-item {% if '/yoshlar/maktab-aniqlanmagan/' in request.path %}active{% endif %}">
-                    <i class="bi bi-check2-square"></i> <span>Aniqlanmaganlar</span>
+                    <span>Aniqlanmaganlar</span>
                 </a>
             </div>
         </div>
+
         {% if user.is_site_admin %}
-        <a href="{% url 'user_list' %}" class="nav-item {% if '/users/' in request.path %}active{% endif %}">
-            <i class="bi bi-person-lines-fill"></i> <span>Foydalanuvchilar</span>
-        </a>
-        {% endif %}
         <hr>
+        {% endif %}
+
+        <!-- Ishsiz Yoshlar -->
         <div class="nav-dropdown {% if 'ishsiz_yoshlar' in request.path %}open active{% endif %}"
             id="ishsizDropdown">
             <div class="nav-dropdown-toggle" onclick="toggleDropdown('ishsizDropdown')">
-                <i class="bi bi-briefcase"></i> <span>Ishsiz Yoshlar</span>
+                <span class="material-symbols-outlined">work</span>
+                <span>Ishsiz Yoshlar</span>
+                <span class="material-symbols-outlined chevron">expand_more</span>
             </div>
             <div class="nav-dropdown-content">
                 <a href="{% url 'ishsiz_yoshlar:svod' %}"
                     class="nav-sub-item {% if '/ishsiz_yoshlar/svod/' == request.path or '/ishsiz_yoshlar/leader-svod/' == request.path or '/ishsiz_yoshlar/professional-svod/' == request.path %}active{% endif %}">
-                    <i class="bi bi-table"></i> <span>Svodlar</span>
+                    <span>Svodlar</span>
                 </a>
                 <a href="{% url 'ishsiz_yoshlar:list' %}"
                     class="nav-sub-item {% if '/ishsiz_yoshlar/list/' == request.path %}active{% endif %}">
-                    <i class="bi bi-list-check"></i> <span>Ishsizlar Ro'yxati</span>
+                    <span>Ishsizlar Ro'yxati</span>
                 </a>
             </div>
         </div>
+
+        <!-- Otaliqdagi Yoshlar -->
         <div class="nav-dropdown {% if 'otaliq' in request.path %}open active{% endif %}" id="otaliqDropdown">
             <div class="nav-dropdown-toggle" onclick="toggleDropdown('otaliqDropdown')">
-                <i class="bi bi-shield-check"></i> <span>Otaliqdagi Yoshlar</span>
+                <span class="material-symbols-outlined">verified_user</span>
+                <span>Otaliqdagi Yoshlar</span>
+                <span class="material-symbols-outlined chevron">expand_more</span>
             </div>
             <div class="nav-dropdown-content">
                 <a href="{% url 'otaliq:svod' %}"
                     class="nav-sub-item {% if '/otaliq/svod/' == request.path %}active{% endif %}">
-                    <i class="bi bi-geo-alt"></i> <span>Svodka (Mahalla)</span>
+                    <span>Svodka (Mahalla)</span>
                 </a>
                 <a href="{% url 'otaliq:list' %}"
                     class="nav-sub-item {% if '/otaliq/list/' == request.path %}active{% endif %}">
-                    <i class="bi bi-list-check"></i> <span>Ro'yxat</span>
+                    <span>Ro'yxat</span>
                 </a>
             </div>
         </div>
+
+        <!-- Migratsiyadagi Yoshlar -->
         <div class="nav-dropdown {% if 'migratsiya' in request.path %}open active{% endif %}"
             id="migratsiyaDropdown">
             <div class="nav-dropdown-toggle" onclick="toggleDropdown('migratsiyaDropdown')">
-                <i class="bi bi-airplane"></i> <span>Migratsiyadagi Yoshlar</span>
+                <span class="material-symbols-outlined">flight</span>
+                <span>Migratsiyadagi Yoshlar</span>
+                <span class="material-symbols-outlined chevron">expand_more</span>
             </div>
             <div class="nav-dropdown-content">
                 <a href="{% url 'migratsiya:list' %}"
                     class="nav-sub-item {% if '/migratsiya/list/' == request.path %}active{% endif %}">
-                    <i class="bi bi-list-check"></i> <span>Ro'yxat</span>
+                    <span>Ro'yxat</span>
                 </a>
             </div>
         </div>
+
+        <!-- Besh tashabbus -->
         <div class="nav-dropdown {% if 'beshtashabbus' in request.path %}open active{% endif %}"
             id="beshtashabbusDropdown">
             <div class="nav-dropdown-toggle" onclick="toggleDropdown('beshtashabbusDropdown')">
-                <i class="bi bi-award"></i> <span>Besh tashabbus</span>
+                <span class="material-symbols-outlined">emoji_events</span>
+                <span>Besh tashabbus</span>
+                <span class="material-symbols-outlined chevron">expand_more</span>
             </div>
             <div class="nav-dropdown-content">
                 <a href="{% url 'beshtashabbus:list' %}"
                     class="nav-sub-item {% if '/beshtashabbus/list/' == request.path %}active{% endif %}">
-                    <i class="bi bi-list-check"></i> <span>Ro'yxat</span>
+                    <span>Ro'yxat</span>
                 </a>
                 <a href="{% url 'beshtashabbus:application_svod' %}"
                     class="nav-sub-item {% if '/beshtashabbus/applications/svod/' == request.path %}active{% endif %}">
-                    <i class="bi bi-table"></i> <span>Ariza svod</span>
+                    <span>Ariza svod</span>
                 </a>
                 <a href="{% url 'beshtashabbus:application_svod_extended' %}"
                     class="nav-sub-item {% if '/beshtashabbus/applications/svod-extended/' == request.path %}active{% endif %}">
-                    <i class="bi bi-grid-3x3-gap"></i> <span>Kengaytirilgan svod</span>
+                    <span>Kengaytirilgan svod</span>
                 </a>
                 <a href="{% url 'beshtashabbus:application_youth_list' %}"
                     class="nav-sub-item {% if '/beshtashabbus/applications/youth-list/' == request.path %}active{% endif %}">
-                    <i class="bi bi-people"></i> <span>Yoshlar ro'yxati</span>
+                    <span>Yoshlar ro'yxati</span>
                 </a>
                 {% if user.is_site_admin %}
                 <a href="{% url 'beshtashabbus:application_upload' %}"
                     class="nav-sub-item {% if '/beshtashabbus/applications/upload/' == request.path %}active{% endif %}">
-                    <i class="bi bi-upload"></i> <span>Ariza yuklash</span>
+                    <span>Ariza yuklash</span>
                 </a>
                 {% endif %}
             </div>
         </div>
+
+        <!-- Ijtimoiy profilaktika -->
         <div class="nav-dropdown {% if 'reyd' in request.path or 'profilaktika' in request.path %}open active{% endif %}"
             id="profilaktikaDropdown">
             <div class="nav-dropdown-toggle" onclick="toggleDropdown('profilaktikaDropdown')">
-                <i class="bi bi-shield-exclamation"></i> <span>Ijtimoiy profilaktika</span>
+                <span class="material-symbols-outlined">shield</span>
+                <span>Ijtimoiy profilaktika</span>
+                <span class="material-symbols-outlined chevron">expand_more</span>
             </div>
             <div class="nav-dropdown-content">
                 <a href="{% url 'reyd:list' %}"
                     class="nav-sub-item {% if '/reyd/list/' == request.path %}active{% endif %}">
-                    <i class="bi bi-list-check"></i> <span>Reyd tadbirlari</span>
+                    <span>Reyd tadbirlari</span>
                 </a>
             </div>
         </div>
+
+        <!-- Kredit yo'naltirish -->
         <div class="nav-dropdown {% if 'kredit-yonaltirish' in request.path %}open active{% endif %}"
             id="kreditYonaltirishDropdown">
             <div class="nav-dropdown-toggle" onclick="toggleDropdown('kreditYonaltirishDropdown')">
-                <i class="bi bi-cash-coin"></i> <span>Kredit yo'naltirish</span>
+                <span class="material-symbols-outlined">paid</span>
+                <span>Kredit yo'naltirish</span>
+                <span class="material-symbols-outlined chevron">expand_more</span>
             </div>
             <div class="nav-dropdown-content">
                 <a href="{% url 'kredit_yo_naltirish:index' %}"
                     class="nav-sub-item {% if '/kredit-yonaltirish/' == request.path %}active{% endif %}">
-                    <i class="bi bi-list-check"></i> <span>Ro'yxat</span>
+                    <span>Ro'yxat</span>
                 </a>
                 <a href="{% url 'kredit_yo_naltirish:svod' %}"
                     class="nav-sub-item {% if '/kredit-yonaltirish/svod/' == request.path %}active{% endif %}">
-                    <i class="bi bi-table"></i> <span>Svod</span>
+                    <span>Svod</span>
                 </a>
             </div>
         </div>
+
+        <!-- Ekin yerlari -->
         <div class="nav-dropdown {% if 'ekin-yerlari' in request.path %}open active{% endif %}"
             id="ekinYerlariDropdown">
             <div class="nav-dropdown-toggle" onclick="toggleDropdown('ekinYerlariDropdown')">
-                <i class="bi bi-tree"></i> <span>Yoshlar uchun ekin yerlari</span>
+                <span class="material-symbols-outlined">park</span>
+                <span>Yoshlar uchun ekin yerlari</span>
+                <span class="material-symbols-outlined chevron">expand_more</span>
             </div>
             <div class="nav-dropdown-content">
                 <a href="{% url 'ekin_yerlari:index' %}"
                     class="nav-sub-item {% if '/ekin-yerlari/' == request.path %}active{% endif %}">
-                    <i class="bi bi-table"></i> <span>Svod</span>
+                    <span>Svod</span>
                 </a>
                 <a href="{% url 'ekin_yerlari:list' %}"
                     class="nav-sub-item {% if '/ekin-yerlari/list/' == request.path %}active{% endif %}">
-                    <i class="bi bi-list-ul"></i> <span>Ro'yxat</span>
+                    <span>Ro'yxat</span>
                 </a>
                 <a href="{% url 'ekin_yerlari:map' %}"
                     class="nav-sub-item {% if '/ekin-yerlari/map/' == request.path %}active{% endif %}">
-                    <i class="bi bi-geo-alt"></i> <span>Xarita</span>
+                    <span>Xarita</span>
                 </a>
             </div>
         </div>
+
+        <!-- Intizomiy jazolar -->
         <div class="nav-dropdown {% if 'intizom-jazo' in request.path %}open active{% endif %}"
             id="intizomJazoDropdown">
             <div class="nav-dropdown-toggle" onclick="toggleDropdown('intizomJazoDropdown')">
-                <i class="bi bi-exclamation-triangle"></i> <span>Intizomiy jazolar</span>
+                <span class="material-symbols-outlined">gavel</span>
+                <span>Intizomiy jazolar</span>
+                <span class="material-symbols-outlined chevron">expand_more</span>
             </div>
             <div class="nav-dropdown-content">
                 <a href="{% url 'intizom_jazo:list' %}"
                     class="nav-sub-item {% if '/intizom-jazo/' == request.path %}active{% endif %}">
-                    <i class="bi bi-list-ul"></i> <span>Ro'yxat</span>
+                    <span>Ro'yxat</span>
                 </a>
             </div>
         </div>
+
+        <!-- Mega loyihalar -->
         <div class="nav-dropdown {% if 'mega-loyihalar' in request.path %}open active{% endif %}"
             id="megaDropdown">
             <div class="nav-dropdown-toggle" onclick="toggleDropdown('megaDropdown')">
-                <i class="bi bi-stars"></i> <span>Mega loyihalar</span>
+                <span class="material-symbols-outlined">rocket_launch</span>
+                <span>Mega loyihalar</span>
+                <span class="material-symbols-outlined chevron">expand_more</span>
             </div>
             <div class="nav-dropdown-content">
                 <a href="{% url 'mega_mutolaa' %}"
                     class="nav-sub-item {% if '/mega-loyihalar/mutolaa/' == request.path %}active{% endif %}">
-                    <i class="bi bi-book"></i> <span>Mutolaa</span>
+                    <span>Mutolaa</span>
                 </a>
                 <a href="{% url 'mega_ustoz_ai' %}"
                     class="nav-sub-item {% if '/mega-loyihalar/ustoz-ai/' == request.path %}active{% endif %}">
-                    <i class="bi bi-robot"></i> <span>Ustoz AI</span>
+                    <span>Ustoz AI</span>
                 </a>
                 <a href="{% url 'mega_uzchess' %}"
                     class="nav-sub-item {% if '/mega-loyihalar/uzchess/' == request.path %}active{% endif %}">
-                    <i class="bi bi-diagram-3"></i> <span>UzChess</span>
+                    <span>UzChess</span>
                 </a>
                 <a href="{% url 'mega_girls_academy' %}"
                     class="nav-sub-item {% if '/mega-loyihalar/qizlar-akademiyasi/' == request.path %}active{% endif %}">
-                    <i class="bi bi-gender-female"></i> <span>Qizlar akademiyasi</span>
+                    <span>Qizlar akademiyasi</span>
                 </a>
             </div>
         </div>
-        <!-- So'rovnomalar Moduli -->
+
+        <!-- So'rovnomalar -->
         <div class="nav-dropdown {% if 'sorovnoma' in request.path %}open active{% endif %}"
             id="sorovnomaDropdown">
             <div class="nav-dropdown-toggle" onclick="toggleDropdown('sorovnomaDropdown')">
                 <span class="nav-icon-wrap">
-                    <i class="bi bi-card-checklist"></i>
+                    <span class="material-symbols-outlined">assignment</span>
                     {% if has_active_surveys %}
                     <span class="nav-alert-dot" title="Aktiv so'rovnoma mavjud" aria-hidden="true"></span>
                     {% endif %}
                 </span>
                 <span>So'rovnomalar</span>
+                <span class="material-symbols-outlined chevron">expand_more</span>
             </div>
             <div class="nav-dropdown-content">
                 <a href="{% url 'sorovnoma:survey_list' %}"
                     class="nav-sub-item {% if '/sorovnoma/' in request.path %}active{% endif %}">
-                    <i class="bi bi-list-ul"></i> <span>So'rovnomalar ro'yxati</span>
+                    <span>So'rovnomalar ro'yxati</span>
                 </a>
             </div>
         </div>
-        <!-- Bilim Sinovi Moduli -->
+
+        <!-- Bilim Sinovi -->
         <div class="nav-dropdown {% if 'bilim-sinovi' in request.path %}open active{% endif %}"
             id="bilimDropdown">
             <div class="nav-dropdown-toggle" onclick="toggleDropdown('bilimDropdown')">
                 <span class="nav-icon-wrap">
-                    <i class="bi bi-journal-text"></i>
+                    <span class="material-symbols-outlined">quiz</span>
                     {% if has_active_tests %}
                     <span class="nav-alert-dot" title="Aktiv test mavjud" aria-hidden="true"></span>
                     {% endif %}
                 </span>
                 <span>Bilim Sinovi</span>
+                <span class="material-symbols-outlined chevron">expand_more</span>
             </div>
             <div class="nav-dropdown-content">
                 <a href="{% if user.is_site_admin %}{% url 'bilim_sinovi:test_manage_list' %}{% else %}{% url 'bilim_sinovi:test_list' %}{% endif %}"
                     class="nav-sub-item {% if user.is_site_admin %}{% if '/bilim-sinovi/manage/' in request.path and '/bilim-sinovi/manage/results/' not in request.path and '/bilim-sinovi/manage/packages/' not in request.path %}active{% endif %}{% else %}{% if '/bilim-sinovi/' in request.path %}active{% endif %}{% endif %}">
-                    <i class="bi bi-pencil-square"></i>
                     <span>{% if user.is_site_admin %}Tashkillashtirish{% else %}Testlar{% endif %}</span>
                 </a>
                 {% if user.is_site_admin %}
                 <a href="{% url 'bilim_sinovi:question_package_list' %}"
                     class="nav-sub-item {% if '/bilim-sinovi/manage/packages/' in request.path %}active{% endif %}">
-                    <i class="bi bi-collection"></i> <span>Savol paketlari</span>
+                    <span>Savol paketlari</span>
                 </a>
                 <a href="{% url 'bilim_sinovi:test_results_dashboard' %}"
                     class="nav-sub-item {% if '/bilim-sinovi/manage/results/' in request.path %}active{% endif %}">
-                    <i class="bi bi-table"></i> <span>Natijalar</span>
+                    <span>Natijalar</span>
                 </a>
                 {% endif %}
             </div>
         </div>
+
         <a href="{% url 'eco_energiya:list' %}"
             class="nav-item {% if '/eco-energiya/' in request.path %}active{% endif %}">
-            <i class="bi bi-sun"></i> <span>Eco Energiya</span>
+            <span class="material-symbols-outlined">eco</span>
+            <span>Eco Energiya</span>
         </a>
+
         {% if user.is_superuser %}
         <hr>
-        <div class="nav-dropdown {% if 'bulk-refresh' in request.path %}open active{% endif %}"
+        <!-- Qo'shimchalar -->
+        <div class="nav-dropdown {% if 'bulk-refresh' in request.path or '/users/' in request.path %}open active{% endif %}"
             id="qoshimchalarDropdown">
             <div class="nav-dropdown-toggle" onclick="toggleDropdown('qoshimchalarDropdown')">
-                <i class="bi bi-tools"></i> <span>Qo'shimchalar</span>
+                <span class="material-symbols-outlined">build</span>
+                <span>Qo'shimchalar</span>
+                <span class="material-symbols-outlined chevron">expand_more</span>
             </div>
             <div class="nav-dropdown-content">
+                {% if user.is_site_admin %}
+                <a href="{% url 'user_list' %}"
+                    class="nav-sub-item {% if '/users/' in request.path %}active{% endif %}">
+                    <span>Foydalanuvchilar</span>
+                </a>
+                {% endif %}
                 <a href="{% url 'yosh_bulk_refresh_photos' %}"
                     class="nav-sub-item {% if '/yoshlar/bulk-refresh-photos/' in request.path %}active{% endif %}">
-                    <i class="bi bi-arrow-repeat"></i> <span>Ishsizlar rasmi yangilash</span>
+                    <span>Ishsizlar rasmi yangilash</span>
                 </a>
                 <a href="{% url 'yosh_all_bulk_refresh_photos' %}"
                     class="nav-sub-item {% if '/yoshlar/all-bulk-refresh-photos/' in request.path %}active{% endif %}">
-                    <i class="bi bi-arrow-repeat"></i> <span>Barcha yoshlar rasmi</span>
+                    <span>Barcha yoshlar rasmi</span>
                 </a>
             </div>
         </div>
         {% endif %}
     </nav>
+
+    <!-- Bottom -->
+    <div class="sidebar-bottom">
+        <a href="#" class="nav-item">
+            <span class="material-symbols-outlined">help</span>
+            <span>Help Center</span>
+        </a>
+        <a href="{% url 'logout' %}" class="nav-item logout">
+            <span class="material-symbols-outlined">logout</span>
+            <span>Chiqish</span>
+        </a>
+    </div>
 </aside>

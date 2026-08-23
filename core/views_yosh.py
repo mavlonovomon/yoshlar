@@ -1238,10 +1238,12 @@ def yosh_all_bulk_refresh_photos(request):
         return redirect("dashboard")
 
     if request.method != "POST":
-        total_count = Yosh.objects.count()
-        no_photo_count = Yosh.objects.filter(photo__isnull=True).count() + Yosh.objects.filter(photo='').count()
+        # Faqat pasport seriyasi mavjud yoshlarni hisoblash
+        youths_with_passport = Yosh.objects.exclude(passport_number__isnull=True).exclude(passport_number='')
+        total_count = youths_with_passport.count()
+        no_photo_count = youths_with_passport.filter(photo__isnull=True).count() + youths_with_passport.filter(photo='').count()
         missing_file_count = 0
-        for y in Yosh.objects.exclude(photo__isnull=True).exclude(photo=''):
+        for y in youths_with_passport.exclude(photo__isnull=True).exclude(photo=''):
             try:
                 if not y.photo or not os.path.exists(y.photo.path):
                     missing_file_count += 1
@@ -1251,7 +1253,8 @@ def yosh_all_bulk_refresh_photos(request):
         return render(request, "bulk_refresh_all.html", {"total": 0, "total_count": total_count, "no_photo_count": no_photo_count})
 
     only_no_photo = request.POST.get("only_no_photo") == "on"
-    youths = Yosh.objects.all().order_by("id")
+    # Faqat pasport seriyasi mavjud yoshlarni olish
+    youths = Yosh.objects.exclude(passport_number__isnull=True).exclude(passport_number='').order_by("id")
     if only_no_photo:
         # Get IDs of youths with photo file that actually exists
         valid_photo_ids = []

@@ -1,0 +1,30 @@
+/* ========================================
+   FOOTER - Stitch Design System
+   ======================================== */
+
+.footer {
+    padding: 16px 24px;
+    background: white;
+    border-top: 1px solid var(--gray-200);
+    font-size: 13px;
+    color: var(--gray-500);
+}
+
+.footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .footer {
+        padding: 16px;
+    }
+
+    .footer-inner {
+        flex-direction: column;
+        text-align: center;
+    }
+}

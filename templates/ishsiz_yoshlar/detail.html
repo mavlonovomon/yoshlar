@@ -1,208 +1,611 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block extra_css %}
+<style>
+/* Youth Detail Page Styles */
+.hero-section {
+    position: relative;
+    background: linear-gradient(135deg, #4f46e5 0%, #396ceb 100%);
+    height: 260px;
+    border-radius: 20px 20px 0 0;
+    overflow: visible;
+}
+
+.profile-section {
+    position: absolute;
+    bottom: -70px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 10;
+}
+
+.profile-image-wrapper {
+    padding: 6px;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.profile-image {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #f1f3ff;
+    border: 1px solid #c7c4d8;
+}
+
+.hero-bottom {
+    background: #ffffff;
+    border-radius: 0 0 20px 20px;
+    border: 1px solid rgba(199, 196, 216, 0.6);
+    border-top: none;
+    padding-top: 80px;
+    padding-bottom: 24px;
+    text-align: center;
+}
+
+.profile-name {
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: #141b2b;
+    letter-spacing: -0.5px;
+    margin: 0 0 8px;
+}
+
+.profile-phone {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #3525cd;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.profile-phone:hover {
+    color: #4f46e5;
+}
+
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-top: 16px;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 9999px;
+    font-weight: 700;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-back {
+    background: #ffffff;
+    border: 1px solid #c7c4d8;
+    color: #464555;
+}
+
+.btn-back:hover {
+    background: #f1f3ff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.btn-pdf {
+    background: #ba1a1a;
+    color: #ffffff;
+}
+
+.btn-pdf:hover {
+    background: #a31515;
+    box-shadow: 0 4px 12px rgba(186, 26, 26, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-meeting {
+    background: #396ceb;
+    color: #ffffff;
+}
+
+.btn-meeting:hover {
+    background: #2e57bc;
+    box-shadow: 0 4px 12px rgba(57, 108, 235, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-assistance {
+    background: #059669;
+    color: #ffffff;
+}
+
+.btn-assistance:hover {
+    background: #047857;
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+    transform: translateY(-1px);
+}
+
+/* Info Cards Grid */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.info-card {
+    background: #ffffff;
+    border: 1px solid rgba(199, 196, 216, 0.6);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.info-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.info-card-icon {
+    color: rgba(79, 70, 229, 0.7);
+    font-size: 24px;
+}
+
+.info-card-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #464555;
+    font-family: 'Inter', sans-serif;
+}
+
+.info-card-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #141b2b;
+    font-family: 'Inter', sans-serif;
+    text-align: center;
+}
+
+/* Two Column Layout */
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+}
+
+@media (min-width: 1024px) {
+    .content-grid {
+        grid-template-columns: 5fr 7fr;
+    }
+}
+
+/* Assistance Card */
+.assistance-card {
+    background: #ffffff;
+    border: 2px dashed rgba(16, 185, 129, 0.3);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.assistance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.assistance-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(16, 185, 129, 0.1);
+    color: #047857;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 9999px;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.assistance-title {
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #141b2b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.assistance-icon {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+    padding: 8px;
+    border-radius: 8px;
+}
+
+.assistance-info {
+    background: #ffffff;
+    border: 1px solid rgba(199, 196, 216, 0.6);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.assistance-type {
+    font-weight: 700;
+    color: #141b2b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.assistance-date {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.assistance-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(79, 70, 229, 0.1);
+    color: #4f46e5;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 16px;
+}
+
+.assistance-btn:hover {
+    background: rgba(79, 70, 229, 0.2);
+}
+
+.no-assistance {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f1f3ff;
+    border-radius: 12px;
+}
+
+/* Meetings Timeline */
+.meetings-card {
+    background: #ffffff;
+    border: 1px solid rgba(199, 196, 216, 0.6);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.meetings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(199, 196, 216, 0.6);
+    margin-bottom: 24px;
+}
+
+.meetings-title {
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #141b2b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.meetings-icon {
+    color: #4f46e5;
+    background: rgba(79, 70, 229, 0.1);
+    padding: 8px;
+    border-radius: 8px;
+}
+
+.meetings-count {
+    background: rgba(79, 70, 229, 0.1);
+    color: #4f46e5;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 9999px;
+}
+
+/* Timeline */
+.timeline-container {
+    position: relative;
+    padding-left: 32px;
+    border-left: 2px solid rgba(79, 70, 229, 0.2);
+    margin-left: 8px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 24px;
+}
+
+.timeline-dot {
+    position: absolute;
+    left: -41px;
+    top: 4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #4f46e5;
+    box-shadow: 0 0 0 4px #ffffff;
+    transition: all 0.2s ease;
+}
+
+.timeline-item:hover .timeline-dot {
+    transform: scale(1.1);
+}
+
+.timeline-dot.inactive {
+    background: #c7c4d8;
+}
+
+.timeline-content {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    background: #ffffff;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(199, 196, 216, 0.4);
+    transition: all 0.2s ease;
+}
+
+.timeline-content:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: rgba(79, 70, 229, 0.3);
+}
+
+.timeline-image {
+    width: 88px;
+    height: 88px;
+    border-radius: 12px;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid rgba(199, 196, 216, 0.3);
+    cursor: pointer;
+}
+
+.timeline-text {
+    flex: 1;
+}
+
+.timeline-date {
+    font-size: 12px;
+    color: #464555;
+    background: #f1f3ff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.timeline-description {
+    font-size: 14px;
+    color: #141b2b;
+    line-height: 1.6;
+}
+
+.no-meetings {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f1f3ff;
+    border-radius: 12px;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid">
-    <!-- Header Actions -->
-    <div class="card mb-4 py-3 px-4">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <a href="{% url 'ishsiz_yoshlar:list' %}" class="btn btn-light shadow-sm">
-                <i class="bi bi-arrow-left me-1"></i> Ro'yxatga qaytish
-            </a>
-            <div class="d-flex gap-2">
-                <a href="{% url 'ishsiz_yoshlar:youth_pdf' youth.pk %}" class="btn btn-danger shadow-sm" target="_blank">
-                    <i class="bi bi-file-earmark-pdf me-1"></i> PDF yuklab olish
-                </a>
-                <a href="{% url 'ishsiz_yoshlar:meeting_create' youth.pk %}" class="btn btn-primary shadow-sm">
-                    <i class="bi bi-calendar-plus me-1"></i> Uchrashuv qo'shish
-                </a>
-                <a href="{% url 'ishsiz_yoshlar:assistance_update' youth.pk %}" class="btn btn-success shadow-sm">
-                    <i class="bi bi-gift me-1"></i> Yordam ma'lumoti
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Profile Header Card -->
-    <div class="card p-0 overflow-hidden mb-4 border-0 shadow-sm" style="border-radius: 24px;">
-        <div style="background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); height: 140px;"></div>
-        <div class="px-4 pb-4">
-            <div class="text-center" style="margin-top: -70px;">
+<div class="container-fluid" style="max-width: 1400px; margin: 0 auto;">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <!-- Profile Image on Blue Background -->
+        <div class="profile-section">
+            <div class="profile-image-wrapper">
                 {% if youth.yosh.photo %}
-                <img src="{{ youth.yosh.photo.url }}"
-                    class="rounded-circle shadow-lg border border-4 border-white cursor-pointer"
-                    style="width: 140px; height: 140px; object-fit: cover;" onclick="openLeaderModal(this)"
-                    data-name="{{ youth.leader.full_name|default:'Biriktirilmagan' }}"
-                    data-position="{{ youth.leader.position|default:'Mas\'ul rahbar' }}"
-                    data-phone="{{ youth.leader.phone_number|default:'--' }}"
-                    data-org="{{ youth.leader.organization|default:youth.yosh.mahalla.name }}"
-                    data-sector="{{ youth.leader.sector|default:'' }}">
+                <img src="{{ youth.yosh.photo.url }}" class="profile-image" alt="{{ youth.yosh.fullname }}">
                 {% else %}
-                <img src="{% static 'img/user_bust.png' %}"
-                    class="rounded-circle shadow-lg border border-4 border-white bg-light cursor-pointer"
-                    style="width: 140px; height: 140px; object-fit: cover;" onclick="openLeaderModal(this)"
-                    data-name="{{ youth.leader.full_name|default:'Biriktirilmagan' }}"
-                    data-position="{{ youth.leader.position|default:'Mas\'ul rahbar' }}"
-                    data-phone="{{ youth.leader.phone_number|default:'--' }}"
-                    data-org="{{ youth.leader.organization|default:youth.yosh.mahalla.name }}"
-                    data-sector="{{ youth.leader.sector|default:'' }}">
+                <img src="{% static 'img/user_bust.png' %}" class="profile-image" alt="{{ youth.yosh.fullname }}">
                 {% endif %}
-                <h2 class="fw-bold mt-3 mb-1 text-dark">{{ youth.yosh.fullname }}</h2>
-                <p class="text-primary fw-medium"><i class="bi bi-telephone me-2"></i>{{ youth.yosh.phone_number }}</p>
-            </div>
-
-            <div class="row g-3 mt-2">
-                <div class="col-md-2 col-6">
-                    <div class="p-3 bg-light rounded-4 text-center">
-                        <small class="text-muted d-block text-uppercase smaller fw-bold mb-1">TOIFASI</small>
-                        <span class="fw-bold text-primary">{{ youth.get_category_display }}</span>
-                    </div>
-                </div>
-                <div class="col-md-2 col-6">
-                    <div class="p-3 bg-light rounded-4 text-center">
-                        <small class="text-muted d-block text-uppercase smaller fw-bold mb-1">PASPORT</small>
-                        <span class="fw-bold text-dark">{{ youth.yosh.passport_number }}</span>
-                    </div>
-                </div>
-                <div class="col-md-2 col-6">
-                    <div class="p-3 bg-light rounded-4 text-center">
-                        <small class="text-muted d-block text-uppercase smaller fw-bold mb-1">JSHSHIR</small>
-                        <span class="fw-bold text-dark">{{ youth.yosh.jshshir }}</span>
-                    </div>
-                </div>
-                <div class="col-md-3 col-6">
-                    <div class="p-3 bg-light rounded-4 text-center">
-                        <small class="text-muted d-block text-uppercase smaller fw-bold mb-1">MAHALLA</small>
-                        <span class="fw-bold text-dark">{{ youth.yosh.mahalla.name }}</span>
-                    </div>
-                </div>
-                {% if youth.otm_name %}
-                <div class="col-md-3 col-6">
-                    <div class="p-3 bg-light rounded-4 text-center">
-                        <small class="text-muted d-block text-uppercase smaller fw-bold mb-1">TA'LIM TASHKILOTI</small>
-                        <span class="fw-bold text-dark">{{ youth.otm_name }}</span>
-                    </div>
-                </div>
-                <div class="col-md-3 col-6">
-                    <div class="p-3 bg-light rounded-4 text-center">
-                        <small class="text-muted d-block text-uppercase smaller fw-bold mb-1">YO'NALISHI</small>
-                        <span class="fw-bold text-dark">{{ youth.direction }}</span>
-                    </div>
-                </div>
-                {% endif %}
-                <div class="col-md-3 col-12">
-                    <div class="p-3 bg-light rounded-4 text-center cursor-pointer" onclick="openLeaderModal(this)"
-                        data-name="{{ youth.leader.full_name|default:'Biriktirilmagan' }}"
-                        data-position="{{ youth.leader.position|default:'Mas\'ul rahbar' }}"
-                        data-phone="{{ youth.leader.phone_number|default:'--' }}"
-                        data-org="{{ youth.leader.organization|default:youth.yosh.mahalla.name }}"
-                        data-sector="{{ youth.leader.sector|default:'' }}">
-                        <small class="text-muted d-block text-uppercase smaller fw-bold mb-1">MAS'UL RAHBAR</small>
-                        <span class="fw-bold text-dark">{{ youth.leader.full_name|default:"Biriktirilmagan" }}</span>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 
-    <div class="row g-4">
-        <!-- Assistance Information -->
-        <div class="col-lg-5">
-            <div class="card h-100 p-4 border-0 shadow-sm" style="border-radius: 20px;">
-                <h5 class="fw-bold mb-4 text-dark"><i class="bi bi-info-circle me-2 text-primary"></i>Yordam Ma'lumoti
-                </h5>
-                {% if assistance and assistance.provided %}
-                <div class="p-4 rounded-4"
-                    style="background: rgba(16, 185, 129, 0.05); border: 2px dashed rgba(16, 185, 129, 0.2);">
-                    <div class="text-center mb-4">
-                        <span class="badge bg-success mb-2">TASDIQLANGAN</span>
-                        <h3 class="fw-bold text-success mb-0">{{ assistance.get_assistance_type_display }}</h3>
-                        <p class="text-muted small mt-1">Berilgan sana: {{ assistance.date_provided|date:"d.m.Y" }}</p>
-                    </div>
+    <!-- Name & Phone -->
+    <div class="hero-bottom">
+        <h2 class="profile-name">{{ youth.yosh.fullname }}</h2>
+        <a href="tel:{{ youth.yosh.phone_number }}" class="profile-phone">
+            <span class="material-symbols-outlined" style="font-size: 18px;">call</span>
+            {{ youth.yosh.phone_number }}
+        </a>
+    </div>
 
-                    {% if assistance.document %}
-                    <a href="{{ assistance.document.url }}" target="_blank"
-                        class="btn btn-success w-100 rounded-pill py-2">
-                        <i class="bi bi-file-earmark-pdf me-2"></i> Hujjatni ko'rish
-                    </a>
-                    {% else %}
-                    <div class="text-center text-muted smaller mt-3">Hujjat yuklanmagan</div>
-                    {% endif %}
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <a href="{% url 'ishsiz_yoshlar:list' %}" class="btn-action btn-back">
+            <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span>
+            Ro'yxatga qaytish
+        </a>
+        <a href="{% url 'ishsiz_yoshlar:youth_pdf' youth.pk %}" class="btn-action btn-pdf" target="_blank">
+            <span class="material-symbols-outlined" style="font-size: 18px;">picture_as_pdf</span>
+            PDF yuklab olish
+        </a>
+        <a href="{% url 'ishsiz_yoshlar:meeting_create' youth.pk %}" class="btn-action btn-meeting">
+            <span class="material-symbols-outlined" style="font-size: 18px;">add_task</span>
+            Uchrashuv qo'shish
+        </a>
+        <a href="{% url 'ishsiz_yoshlar:assistance_update' youth.pk %}" class="btn-action btn-assistance">
+            <span class="material-symbols-outlined" style="font-size: 18px;">info</span>
+            Yordam ma'lumoti
+        </a>
+    </div>
+
+    <!-- Info Grid -->
+    <div class="info-grid">
+        <div class="info-card">
+            <span class="material-symbols-outlined info-card-icon">category</span>
+            <p class="info-card-label">Toifasi</p>
+            <p class="info-card-value">{{ youth.get_category_display }}</p>
+        </div>
+        <div class="info-card">
+            <span class="material-symbols-outlined info-card-icon">badge</span>
+            <p class="info-card-label">Pasport</p>
+            <p class="info-card-value">{{ youth.yosh.passport_number }}</p>
+        </div>
+        <div class="info-card">
+            <span class="material-symbols-outlined info-card-icon">fingerprint</span>
+            <p class="info-card-label">JSHSHIR</p>
+            <p class="info-card-value">{{ youth.yosh.jshshir }}</p>
+        </div>
+        <div class="info-card">
+            <span class="material-symbols-outlined info-card-icon">location_city</span>
+            <p class="info-card-label">Mahalla</p>
+            <p class="info-card-value">{{ youth.yosh.mahalla.name }}</p>
+        </div>
+        {% if youth.otm_name %}
+        <div class="info-card">
+            <span class="material-symbols-outlined info-card-icon">school</span>
+            <p class="info-card-label">OTM</p>
+            <p class="info-card-value">{{ youth.otm_name }}</p>
+        </div>
+        {% endif %}
+        <div class="info-card" style="cursor: pointer;" onclick="openLeaderModal(this)"
+            data-name="{{ youth.leader.full_name|default:'Biriktirilmagan' }}"
+            data-position="{{ youth.leader.position|default:'Mas\'ul rahbar' }}"
+            data-phone="{{ youth.leader.phone_number|default:'--' }}"
+            data-org="{{ youth.leader.organization|default:youth.yosh.mahalla.name }}"
+            data-sector="{{ youth.leader.sector|default:'' }}">
+            <span class="material-symbols-outlined info-card-icon">person_apron</span>
+            <p class="info-card-label">Mas'ul Rahbar</p>
+            <p class="info-card-value">{{ youth.leader.full_name|default:"Biriktirilmagan" }}</p>
+        </div>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div class="content-grid">
+        <!-- Left: Assistance -->
+        <div>
+            {% if assistance and assistance.provided %}
+            <div class="assistance-card">
+                <div class="assistance-header">
+                    <h3 class="assistance-title">
+                        <span class="material-symbols-outlined assistance-icon">volunteer_activism</span>
+                        Yordam Ma'lumoti
+                    </h3>
+                    <span class="assistance-badge">
+                        <span class="material-symbols-outlined" style="font-size: 14px;">check_circle</span>
+                        TASDIQLANGAN
+                    </span>
                 </div>
-                {% else %}
-                <div class="text-center py-5 bg-light rounded-4">
-                    <i class="bi bi-slash-circle fs-2 text-muted"></i>
-                    <p class="text-muted mt-2 mb-0 small">Yordam berilgani haqida ma'lumot yo'q</p>
+                
+                <div class="assistance-info">
+                    <p style="font-size: 14px; color: #464555; font-weight: 500; margin-bottom: 8px;">Yordam turi</p>
+                    <p class="assistance-type">
+                        <span class="material-symbols-outlined" style="color: #4f46e5; font-size: 18px;">monetization_on</span>
+                        {{ assistance.get_assistance_type_display }}
+                    </p>
                 </div>
+
+                <div class="assistance-info assistance-date">
+                    <p style="font-size: 14px; color: #464555; font-weight: 500;">Sana</p>
+                    <p style="font-weight: 700; color: #141b2b; display: flex; align-items: center; gap: 6px;">
+                        <span class="material-symbols-outlined" style="color: #777587; font-size: 16px;">calendar_today</span>
+                        {{ assistance.date_provided|date:"d.m.Y" }}
+                    </p>
+                </div>
+
+                {% if assistance.document %}
+                <a href="{{ assistance.document.url }}" target="_blank" class="assistance-btn">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">visibility</span>
+                    Hujjatni ko'rish
+                </a>
                 {% endif %}
             </div>
+            {% else %}
+            <div class="assistance-card">
+                <h3 class="assistance-title">
+                    <span class="material-symbols-outlined assistance-icon">volunteer_activism</span>
+                    Yordam Ma'lumoti
+                </h3>
+                <div class="no-assistance">
+                    <span class="material-symbols-outlined" style="font-size: 48px; color: #c7c4d8;">block</span>
+                    <p style="color: #777587; margin-top: 16px; font-size: 14px;">Yordam berilgani haqida ma'lumot yo'q</p>
+                </div>
+            </div>
+            {% endif %}
         </div>
 
-        <!-- Meetings Timeline -->
-        <div class="col-lg-7">
-            <div class="card h-100 p-4 border-0 shadow-sm" style="border-radius: 20px;">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="fw-bold mb-0 text-dark"><i
-                            class="bi bi-calendar-event me-2 text-primary"></i>Uchrashuvlar Tarixi</h5>
-                    <span class="badge bg-primary-subtle text-primary">{{ meetings.count }} ta</span>
+        <!-- Right: Meetings Timeline -->
+        <div>
+            <div class="meetings-card">
+                <div class="meetings-header">
+                    <h3 class="meetings-title">
+                        <span class="material-symbols-outlined meetings-icon">history</span>
+                        Uchrashuvlar Tarixi
+                    </h3>
+                    <span class="meetings-count">{{ meetings.count }} ta</span>
                 </div>
 
                 {% if meetings %}
-                <div class="timeline">
+                <div class="timeline-container">
                     {% for meeting in meetings %}
-                    <div class="timeline-item mb-4 ps-4 position-relative">
-                        <div class="timeline-dot"></div>
-                        <div class="p-3 bg-light rounded-4 border border-white shadow-sm">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="fw-bold text-dark small">{{ meeting.meeting_date|date:"d-F, Y | H:i" }}</span>
-                                <span class="text-muted smaller" style="font-size: 0.7rem;">{{ meeting.created_at|timesince }} oldin</span>
-                            </div>
-                            <div class="row g-3">
-                                {% if meeting.photo %}
-                                <div class="col-md-3">
-                                    <img src="{{ meeting.photo.url }}" class="img-fluid rounded-3 shadow-sm"
-                                        style="height: 80px; width: 100%; object-fit: cover; cursor: pointer;"
-                                        onclick="openImageModal(this.src)">
-                                </div>
-                                {% endif %}
-                                <div class="col">
-                                    <p class="text-secondary small mb-0">{{ meeting.description }}</p>
-                                </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot {% if not forloop.first %}inactive{% endif %}"></div>
+                        <div class="timeline-content">
+                            {% if meeting.photo %}
+                            <img src="{{ meeting.photo.url }}" class="timeline-image" alt="Meeting photo" onclick="openImageModal(this.src)">
+                            {% endif %}
+                            <div class="timeline-text">
+                                <span class="timeline-date">
+                                    <span class="material-symbols-outlined" style="font-size: 14px;">event</span>
+                                    {{ meeting.meeting_date|date:"d.m.Y, H:i" }}
+                                </span>
+                                <p class="timeline-description">{{ meeting.description }}</p>
                             </div>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
-                <div class="text-center py-5 bg-light rounded-4">
-                    <p class="text-muted mb-0 small">Uchrashuvlar o'tkazilmagan</p>
+                <div class="no-meetings">
+                    <p style="color: #777587; font-size: 14px;">Uchrashuvlar o'tkazilmagan</p>
                 </div>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
-
-<style>
-    .smaller {
-        font-size: 0.65rem;
-    }
-
-    .timeline {
-        border-left: 2px solid #f1f5f9;
-        margin-left: 10px;
-    }
-
-    .timeline-dot {
-        position: absolute;
-        left: -7px;
-        top: 0;
-        width: 12px;
-        height: 12px;
-        background: var(--primary);
-        border: 2px solid white;
-        border-radius: 50%;
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-    }
-</style>
 {% endblock %}

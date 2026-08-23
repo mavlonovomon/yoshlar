@@ -1,67 +1,155 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="uz">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kirish - Yoshlar Tizimi</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/login.css' %}?v=20260823-2">
+    
+    <link rel="stylesheet" href="/static/css/login.css?v=20260823-2">
     <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
 </head>
 
-<body class="login-body" data-eimzo-challenge-url="{% url 'eimzo_auth:eimzo_challenge' %}"
-    data-eimzo-verify-url="{% url 'eimzo_auth:eimzo_verify' %}" data-mahalla-id="{{ form.mahalla.id_for_label }}"
-    data-username-id="{{ form.username.id_for_label }}">
+<body class="login-body" data-eimzo-challenge-url="/auth/eimzo/challenge/"
+    data-eimzo-verify-url="/auth/eimzo/verify/" data-mahalla-id="id_mahalla"
+    data-username-id="id_username">
 
     <div class="login-container">
         <div class="login-logo-wrap">
-            <img src="{% static 'media/Yoshlar_ishlari_agentligi_logotipi.svg' %}" alt="Yoshlar Ishlari Agentligi" class="login-logo">
+            <div class="login-logo-container">
+                <img src="/static/img/logo.png" alt="Yoshlar Tizimi">
+            </div>
         </div>
 
         <div class="login-header">
+            <h1 class="login-title">Yoshlar Tizimi</h1>
             <p class="login-subtitle">Ma'lumotlaringizni kiriting</p>
         </div>
 
         <form method="post">
-            {% csrf_token %}
+            <input type="hidden" name="csrfmiddlewaretoken" value="EGgq8CCSy4Rrb1kdxlPyqoUW7iCfrPGdpJvB2Xdi6ag1IiRKEW2s0ve5BBEhHV0v">
 
-            {% if form.non_field_errors %}
-            <div class="error-container">
-                {% for error in form.non_field_errors %}
-                <span class="material-symbols-outlined login-inline-icon" style="font-size:16px;vertical-align:middle;">error</span> {{ error }}<br>
-                {% endfor %}
-            </div>
-            {% endif %}
+            
 
-            {% if oneid_error %}
-            <div class="error-container">
-                <span class="material-symbols-outlined login-inline-icon" style="font-size:16px;vertical-align:middle;">warning</span> {{ oneid_error }}
-            </div>
-            {% endif %}
+            
 
             <div class="form-group">
-                <label for="{{ form.mahalla.id_for_label }}">
+                <label for="id_mahalla">
                     <i class="bi bi-geo-alt login-label-icon"></i> Mahalla (Yetakchi uchun)
                 </label>
-                {{ form.mahalla }}
+                <select name="mahalla" class="form-control" id="id_mahalla">
+  <option value="" selected>Mahallani tanlang...</option>
+
+  <option value="27">Al-Xorazmiy</option>
+
+  <option value="37">Aloqali koʻl</option>
+
+  <option value="28">Amudaryo</option>
+
+  <option value="24">Barkamol avlod</option>
+
+  <option value="16">Beshta</option>
+
+  <option value="44">Bogi eram</option>
+
+  <option value="43">Bogʻdor</option>
+
+  <option value="34">Bogʻirogʻlar</option>
+
+  <option value="21">Boʻston</option>
+
+  <option value="26">Buyuk Simo</option>
+
+  <option value="39">Buyuk ajdodlar</option>
+
+  <option value="7">Gulzor</option>
+
+  <option value="9">Gʻ.Gʻofur</option>
+
+  <option value="22">Ishchilar</option>
+
+  <option value="40">Istiqlol</option>
+
+  <option value="42">Jaloladdin Manguberdi</option>
+
+  <option value="47">Juvarxos</option>
+
+  <option value="36">Kamolot</option>
+
+  <option value="31">Karvak</option>
+
+  <option value="30">Kirtepa</option>
+
+  <option value="8">Ming otliqlar</option>
+
+  <option value="23">Munis Xorazmiy</option>
+
+  <option value="17">Mustaqillik</option>
+
+  <option value="29">Muxomon</option>
+
+  <option value="11">Navroʻz</option>
+
+  <option value="12">Obod zamin</option>
+
+  <option value="6">Oq maydon</option>
+
+  <option value="33">Otaliq</option>
+
+  <option value="5">Ovshar</option>
+
+  <option value="41">Oybek nomli</option>
+
+  <option value="10">Paxlavon Maxmud</option>
+
+  <option value="38">Pichoqchi</option>
+
+  <option value="15">Qovunchi</option>
+
+  <option value="32">Sanoat</option>
+
+  <option value="20">Shoduxurram</option>
+
+  <option value="2">Shovot</option>
+
+  <option value="18">Shukrona</option>
+
+  <option value="19">Sulaymon qalʻasi</option>
+
+  <option value="25">Taraqqiyot</option>
+
+  <option value="35">Temirchi maskani</option>
+
+  <option value="13">Yangi xayot</option>
+
+  <option value="45">Yangibozor</option>
+
+  <option value="46">Yangiobod</option>
+
+  <option value="3">Yuqori Shovot</option>
+
+  <option value="4">Zehnli</option>
+
+  <option value="14">Ziyolilar</option>
+
+</select>
             </div>
 
             <div class="login-divider" id="adminLoginDivider">YOKI</div>
 
             <div class="form-group" id="adminLoginGroup">
-                <label for="{{ form.username.id_for_label }}">
+                <label for="id_username">
                     <span class="material-symbols-outlined login-label-icon" style="font-size:14px;vertical-align:middle;">person</span> Login (Super Admin)
                 </label>
-                {{ form.username }}
+                <input type="text" name="username" class="form-control" placeholder="Admin/Rahbar logini" id="id_username">
             </div>
 
             <div class="form-group">
-                <label for="{{ form.password.id_for_label }}">
+                <label for="id_password">
                     <span class="material-symbols-outlined login-label-icon" style="font-size:14px;vertical-align:middle;">lock</span> Parol
                 </label>
-                {{ form.password }}
+                <input type="password" name="password" class="form-control" placeholder="Parol" required id="id_password">
             </div>
 
             <button type="submit" class="btn-login">
@@ -72,7 +160,7 @@
         <div class="login-divider">BOSHQA USULLAR</div>
 
         <div class="login-alt-buttons">
-            <a href="{% url 'login_oneid' %}" class="btn-login-oneid">
+            <a href="/login/oneid/" class="btn-login-oneid">
                 <span class="material-symbols-outlined" style="font-size:18px;">fingerprint</span> OneID
             </a>
             <button type="button" id="eimzoLoginBtn" class="btn-login-eimzo">
@@ -121,7 +209,9 @@
         </div>
     </div>
 
-    <script src="{% static 'js/pages/login_page.js' %}?v=20260823-2"></script>
+    <script src="/static/js/pages/login_bg_animation.js?v=20260823-2"></script>
+    <script src="/static/js/pages/login_page.js?v=20260823-2"></script>
 </body>
 
 </html>
+

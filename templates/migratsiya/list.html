@@ -69,6 +69,7 @@
             <table class="premium-table">
                 <thead>
                     <tr>
+                        <th style="width: 60px;" class="text-center">№</th>
                         <th style="width: 300px;">{% sort_link 'fullname' "Yosh haqida ma'lumot" %}</th>
                         <th>{% sort_link 'passport_number' 'Hujjatlar' %}</th>
                         <th>{% sort_link 'mahalla' 'Mahalla' %}</th>
@@ -81,6 +82,7 @@
                 <tbody>
                     {% for youth in youths %}
                     <tr>
+                        <td class="text-center text-muted fw-semibold">{{ page_obj.start_index|add:forloop.counter0 }}</td>
                         <td>
                             <div class="user-cell">
                                 {% with leader=youth.yosh.mahalla.leaders.all|first %}
@@ -173,7 +175,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" class="text-center py-5">
+                        <td colspan="8" class="text-center py-5">
                             <div class="mb-3 text-muted">
                                 <i class="bi bi-database-exclamation display-4"></i>
                             </div>

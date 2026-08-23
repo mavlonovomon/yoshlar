@@ -69,6 +69,7 @@
             <table class="premium-table">
                 <thead>
                     <tr>
+                        <th style="width: 60px;" class="text-center">№</th>
                         <th>{% sort_link 'title' 'Tadbir nomi' %}</th>
                         <th>{% sort_link 'mahalla' 'Mahalla' %}</th>
                         <th>{% sort_link 'event_date' 'Sana' %}</th>
@@ -80,6 +81,7 @@
                 <tbody>
                     {% for event in events %}
                     <tr>
+                        <td class="text-center text-muted fw-semibold">{{ page_obj.start_index|add:forloop.counter0 }}</td>
                         <td>
                             <div class="fw-bold text-dark">{{ event.title }}</div>
                             <div class="text-muted smaller">{{ event.description|default:"-"|truncatechars:60 }}</div>
@@ -115,7 +117,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center py-5">
+                        <td colspan="7" class="text-center py-5">
                             <div class="mb-3 text-muted">
                                 <i class="bi bi-database-exclamation display-4"></i>
                             </div>

@@ -1,0 +1,242 @@
+/* ========================================
+   SIDEBAR - Stitch Design System
+   ======================================== */
+
+.sidebar {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    width: 280px;
+    height: calc(100vh - 70px);
+    background: #f1f3ff;
+    border-right: 1px solid #c7c4d8;
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+    z-index: 900;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Inter', sans-serif;
+}
+
+.sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: #c7c4d8;
+    border-radius: 4px;
+}
+
+/* ---- Navigation Menu ---- */
+.nav-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 12px;
+    flex: 1;
+}
+
+/* Nav Items */
+.sidebar .nav-item,
+.sidebar .nav-dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: #464555;
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 1.5;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-family: 'Inter', sans-serif;
+}
+
+.sidebar .nav-item .material-symbols-outlined,
+.sidebar .nav-dropdown-toggle .material-symbols-outlined {
+    font-size: 24px;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.nav-icon-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+}
+
+.nav-icon-wrap .material-symbols-outlined {
+    width: auto;
+}
+
+.nav-alert-dot {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #ba1a1a;
+    border: 2px solid #f1f3ff;
+    box-shadow: 0 0 0 2px rgba(186, 26, 26, 0.12);
+}
+
+/* Hover State */
+.sidebar .nav-item:hover,
+.sidebar .nav-dropdown-toggle:hover {
+    background: #e9edff;
+    color: #3525cd;
+}
+
+/* Active State */
+.sidebar .nav-item.active {
+    background: #4f46e5;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.sidebar .nav-item.active .material-symbols-outlined {
+    color: #ffffff;
+}
+
+/* ---- Dropdown ---- */
+.nav-dropdown.active .nav-dropdown-toggle {
+    background: #4f46e5;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.nav-dropdown.active .nav-dropdown-toggle .material-symbols-outlined {
+    color: #ffffff;
+}
+
+.nav-dropdown-toggle .chevron {
+    margin-left: auto;
+    font-size: 20px;
+    transition: transform 0.3s ease;
+    color: inherit;
+}
+
+.nav-dropdown.open .nav-dropdown-toggle .chevron {
+    transform: rotate(180deg);
+}
+
+/* Submenu */
+.nav-dropdown-content {
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    padding-left: 44px;
+}
+
+.nav-dropdown.open .nav-dropdown-content {
+    display: flex;
+}
+
+.nav-sub-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 6px;
+    color: #464555;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.6;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.nav-sub-item:hover {
+    background: #e9edff;
+    color: #3525cd;
+}
+
+.nav-sub-item.active {
+    background: #e9edff;
+    color: #3525cd;
+    font-weight: 700;
+}
+
+/* ---- Divider ---- */
+.nav-menu hr {
+    border: none;
+    border-top: 1px solid #c7c4d8;
+    margin: 8px 0;
+}
+
+/* ---- Bottom Section ---- */
+.sidebar-bottom {
+    margin-top: auto;
+    padding: 16px 12px;
+    border-top: 1px solid #c7c4d8;
+}
+
+.sidebar-bottom .nav-item {
+    color: #464555;
+}
+
+.sidebar-bottom .nav-item:hover {
+    background: #e9edff;
+    color: #3525cd;
+}
+
+.sidebar-bottom .nav-item.logout {
+    color: #ba1a1a;
+}
+
+.sidebar-bottom .nav-item.logout:hover {
+    background: #ffdad6;
+    color: #ba1a1a;
+}
+
+/* ---- Sidebar Collapsed State ---- */
+body.sidebar-collapsed .sidebar {
+    width: 72px;
+}
+
+body.sidebar-collapsed .sidebar .nav-item span,
+body.sidebar-collapsed .sidebar .nav-dropdown-toggle > span:not(.material-symbols-outlined),
+body.sidebar-collapsed .sidebar .nav-dropdown-toggle .chevron,
+body.sidebar-collapsed .sidebar .nav-sub-item {
+    display: none !important;
+}
+
+body.sidebar-collapsed .sidebar .nav-item,
+body.sidebar-collapsed .sidebar .nav-dropdown-toggle {
+    justify-content: center;
+    padding: 12px;
+}
+
+/* ---- Mobile Sidebar ---- */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+        width: 280px !important;
+        box-shadow: none;
+    }
+
+    body.sidebar-open .sidebar {
+        transform: translateX(0);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    body.sidebar-open .sidebar-overlay {
+        display: block;
+    }
+}

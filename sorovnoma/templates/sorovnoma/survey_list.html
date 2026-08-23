@@ -10,7 +10,7 @@
 
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white border-0 pt-3">
-            <ul class="nav nav-pills card-header-pills" id="surveyTabs" role="tablist">
+            <ul class="nav nav-pills card-header-pills" id="surveyTabs" role="tablist" style="display: flex !important; flex-direction: row !important;">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active-pane" type="button" role="tab" aria-controls="active-pane" aria-selected="true">
                         <i class="bi bi-play-circle me-1"></i> Aktiv
@@ -67,7 +67,7 @@
                                             </div>
                                         {% else %}
                                             {% if s.allow_multi %}
-                                                <div class="btn-group btn-group-sm">
+                                                <div class="btn-group btn-group-sm" role="group">
                                                     <a href="{% url 'sorovnoma:survey_fill' s.pk %}" class="btn btn-outline-success"><i class="bi bi-plus-circle"></i> Yangi to'ldirish</a>
                                                     {% if s.user_response_count > 0 %}
                                                     <a href="{% url 'sorovnoma:survey_response_list' s.pk %}" class="btn btn-outline-info" title="Natijalarim"><i class="bi bi-list-columns"></i> Natijalarim <span class="badge bg-info text-white ms-1">{{ s.user_response_count }}</span></a>
@@ -75,7 +75,7 @@
                                                 </div>
                                             {% else %}
                                                 {% if s.user_response_id %}
-                                                    <div class="btn-group btn-group-sm">
+                                                    <div class="btn-group btn-group-sm" role="group">
                                                         <a href="{% url 'sorovnoma:survey_response_detail' s.user_response_id %}" class="btn btn-outline-info" title="Ko'rish"><i class="bi bi-eye"></i> Javobim</a>
                                                         {% if s.allow_edit %}
                                                         <a href="{% url 'sorovnoma:survey_response_edit' s.user_response_id %}" class="btn btn-outline-warning" title="O'zgartirish"><i class="bi bi-pencil-square"></i></a>
@@ -198,8 +198,42 @@
 </div>
 
 <style>
-.nav-pills .nav-link{color:#64748b;font-weight:500;padding:.5rem 1.25rem;border-radius:6px;transition:all .2s; margin-right: 5px;}
-.nav-pills .nav-link:hover{background-color:#f1f5f9;color:#334155}
-.nav-pills .nav-link.active{background-color:#e2e8f0;color:#0f172a;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+/* Override sidebar.css conflicts */
+#surveyTabs {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+}
+
+#surveyTabs .nav-item {
+    display: inline-block !important;
+    flex-direction: row !important;
+    margin-bottom: 0 !important;
+}
+
+#surveyTabs .nav-link {
+    color: #64748b !important;
+    font-weight: 500 !important;
+    padding: .5rem 1.25rem !important;
+    border-radius: 6px !important;
+    transition: all .2s !important;
+    background: transparent !important;
+}
+
+#surveyTabs .nav-link:hover {
+    background-color: #f1f5f9 !important;
+    color: #334155 !important;
+}
+
+#surveyTabs .nav-link.active {
+    background-color: #e2e8f0 !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,.05) !important;
+}
+
+.card-header-pills {
+    margin: 0 !important;
+}
 </style>
 {% endblock %}

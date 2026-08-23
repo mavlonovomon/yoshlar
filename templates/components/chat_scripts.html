@@ -1,0 +1,295 @@
+{% load static %}
+<script>
+const Chat = {
+    isOpen: false,
+    currentContact: null,
+    contacts: [],
+    messages: [],
+    pollInterval: null,
+    heartbeatInterval: null,
+    emojiPickerOpen: false,
+
+    emojis: [
+        '😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃',
+        '😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙',
+        '🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🫢',
+        '🤔','🫡','🤐','🤨','😐','😑','😶','🫥','😏','😒',
+        '🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒',
+        '🤕','🤢','🤮','🥵','🥶','🥴','😵','🤯','🤠','🥳',
+        '🥸','😎','🤓','🧐','😕','🫤','😟','🙁','😮','😯',
+        '😲','😳','🥺','🥹','😦','😧','😨','😰','😥','😢',
+        '😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤',
+        '😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹',
+        '👺','👻','👽','👾','🤖','😺','😸','😹','😻','😼',
+        '👋','🤚','🖐️','✋','🖖','🫱','🫲','🫳','🫴','👌',
+        '🤌','🤏','✌️','🤞','🫰','🤟','🤘','🤙','👈','👉',
+        '👆','🖕','👇','☝️','🫵','👍','👎','✊','👊','🤛',
+        '🤜','👏','🙌','🫶','👐','🤲','🤝','🙏','❤️','🧡',
+        '💛','💚','💙','💜','🖤','🤍','🤎','💔','❤️‍🔥','💕',
+        '💞','💓','💗','💖','💘','💝','💟','🔥','⭐','🌟',
+        '✨','💫','🎉','🎊','🎈','🎁','🎂','🍰','🍕','🍔',
+        '🍟','🌭','🍿','🧀','🥚','🍳','🥞','🧇','🥓','🥩',
+        '🍗','🍖','🌮','🌯','🫔','🥙','🧆','🥗','🍝','🍜',
+        '🍲','🍛','🍣','🍱','🥟','🦪','🍤','🍙','🍚','🍘'
+    ],
+
+    init() {
+        this.loadEmojiPicker();
+        this.startHeartbeat();
+        this.startPolling();
+        this.updateBadge();
+    },
+
+    toggle() {
+        this.isOpen = !this.isOpen;
+        const panel = document.getElementById('chatPanel');
+        if (this.isOpen) {
+            panel.style.display = 'block';
+            panel.classList.add('chat-panel-open');
+            this.loadContacts();
+        } else {
+            panel.classList.remove('chat-panel-open');
+            setTimeout(() => { panel.style.display = 'none'; }, 200);
+        }
+    },
+
+    loadContacts() {
+        fetch('/chat/api/contacts/')
+            .then(r => r.json())
+            .then(data => {
+                this.contacts = data.contacts;
+                this.renderContacts();
+            });
+    },
+
+    renderContacts(filter = '') {
+        const list = document.getElementById('chatContactsList');
+        const filtered = filter 
+            ? this.contacts.filter(c => c.full_name.toLowerCase().includes(filter.toLowerCase()))
+            : this.contacts;
+
+        if (filtered.length === 0) {
+            list.innerHTML = '<div class="chat-empty">Hech qanday suhbat topilmadi</div>';
+            return;
+        }
+
+        list.innerHTML = filtered.map(c => `
+            <div class="chat-contact-item" onclick="Chat.openChat(${c.id}, '${c.full_name.replace(/'/g, "\\'")}', '${c.profile_image || ''}')">
+                <div class="chat-contact-item-avatar">
+                    ${c.profile_image 
+                        ? `<img src="${c.profile_image}" alt="${c.full_name}">` 
+                        : `<div class="chat-avatar-placeholder">${c.full_name.charAt(0).toUpperCase()}</div>`}
+                    ${c.is_online ? '<span class="chat-online-dot"></span>' : ''}
+                </div>
+                <div class="chat-contact-item-info">
+                    <div class="chat-contact-item-name">${c.full_name}</div>
+                    <div class="chat-contact-item-msg">${c.last_message ? (c.last_message.length > 30 ? c.last_message.substring(0, 30) + '...' : c.last_message) : 'Suhbatni boshlang'}</div>
+                </div>
+                <div class="chat-contact-item-meta">
+                    <div class="chat-contact-item-time">${c.last_message_time ? this.formatTime(c.last_message_time) : ''}</div>
+                    ${c.unread_count > 0 ? `<span class="chat-unread-badge">${c.unread_count}</span>` : ''}
+                </div>
+            </div>
+        `).join('');
+    },
+
+    filterContacts(value) {
+        this.renderContacts(value);
+    },
+
+    openChat(userId, name, avatar) {
+        this.currentContact = { id: userId, name: name, avatar: avatar };
+        document.getElementById('chatContacts').style.display = 'none';
+        document.getElementById('chatView').style.display = 'flex';
+        document.getElementById('chatContactName').textContent = name;
+        
+        const avatarEl = document.getElementById('chatContactAvatar');
+        if (avatar) {
+            avatarEl.innerHTML = `<img src="${avatar}" alt="${name}">`;
+        } else {
+            avatarEl.innerHTML = `<div class="chat-avatar-placeholder">${name.charAt(0).toUpperCase()}</div>`;
+        }
+
+        this.loadMessages();
+        this.markAsRead();
+    },
+
+    backToContacts() {
+        this.currentContact = null;
+        document.getElementById('chatView').style.display = 'none';
+        document.getElementById('chatContacts').style.display = 'flex';
+        this.loadContacts();
+    },
+
+    loadMessages() {
+        if (!this.currentContact) return;
+        
+        fetch(`/chat/api/messages/${this.currentContact.id}/`)
+            .then(r => r.json())
+            .then(data => {
+                this.messages = data.messages;
+                this.renderMessages();
+                this.updateContactStatus();
+            });
+    },
+
+    renderMessages() {
+        const container = document.getElementById('chatMessages');
+        const currentUserId = {{ request.user.id }};
+        
+        container.innerHTML = this.messages.map(m => `
+            <div class="chat-message ${m.sender_id === currentUserId ? 'chat-message-sent' : 'chat-message-received'}">
+                <div class="chat-message-bubble">${this.escapeHtml(m.text)}</div>
+                <div class="chat-message-time">${this.formatTime(m.created_at)}</div>
+            </div>
+        `).join('');
+
+        container.scrollTop = container.scrollHeight;
+    },
+
+    updateContactStatus() {
+        if (!this.currentContact) return;
+        const contact = this.contacts.find(c => c.id === this.currentContact.id);
+        if (contact) {
+            const statusEl = document.getElementById('chatContactStatus');
+            if (contact.is_online) {
+                statusEl.textContent = 'online';
+                statusEl.classList.add('online');
+            } else {
+                statusEl.textContent = contact.last_seen ? `oxirgi faollik: ${this.formatTime(contact.last_seen)}` : 'offline';
+                statusEl.classList.remove('online');
+            }
+        }
+    },
+
+    send() {
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if (!text || !this.currentContact) return;
+
+        fetch(`/chat/api/messages/${this.currentContact.id}/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': this.getCSRF() },
+            body: JSON.stringify({ text })
+        })
+        .then(r => r.json())
+        .then(data => {
+            this.messages.push({
+                id: data.id,
+                sender_id: {{ request.user.id }},
+                text: data.text,
+                created_at: data.created_at,
+                read_at: null
+            });
+            this.renderMessages();
+            input.value = '';
+            input.style.height = 'auto';
+            this.loadContacts();
+        });
+    },
+
+    markAsRead() {
+        if (!this.currentContact) return;
+        fetch(`/chat/api/read/${this.currentContact.id}/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': this.getCSRF() }
+        }).then(() => this.updateBadge());
+    },
+
+    handleKeydown(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            this.send();
+        }
+    },
+
+    autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+    },
+
+    toggleEmoji() {
+        this.emojiPickerOpen = !this.emojiPickerOpen;
+        document.getElementById('chatEmojiPicker').style.display = this.emojiPickerOpen ? 'grid' : 'none';
+    },
+
+    insertEmoji(emoji) {
+        const input = document.getElementById('chatInput');
+        input.value += emoji;
+        input.focus();
+    },
+
+    loadEmojiPicker() {
+        const picker = document.getElementById('chatEmojiPicker');
+        picker.innerHTML = this.emojis.map(e => 
+            `<span class="chat-emoji-item" onclick="Chat.insertEmoji('${e}')">${e}</span>`
+        ).join('');
+    },
+
+    startPolling() {
+        this.pollInterval = setInterval(() => {
+            if (this.isOpen) {
+                this.loadContacts();
+                if (this.currentContact) {
+                    this.loadMessages();
+                    this.markAsRead();
+                }
+                this.updateBadge();
+            }
+        }, 3000);
+    },
+
+    startHeartbeat() {
+        const heartbeat = () => {
+            fetch('/chat/api/heartbeat/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': this.getCSRF() }
+            });
+        };
+        heartbeat();
+        this.heartbeatInterval = setInterval(heartbeat, 30000);
+    },
+
+    updateBadge() {
+        fetch('/chat/api/unread-count/')
+            .then(r => r.json())
+            .then(data => {
+                const badge = document.getElementById('chatBadge');
+                if (data.count > 0) {
+                    badge.textContent = data.count;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            });
+    },
+
+    formatTime(isoString) {
+        const date = new Date(isoString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        
+        if (diffMins < 1) return 'hozir';
+        if (diffMins < 60) return `${diffMins} daqiqa oldin`;
+        
+        const diffHours = Math.floor(diffMins / 60);
+        if (diffHours < 24) return `${diffHours} soat oldin`;
+        
+        return date.toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short' });
+    },
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    },
+
+    getCSRF() {
+        const cookie = document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='));
+        return cookie ? cookie.split('=')[1] : '';
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => Chat.init());
+</script>

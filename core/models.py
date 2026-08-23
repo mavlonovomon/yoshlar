@@ -477,3 +477,70 @@ class QizlarAkademiyasiMahallaAlias(models.Model):
 
     def __str__(self):
         return f"{self.api_name} -> {self.mahalla or '-'}"
+
+
+# ============ CHAT MODELS ============
+
+class Chat(models.Model):
+    """1-on-1 suhbat."""
+    user1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chats_as_user1')
+    user2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chats_as_user2')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user1', 'user2')
+        ordering = ['-updated_at']
+        verbose_name = "Chat"
+        verbose_name_plural = "Chatlar"
+
+    def __str__(self):
+        return f"Chat: {self.user1} <-> {self.user2}"
+
+    @classmethod
+    def get_or_create_chat(cls, user_a, user_b):
+        """Ikki foydalanuvchi o'rtasidagi chatni olish yoki yaratish."""
+        if user_a.pk > user_b.pk:
+            user_a, user_b = user_b, user_a
+        chat, _ = cls.objects.get_or_create(user1=user_a, user2=user_b)
+        return chat
+
+
+class ChatMessage(models.Model):
+    """Chat xabari."""
+    chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField(max_length=2000)
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = "Chat xabari"
+        verbose_name_plural = "Chat xabarlar"
+
+    def __str__(self):
+        return f"{self.sender}: {self.text[:50]}"
+
+    @property
+    def is_read(self):
+        return self.read_at is not None
+
+
+class ChatSession(models.Model):
+    """Foydalanuvchi online statusi."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='chat_session')
+    last_seen = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Chat sessiya"
+        verbose_name_plural = "Chat sessiyalar"
+
+    def __str__(self):
+        return f"{self.user} - {self.last_seen}"
+
+    @property
+    def is_online(self):
+        from django.utils import timezone
+        import datetime
+        return (timezone.now() - self.last_seen) < datetime.timedelta(seconds=30)

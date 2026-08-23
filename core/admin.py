@@ -18,6 +18,9 @@ from .models import (
     QizlarAkademiyasiStatSnapshot,
     QizlarAkademiyasiMahallaStat,
     QizlarAkademiyasiMahallaAlias,
+    Chat,
+    ChatMessage,
+    ChatSession,
 )
 from django.contrib.auth.admin import UserAdmin
 
@@ -269,3 +272,32 @@ def _mega_get_app_list(request, app_label=None):
 
 
 admin.site.get_app_list = _mega_get_app_list
+
+
+@admin.register(Chat)
+class ChatAdmin(admin.ModelAdmin):
+    list_display = ('user1', 'user2', 'created_at', 'updated_at')
+    list_filter = ('created_at',)
+    search_fields = ('user1__full_name', 'user2__full_name')
+    raw_id_fields = ('user1', 'user2')
+
+
+@admin.register(ChatMessage)
+class ChatMessageAdmin(admin.ModelAdmin):
+    list_display = ('chat', 'sender', 'text_preview', 'created_at', 'read_at')
+    list_filter = ('created_at', 'read_at')
+    search_fields = ('sender__full_name', 'text')
+    raw_id_fields = ('chat', 'sender')
+    readonly_fields = ('created_at',)
+
+    def text_preview(self, obj):
+        return obj.text[:50] + '...' if len(obj.text) > 50 else obj.text
+    text_preview.short_description = 'Xabar'
+
+
+@admin.register(ChatSession)
+class ChatSessionAdmin(admin.ModelAdmin):
+    list_display = ('user', 'last_seen', 'is_online')
+    search_fields = ('user__full_name', 'user__username')
+    raw_id_fields = ('user',)
+    readonly_fields = ('last_seen',)

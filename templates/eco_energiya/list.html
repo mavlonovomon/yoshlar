@@ -1,132 +1,529 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% block extra_css %}
+<style>
+/* Eco Energiya Page Styles */
+.eco-page-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.eco-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: #f1f3ff;
+    border: 1px solid #c7c4d8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f59e0b;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.eco-page-title {
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: #141b2b;
+    letter-spacing: -0.5px;
+    line-height: 1.25;
+    margin: 0;
+}
+
+/* Stats Cards */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: #ffffff;
+    border: 1px solid #c7c4d8;
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.stat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.stat-card-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: #464555;
+    font-weight: 500;
+}
+
+.stat-card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-card-icon.blue {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.stat-card-icon.green {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.stat-card-icon.red {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.stat-card-icon.amber {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.stat-card-value {
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: #141b2b;
+    letter-spacing: -0.02em;
+    line-height: 1;
+}
+
+.stat-card-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    width: 100%;
+}
+
+.stat-card-progress-bg {
+    height: 100%;
+    transition: width 0.5s ease;
+}
+
+.stat-card-progress-bg.blue {
+    background: #3b82f6;
+}
+
+.stat-card-progress-bg.green {
+    background: #10b981;
+}
+
+.stat-card-progress-bg.red {
+    background: #ef4444;
+}
+
+.stat-card-progress-bg.amber {
+    background: #f59e0b;
+}
+
+/* Table Container */
+.eco-table-container {
+    background: #ffffff;
+    border: 1px solid #c7c4d8;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.eco-table-toolbar {
+    padding: 16px 20px;
+    border-bottom: 1px solid #c7c4d8;
+    background: #d3daef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.eco-table-title {
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #141b2b;
+    margin: 0;
+}
+
+.eco-export-btn {
+    background: #4f46e5;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.eco-export-btn:hover {
+    background: #3525cd;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+/* Table Styles */
+.eco-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.eco-table thead {
+    background: #f9f9ff;
+    border-bottom: 1px solid #c7c4d8;
+}
+
+.eco-table th {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: #464555;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 12px 20px;
+    text-align: left;
+}
+
+.eco-table th.text-center {
+    text-align: center;
+}
+
+.eco-table th.text-right {
+    text-align: right;
+}
+
+.eco-table tbody tr {
+    border-bottom: 1px solid #c7c4d8;
+    transition: background-color 0.2s ease;
+}
+
+.eco-table tbody tr:hover {
+    background: #f1f3ff;
+}
+
+.eco-table td {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: #3f495a;
+    padding: 12px 20px;
+}
+
+.eco-table td.text-center {
+    text-align: center;
+}
+
+.eco-table td.text-right {
+    text-align: right;
+}
+
+.eco-table-index {
+    color: #777587;
+}
+
+.eco-table-name {
+    font-weight: 500;
+    color: #141b2b;
+}
+
+.eco-table-value {
+    font-weight: 500;
+    color: #141b2b;
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.02em;
+}
+
+.status-badge.installed {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.status-badge.not-installed {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.status-dot.green {
+    background: #059669;
+}
+
+.status-dot.red {
+    background: #dc2626;
+}
+
+/* Edit Button */
+.edit-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #c7c4d8;
+    color: #777587;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0;
+}
+
+.eco-table tbody tr:hover .edit-btn {
+    opacity: 1;
+}
+
+.edit-btn:hover {
+    background: #e9edff;
+    color: #3525cd;
+    border-color: #4f46e5;
+}
+
+/* Modal Styles */
+.modal-content {
+    border-radius: 8px;
+    border: 1px solid #c7c4d8;
+}
+
+.modal-header {
+    border-bottom: 1px solid #c7c4d8;
+    font-family: 'Hanken Grotesk', sans-serif;
+}
+
+.modal-body label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: #141b2b;
+}
+
+.modal-body input,
+.modal-body select {
+    border: 1px solid #c7c4d8;
+    border-radius: 8px;
+    background: #f1f3ff;
+    font-family: 'Inter', sans-serif;
+}
+
+.modal-body input:focus,
+.modal-body select:focus {
+    border-color: #3525cd;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    background: #ffffff;
+}
+
+.modal-footer {
+    border-top: 1px solid #c7c4d8;
+}
+
+.modal-footer .btn-primary {
+    background: #4f46e5;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+}
+
+.modal-footer .btn-primary:hover {
+    background: #3525cd;
+}
+
+.modal-footer .btn-secondary {
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0">
-            <i class="bi bi-sun text-warning"></i> Eco Energiya — Quyosh Panellari
-        </h4>
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="eco-page-header">
+        <div class="eco-icon-box">
+            <span class="material-symbols-outlined" style="font-size: 28px; font-variation-settings: 'FILL' 1;">sunny</span>
+        </div>
+        <h2 class="eco-page-title">Eco Energiya — Quyosh Panellari</h2>
     </div>
 
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0 bg-primary text-white">
-                <div class="card-body text-center">
-                    <i class="bi bi-grid-3x3-gap fs-1"></i>
-                    <h3 class="mb-0 mt-2">{{ total_count }}</h3>
-                    <small>Jami mahallalar</small>
+    <!-- Stats Row -->
+    <div class="stats-grid">
+        <!-- Stat Card 1: Total Mahallas -->
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <p class="stat-card-label">Jami mahallalar</p>
+                <div class="stat-card-icon blue">
+                    <span class="material-symbols-outlined">grid_view</span>
                 </div>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0 bg-success text-white">
-                <div class="card-body text-center">
-                    <i class="bi bi-check-circle-fill fs-1"></i>
-                    <h3 class="mb-0 mt-2">{{ installed_count }}</h3>
-                    <small>O'rnatilgan</small>
-                </div>
+            <p class="stat-card-value">{{ total_count }}</p>
+            <div class="stat-card-progress">
+                <div class="stat-card-progress-bg blue" style="width: 100%;"></div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0 bg-danger text-white">
-                <div class="card-body text-center">
-                    <i class="bi bi-x-circle-fill fs-1"></i>
-                    <h3 class="mb-0 mt-2">{{ not_installed_count }}</h3>
-                    <small>O'natmagan</small>
+
+        <!-- Stat Card 2: Installed -->
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <p class="stat-card-label">O'rnatilgan</p>
+                <div class="stat-card-icon green">
+                    <span class="material-symbols-outlined">check_circle</span>
                 </div>
             </div>
+            <p class="stat-card-value">{{ installed_count }}</p>
+            <div class="stat-card-progress">
+                <div class="stat-card-progress-bg green" style="width: {% if total_count > 0 %}{% widthratio installed_count total_count 100 %}{% else %}0{% endif %}%;"></div>
+            </div>
         </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0 bg-warning text-dark">
-                <div class="card-body text-center">
-                    <i class="bi bi-lightning-charge-fill fs-1"></i>
-                    <h3 class="mb-0 mt-2">{{ total_capacity }} kVt</h3>
-                    <small>Jami quvvat</small>
+
+        <!-- Stat Card 3: Not Installed -->
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <p class="stat-card-label">O'rnatmagan</p>
+                <div class="stat-card-icon red">
+                    <span class="material-symbols-outlined">cancel</span>
                 </div>
+            </div>
+            <p class="stat-card-value">{{ not_installed_count }}</p>
+            <div class="stat-card-progress">
+                <div class="stat-card-progress-bg red" style="width: {% if total_count > 0 %}{% widthratio not_installed_count total_count 100 %}{% else %}0{% endif %}%;"></div>
+            </div>
+        </div>
+
+        <!-- Stat Card 4: Total Power -->
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <p class="stat-card-label">Umumiy quvvat (kVt)</p>
+                <div class="stat-card-icon amber">
+                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bolt</span>
+                </div>
+            </div>
+            <p class="stat-card-value">{{ total_capacity }}</p>
+            <div class="stat-card-progress">
+                <div class="stat-card-progress-bg amber" style="width: 80%;"></div>
             </div>
         </div>
     </div>
 
-    <div class="card shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" style="table-layout: fixed;">
-                    <colgroup>
-                        <col style="width: 50px;">
-                        <col>
-                        <col>
-                        <col>
-                        <col>
-                        <col>
+    <!-- Data Table Section -->
+    <div class="eco-table-container">
+        <!-- Table Toolbar -->
+        <div class="eco-table-toolbar">
+            <h3 class="eco-table-title">Mahallalar ro'yxati</h3>
+            <button class="eco-export-btn">
+                <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
+                Eksport
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="eco-table">
+                <thead>
+                    <tr>
+                        <th class="text-center" style="width: 60px;">#</th>
+                        <th>Mahalla nomi</th>
+                        <th>Sektor</th>
+                        <th>Holat</th>
+                        <th class="text-right">Quvvat (kVt)</th>
+                        <th>Sana</th>
                         {% if is_editor %}
-                        <col style="width: 70px;">
+                        <th class="text-center" style="width: 100px;">Amallar</th>
                         {% endif %}
-                    </colgroup>
-                    <thead class="table-light">
-                        <tr>
-                            <th>#</th>
-                            <th>Mahalla nomi</th>
-                            <th>Sektor</th>
-                            <th>Holat</th>
-                            <th>Quvvat (kVt)</th>
-                            <th>Sana</th>
-                            {% if is_editor %}
-                            <th>Amallar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for panel in panels %}
+                    <tr>
+                        <td class="text-center eco-table-index">{{ forloop.counter }}</td>
+                        <td class="eco-table-name">{{ panel.mahalla.name }}</td>
+                        <td>
+                            {% with leader=panel.mahalla.leaders.first %}
+                            {% if leader and leader.sector %}
+                            {{ leader.get_sector_display }}
+                            {% else %}
+                            —
                             {% endif %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for panel in panels %}
-                        <tr>
-                            <td class="text-muted">{{ forloop.counter }}</td>
-                            <td class="fw-semibold">{{ panel.mahalla.name }}</td>
-                            <td>
-                                {% with leader=panel.mahalla.leaders.first %}
-                                {% if leader and leader.sector %}
-                                {{ leader.get_sector_display }}
-                                {% else %}
-                                —
-                                {% endif %}
-                                {% endwith %}
-                            </td>
-                            <td>
-                                {% if panel.is_installed %}
-                                <span class="badge bg-success">
-                                    <i class="bi bi-check-circle-fill"></i> O'rnatilgan
-                                </span>
-                                {% else %}
-                                <span class="badge bg-danger">
-                                    <i class="bi bi-x-circle-fill"></i> O'natmagan
-                                </span>
-                                {% endif %}
-                            </td>
-                            <td>{{ panel.capacity_kw|default:"—" }}</td>
-                            <td>{{ panel.installed_date|date:"d.m.Y"|default:"—" }}</td>
-                            {% if is_editor %}
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary edit-btn"
-                                    data-id="{{ panel.id }}"
-                                    data-mahalla="{{ panel.mahalla.name }}"
-                                    data-installed="{{ panel.is_installed|yesno:'true,false' }}"
-                                    data-capacity="{{ panel.capacity_kw|default:'' }}"
-                                    data-date="{{ panel.installed_date|date:'Y-m-d'|default:'' }}"
-                                    title="Tahrirlash">
-                                    <i class="bi bi-pencil-square"></i>
-                                </button>
-                            </td>
+                            {% endwith %}
+                        </td>
+                        <td>
+                            {% if panel.is_installed %}
+                            <span class="status-badge installed">
+                                <span class="status-dot green"></span>
+                                O'rnatilgan
+                            </span>
+                            {% else %}
+                            <span class="status-badge not-installed">
+                                <span class="status-dot red"></span>
+                                O'rnatmagan
+                            </span>
                             {% endif %}
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="{% if is_editor %}7{% else %}6{% endif %}" class="text-center text-muted py-4">
-                                Ma'lumotlar topilmadi
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                        </td>
+                        <td class="text-right eco-table-value">{{ panel.capacity_kw|default:"—" }}</td>
+                        <td class="eco-table-index">{{ panel.installed_date|date:"d.m.Y"|default:"—" }}</td>
+                        {% if is_editor %}
+                        <td class="text-center">
+                            <button class="edit-btn"
+                                data-id="{{ panel.id }}"
+                                data-mahalla="{{ panel.mahalla.name }}"
+                                data-installed="{{ panel.is_installed|yesno:'true,false' }}"
+                                data-capacity="{{ panel.capacity_kw|default:'' }}"
+                                data-date="{{ panel.installed_date|date:'Y-m-d'|default:'' }}"
+                                title="Tahrirlash">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">edit</span>
+                            </button>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if is_editor %}7{% else %}6{% endif %}" class="text-center" style="padding: 40px; color: #777587;">
+                            Ma'lumotlar topilmadi
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -139,14 +536,15 @@
                 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="bi bi-pencil-square"></i> <span id="modalMahallaName"></span>
+                        <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 20px;">edit</span>
+                        <span id="modalMahallaName"></span>
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3 form-check form-switch">
                         <input type="checkbox" class="form-check-input" id="editInstalled" name="is_installed">
-                        <label class="form-check-label" for="editInstalled">Quyosh paneli o'rnatilgan</label>
+                        <label class="form-check-label" for="editInstalled" style="font-size: 14px; text-transform: none;">Quyosh paneli o'rnatilgan</label>
                     </div>
                     <div class="mb-3">
                         <label for="editCapacity" class="form-label">Quvvat (kVt)</label>
@@ -160,7 +558,8 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Yopish</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-lg"></i> Saqlash
+                        <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">check</span>
+                        Saqlash
                     </button>
                 </div>
             </form>
