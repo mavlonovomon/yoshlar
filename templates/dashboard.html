@@ -11,20 +11,120 @@
 <div class="container-fluid py-4 dashboard-page">
     {% include 'components/page_header.html' with title="Umumiy Dashboard" subtitle="Tizimdagi barcha yoshlar va suhbatlar statistikasi" show_refresh=True %}
 
-    <div class="row g-4 mb-5 row-cols-1 row-cols-md-2 row-cols-lg-4">
-        {% include 'components/stats_card.html' with col_class='col' icon='bi-people' icon_bg_class='bg-primary-subtle' icon_text_class='text-primary' label='Jami yoshlar' value=total_yosh progress_class='bg-primary' progress_percent='100' %}
-        {% include 'components/stats_card.html' with col_class='col' icon='bi-check-circle' icon_bg_class='bg-success-subtle' icon_text_class='text-success' label="Suhbat o'tkazilgan" value=suhbat_bor progress_class='bg-success' progress_percent='100' %}
-        {% include 'components/stats_card.html' with col_class='col' icon='bi-x-circle' icon_bg_class='bg-danger-subtle' icon_text_class='text-danger' label='Kutilmoqda' value=suhbat_yoq progress_class='bg-danger' progress_percent='100' %}
-        {% include 'components/stats_card.html' with col_class='col' icon='bi-journal-text' icon_bg_class='bg-info-subtle' icon_text_class='text-info' label='Jami suhbatlar' value=total_meetings progress_class='bg-info' progress_percent='100' %}
+    <!-- Stats Cards Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden stats-card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div class="stats-icon bg-primary-subtle text-primary">
+                            <i class="bi bi-people"></i>
+                        </div>
+                    </div>
+                    <div class="stats-content mt-3">
+                        <h3 class="stats-value mb-1">{{ total_yosh }}</h3>
+                        <p class="stats-label mb-0">Jami yoshlar</p>
+                    </div>
+                </div>
+                <div class="stats-progress">
+                    <div class="progress-bar bg-primary" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden stats-card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div class="stats-icon bg-success-subtle text-success">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                    </div>
+                    <div class="stats-content mt-3">
+                        <h3 class="stats-value mb-1">{{ suhbat_bor }}</h3>
+                        <p class="stats-label mb-0">Suhbat o'tkazilgan</p>
+                    </div>
+                </div>
+                <div class="stats-progress">
+                    <div class="progress-bar bg-success" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden stats-card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div class="stats-icon bg-danger-subtle text-danger">
+                            <i class="bi bi-x-circle"></i>
+                        </div>
+                    </div>
+                    <div class="stats-content mt-3">
+                        <h3 class="stats-value mb-1">{{ suhbat_yoq }}</h3>
+                        <p class="stats-label mb-0">Kutilmoqda</p>
+                    </div>
+                </div>
+                <div class="stats-progress">
+                    <div class="progress-bar bg-danger" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden stats-card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div class="stats-icon bg-info-subtle text-info">
+                            <i class="bi bi-journal-text"></i>
+                        </div>
+                    </div>
+                    <div class="stats-content mt-3">
+                        <h3 class="stats-value mb-1">{{ total_meetings }}</h3>
+                        <p class="stats-label mb-0">Jami suhbatlar</p>
+                    </div>
+                </div>
+                <div class="stats-progress">
+                    <div class="progress-bar bg-info" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="row g-4 mb-5">
-        {% include 'components/chart_card.html' with col_class='col-xl-5' title="Suhbat holati" canvas_id="meetingStatusChart" canvas_height="240" %}
-        {% include 'components/chart_card.html' with col_class='col-xl-7' title="Bo'limlar bo'yicha qamrov" canvas_id="moduleSummaryChart" canvas_height="240" %}
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-5">
+            <div class="card border-0 shadow-sm chart-card">
+                <div class="card-header bg-white border-0 py-3 px-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h5 class="chart-title fw-bold mb-0">Suhbat holati</h5>
+                    </div>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="chart-container">
+                        <canvas id="meetingStatusChart" height="240"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-7">
+            <div class="card border-0 shadow-sm chart-card">
+                <div class="card-header bg-white border-0 py-3 px-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h5 class="chart-title fw-bold mb-0">Bo'limlar bo'yicha qamrov</h5>
+                    </div>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="chart-container">
+                        <canvas id="moduleSummaryChart" height="240"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Mahalla Map Section -->
-    <div class="mahalla-map-section mb-5">
+    <div class="mahalla-map-section mb-4">
         <div class="dashboard-section-head mb-3">
             <h5 class="fw-bold mb-1 text-dark">Mahallalar xaritasi</h5>
             <p class="text-muted small mb-0">Mahallani bosib batafsil statistikani ko'ring</p>
@@ -34,13 +134,14 @@
         </div>
     </div>
 
+    <!-- Module Summary Section -->
     <div class="dashboard-section-head mb-4">
         <h5 class="fw-bold mb-1 text-dark">Bo'limlar bo'yicha umumiy holat</h5>
         <p class="text-muted small mb-0">Alohida dashboardlar o'rniga yagona ko'rinish</p>
     </div>
-    <div class="row g-4 mb-5 row-cols-1 row-cols-md-2 row-cols-xl-5">
+    <div class="row g-4 mb-4">
         {% for module in module_summary %}
-        <div class="col">
+        <div class="col-xl col-md-4 col-sm-6">
             <div class="card border-0 shadow-sm h-100 module-card">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-start mb-3">
@@ -61,11 +162,12 @@
     </div>
 
     {% if show_online_users %}
+    <!-- Online Users Section -->
     <div class="dashboard-section-head mb-4">
         <h5 class="fw-bold mb-1 text-dark">Hozir onlayn foydalanuvchilar</h5>
         <p class="text-muted small mb-0">Sessiyada faol bo'lgan foydalanuvchilar oxirgi faollik vaqtiga ko'ra ko'rsatiladi.</p>
     </div>
-    <div class="card border-0 shadow-sm mb-5">
+    <div class="card border-0 shadow-sm mb-4 online-users-card">
         <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
             <div>
                 <h5 class="fw-bold mb-0 text-dark">Onlayn userlar</h5>
@@ -121,10 +223,11 @@
     </div>
     {% endif %}
 
+    <!-- Recent Meetings Table -->
     <div class="card border-0 shadow-sm overflow-hidden recent-meetings-card">
         <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
             <h5 class="fw-bold mb-0 text-dark">Oxirgi Suhbatlar</h5>
-            <a href="{% url 'yosh_list' %}" class="btn btn-primary-soft btn-sm rounded-pill px-4">Barcha yoshlar</a>
+            <a href="{% url 'yosh_list' %}" class="btn btn-primary btn-sm rounded-pill px-4">Barcha yoshlar</a>
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">

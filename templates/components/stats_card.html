@@ -1,23 +1,25 @@
 <div class="{{ col_class|default:'col-xl-3 col-md-6' }}">
-    <div class="card border-0 shadow-sm h-100 overflow-hidden">
+    <div class="card border-0 shadow-sm h-100 overflow-hidden stats-card">
         <div class="card-body p-4">
-            <div class="d-flex align-items-center">
-                <div class="stats-icon {{ icon_bg_class }} {{ icon_text_class }} me-3">
-                    <i class="bi {{ icon }} fs-4"></i>
-                </div>
-                <div>
-                    <h6 class="text-muted small fw-bold text-uppercase mb-1">{{ label }}</h6>
-                    <h2 class="fw-bold mb-0">{{ value }}</h2>
+            <div class="d-flex align-items-start justify-content-between">
+                <div class="stats-icon {{ icon_bg_class }} {{ icon_text_class }}">
+                    <i class="bi {{ icon }}"></i>
                 </div>
                 {% if side_text %}
-                <div class="ms-auto text-end">
-                    <div class="small fw-bold {{ side_text_class|default:'' }}">{{ side_text }}</div>
+                <div class="stats-trend {{ side_text_class|default:'' }}">
+                    <i class="bi bi-arrow-up-short"></i>{{ side_text }}
                 </div>
                 {% endif %}
             </div>
+            <div class="stats-content mt-3">
+                <h3 class="stats-value mb-1">{{ value }}</h3>
+                <p class="stats-label mb-0">{{ label }}</p>
+            </div>
         </div>
-        <div class="stats-progress progress" style="height: 4px;">
+        {% if progress_percent %}
+        <div class="stats-progress">
             <div class="progress-bar {{ progress_class|default:'bg-primary' }}" style="width: {{ progress_percent|default:'100' }}%"></div>
         </div>
+        {% endif %}
     </div>
 </div>

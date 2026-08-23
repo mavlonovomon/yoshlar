@@ -1,10 +1,17 @@
 {% if col_class %}<div class="{{ col_class }}">{% endif %}
-    <div class="card border-0 shadow-sm">
+    <div class="card border-0 shadow-sm chart-card">
         <div class="card-header bg-white border-0 py-3 px-4">
-            <h5 class="fw-bold mb-0">{{ title }}</h5>
+            <div class="d-flex align-items-center justify-content-between">
+                <h5 class="chart-title fw-bold mb-0">{{ title }}</h5>
+                {% if subtitle %}
+                <span class="text-muted small">{{ subtitle }}</span>
+                {% endif %}
+            </div>
         </div>
-        <div class="card-body p-4">
-            <canvas id="{{ canvas_id }}" height="{{ canvas_height|default:'280' }}"></canvas>
+        <div class="card-body p-4 pt-0">
+            <div class="chart-container">
+                <canvas id="{{ canvas_id }}" height="{{ canvas_height|default:'280' }}"></canvas>
+            </div>
         </div>
     </div>
 {% if col_class %}</div>{% endif %}
