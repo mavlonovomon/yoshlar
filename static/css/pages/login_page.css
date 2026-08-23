@@ -1,20 +1,24 @@
+/* ========================================
+   LOGIN PAGE - Supplementary styles
+   ======================================== */
+
 .login-logo-wrap {
     display: flex;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .login-logo-badge {
-    width: 64px;
-    height: 64px;
-    background: #4f7fff;
-    border-radius: 16px;
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, #4f7fff 0%, #3d6fef 100%);
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #fff;
     font-size: 32px;
-    box-shadow: 0 10px 15px -3px rgba(79, 127, 255, 0.4);
+    box-shadow: 0 8px 20px -4px rgba(79, 127, 255, 0.35);
 }
 
 .login-inline-icon {
@@ -23,19 +27,11 @@
 
 .login-label-icon {
     margin-right: 6px;
+    color: #9ca3af;
 }
 
 .login-arrow-icon {
     font-size: 20px;
-}
-
-.btn-login-eimzo {
-    background: #16a34a;
-}
-
-.btn-login-eimzo:hover {
-    background: #15803d;
-    box-shadow: 0 10px 15px -3px rgba(22, 163, 74, 0.35);
 }
 
 .eimzo-status {
@@ -47,14 +43,8 @@
 
 .login-footer-note {
     text-align: center;
-    margin-top: 32px;
+    margin-top: 28px;
     color: #9ca3af;
     font-size: 12px;
     font-weight: 500;
-}
-
-.eimzo-trust-link {
-    color: #dc3545;
-    font-weight: 700;
-    text-decoration: underline;
 }

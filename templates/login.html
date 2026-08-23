@@ -6,9 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kirish - Yoshlar Tizimi</title>
     {% load static %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260329-2">
-    <link rel="stylesheet" href="{% static 'css/login.css' %}?v=20260329-2">
-    <link rel="stylesheet" href="{% static 'css/pages/login_page.css' %}?v=20260329-2">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}?v=20260823-1">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 </head>
@@ -16,96 +14,82 @@
 <body class="login-body" data-eimzo-challenge-url="{% url 'eimzo_auth:eimzo_challenge' %}"
     data-eimzo-verify-url="{% url 'eimzo_auth:eimzo_verify' %}" data-mahalla-id="{{ form.mahalla.id_for_label }}"
     data-username-id="{{ form.username.id_for_label }}">
+
     <div class="login-container">
-        <!-- CHAP PANEL -->
-        <div class="login-left-panel">
-            <div class="login-header" style="margin-bottom: 20px;">
-                <h2 style="font-size: 18px; color: #1f2937; margin-bottom: 15px; font-weight: 700;">Boshqa usullar bilan
-                    kirish</h2>
-                <p style="font-size: 13px; color: #6b7280; margin-bottom: 0;">Pasport yoki davlat xizmatlari orqali
-                    autentifikatsiya</p>
-            </div>
-
-            <div style="display: flex; flex-direction: column; gap: 15px;">
-                <a href="{% url 'login_oneid' %}" class="btn-login"
-                    style="background-color: #2e5b9f; color: white; text-decoration: none; margin-top: 0; padding: 14px; font-size: 15px; gap: 8px;">
-                    <i class="bi bi-person-bounding-box" style="font-size: 18px;"></i> OneID tizimi
-                </a>
-                <button type="button" id="eimzoLoginBtn" class="btn-login btn-login-eimzo"
-                    style="margin-top: 0; padding: 14px; font-size: 15px; gap: 8px;">
-                    <i class="bi bi-shield-lock" style="font-size: 18px;"></i> E-IMZO orqali
-                </button>
-            </div>
-            <div id="eimzoStatus" class="eimzo-status"></div>
-
-            <div class="login-footer-note" style="margin-top: 40px;">
-                &copy; 2026 Yoshlar Tizimi.<br>Barcha huquqlar himoyalangan.
+        <div class="login-logo-wrap">
+            <div class="login-logo-container">
+                <img src="{% static 'img/logo.png' %}" alt="Yoshlar Tizimi">
             </div>
         </div>
 
-        <!-- O'NG PANEL -->
-        <div class="login-right-panel">
-            <div class="login-header">
-                <div class="login-logo-container login-logo-wrap">
-                    <div class="login-logo-badge">
-                        <i class="bi bi-person-badge"></i>
-                    </div>
-                </div>
-                <h1 class="login-title">Yoshlar Tizimi</h1>
-                <p class="login-subtitle">Xush kelibsiz! Ma'lumotlaringizni kiriting.</p>
+        <div class="login-header">
+            <h1 class="login-title">Yoshlar Tizimi</h1>
+            <p class="login-subtitle">Ma'lumotlaringizni kiriting</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="error-container">
+                {% for error in form.non_field_errors %}
+                <i class="bi bi-exclamation-circle-fill login-inline-icon"></i> {{ error }}<br>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if oneid_error %}
+            <div class="error-container">
+                <i class="bi bi-exclamation-triangle-fill login-inline-icon"></i> {{ oneid_error }}
+            </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="{{ form.mahalla.id_for_label }}">
+                    <i class="bi bi-geo-alt login-label-icon"></i> Mahalla (Yetakchi uchun)
+                </label>
+                {{ form.mahalla }}
             </div>
 
-            <form method="post">
-                {% csrf_token %}
+            <div class="login-divider" id="adminLoginDivider">YOKI</div>
 
-                {% if form.non_field_errors %}
-                <div class="error-container">
-                    {% for error in form.non_field_errors %}
-                    <i class="bi bi-exclamation-circle-fill login-inline-icon"></i> {{ error }}<br>
-                    {% endfor %}
-                </div>
-                {% endif %}
-
-                {% if oneid_error %}
-                <div class="error-container"
-                    style="margin-top: 10px; background-color: #fde8e8; color: #c53030; padding: 10px; border-radius: 6px;">
-                    <i class="bi bi-exclamation-triangle-fill login-inline-icon"></i> {{ oneid_error }}
-                </div>
-                {% endif %}
-
-
-                <div class="form-group">
-                    <label for="{{ form.mahalla.id_for_label }}"><i class="bi bi-geo-alt login-label-icon"></i> Mahalla
-                        (Yetakchi uchun)</label>
-                    {{ form.mahalla }}
-                </div>
-
-                <div class="login-divider" id="adminLoginDivider">YOKI</div>
-
-                <div class="form-group" id="adminLoginGroup">
-                    <label for="{{ form.username.id_for_label }}"><i class="bi bi-person login-label-icon"></i> Login
-                        (Super Admin)</label>
-                    {{ form.username }}
-                </div>
-
-                <div class="form-group">
-                    <label for="{{ form.password.id_for_label }}"><i class="bi bi-lock login-label-icon"></i>
-                        Parol</label>
-                    {{ form.password }}
-                </div>
-
-                <button type="submit" class="btn-login">
-                    Tizimga kirish <i class="bi bi-arrow-right-short login-arrow-icon"></i>
-                </button>
-            </form>
-            <div class="login-footer-note"
-                style="text-align: center; margin-top: 24px; color: #64748b; font-size: 12px;">
-                &copy; 2026 Yoshlar Tizimi.<br>Barcha huquqlar himoyalangan.
+            <div class="form-group" id="adminLoginGroup">
+                <label for="{{ form.username.id_for_label }}">
+                    <i class="bi bi-person login-label-icon"></i> Login (Super Admin)
+                </label>
+                {{ form.username }}
             </div>
+
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}">
+                    <i class="bi bi-lock login-label-icon"></i> Parol
+                </label>
+                {{ form.password }}
+            </div>
+
+            <button type="submit" class="btn-login">
+                Tizimga kirish <i class="bi bi-arrow-right-short login-arrow-icon"></i>
+            </button>
+        </form>
+
+        <div class="login-divider">BOSHQA USULLAR</div>
+
+        <div class="login-alt-buttons">
+            <a href="{% url 'login_oneid' %}" class="btn-login-oneid">
+                <i class="bi bi-person-bounding-box" style="font-size: 18px;"></i> OneID tizimi
+            </a>
+            <button type="button" id="eimzoLoginBtn" class="btn-login-eimzo">
+                <i class="bi bi-shield-lock" style="font-size: 18px;"></i> E-IMZO orqali
+            </button>
+        </div>
+        <div id="eimzoStatus" class="eimzo-status"></div>
+
+        <div class="login-footer-note">
+            &copy; 2026 Yoshlar Tizimi. Barcha huquqlar himoyalangan.
         </div>
     </div>
 
-    <!-- E-IMZO Modal Oynasi -->
+    <!-- E-IMZO Modal -->
     <div id="eimzoModal"
         style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
         <div
@@ -140,9 +124,8 @@
         </div>
     </div>
 
-    <script src="{% static 'js/pages/login_bg_animation.js' %}?v=20260329-2"></script>
-    <script src="{% static 'js/pages/login_page.js' %}?v=20260329-2"></script>
+    <script src="{% static 'js/pages/login_bg_animation.js' %}?v=20260823-1"></script>
+    <script src="{% static 'js/pages/login_page.js' %}?v=20260823-1"></script>
 </body>
 
 </html>
-
