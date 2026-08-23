@@ -1,16 +1,28 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/sorovnoma.css' %}">
+{% endblock %}
 {% block content %}
 <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div>
             <h4 class="fw-bold mb-1">So'rovnomalar</h4>
             <p class="text-muted mb-0">Tizimdagi barcha so'rovnomalarni boshqarish</p>
         </div>
+        <form method="get" class="d-flex gap-2" role="search">
+            <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm survey-search-input"
+                placeholder="Nomi bo'yicha qidirish...">
+            <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-search"></i></button>
+            {% if q %}
+            <a href="{% url 'sorovnoma:survey_list' %}" class="btn btn-sm btn-outline-secondary" title="Tozalash"><i class="bi bi-x-lg"></i></a>
+            {% endif %}
+        </form>
     </div>
 
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white border-0 pt-3">
-            <ul class="nav nav-pills card-header-pills" id="surveyTabs" role="tablist" style="display: flex !important; flex-direction: row !important;">
+            <ul class="nav nav-pills card-header-pills" id="surveyTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active-pane" type="button" role="tab" aria-controls="active-pane" aria-selected="true">
                         <i class="bi bi-play-circle me-1"></i> Aktiv
@@ -30,210 +42,34 @@
         </div>
         <div class="card-body">
             <div class="tab-content" id="surveyTabContent">
-                
+
                 <!-- Aktiv -->
                 <div class="tab-pane fade show active" id="active-pane" role="tabpanel" aria-labelledby="active-tab">
-                    <div class="table-responsive rounded border">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 50px;">#</th>
-                                    <th>Nomi</th>
-                                    <th>Ta'rifi</th>
-                                    <th class="text-center">Yaratilgan vaqt</th>
-                                    <th class="text-center">Amallar</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for s in active_surveys %}
-                                <tr style="border-left: 5px solid {% if s.allow_multi %}#3b82f6{% else %}#10b981{% endif %};">
-                                    <td>{{ forloop.counter }}</td>
-                                    <td class="fw-semibold">
-                                        {{ s.title }}
-                                        {% if s.allow_multi %}
-                                            <span class="badge bg-primary rounded-pill ms-2" style="font-size: 0.7rem;">Ko'p marta</span>
-                                        {% else %}
-                                            <span class="badge bg-success rounded-pill ms-2" style="font-size: 0.7rem;">Bir marta</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-muted small">{{ s.description|truncatewords:10 }}</td>
-                                    <td class="text-center">{{ s.created_at|date:"d.m.Y H:i" }}</td>
-                                    <td class="text-center">
-                                        {% if is_site_admin %}
-                                            <div class="btn-group btn-group-sm">
-                                                <a href="{% url 'sorovnoma:survey_response_list' s.pk %}" class="btn btn-outline-primary" title="Natijalar"><i class="bi bi-list-columns"></i></a>
-                                                <a href="{% url 'sorovnoma:survey_status_change' s.pk 'paused' %}" class="btn btn-outline-warning" title="To'xtatib turish"><i class="bi bi-pause-fill"></i></a>
-                                                <a href="{% url 'sorovnoma:survey_status_change' s.pk 'completed' %}" class="btn btn-outline-danger" title="Tugallash"><i class="bi bi-stop-fill"></i></a>
-                                            </div>
-                                        {% else %}
-                                            {% if s.allow_multi %}
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    <a href="{% url 'sorovnoma:survey_fill' s.pk %}" class="btn btn-outline-success"><i class="bi bi-plus-circle"></i> Yangi to'ldirish</a>
-                                                    {% if s.user_response_count > 0 %}
-                                                    <a href="{% url 'sorovnoma:survey_response_list' s.pk %}" class="btn btn-outline-info" title="Natijalarim"><i class="bi bi-list-columns"></i> Natijalarim <span class="badge bg-info text-white ms-1">{{ s.user_response_count }}</span></a>
-                                                    {% endif %}
-                                                </div>
-                                            {% else %}
-                                                {% if s.user_response_id %}
-                                                    <div class="btn-group btn-group-sm" role="group">
-                                                        <a href="{% url 'sorovnoma:survey_response_detail' s.user_response_id %}" class="btn btn-outline-info" title="Ko'rish"><i class="bi bi-eye"></i> Javobim</a>
-                                                        {% if s.allow_edit %}
-                                                        <a href="{% url 'sorovnoma:survey_response_edit' s.user_response_id %}" class="btn btn-outline-warning" title="O'zgartirish"><i class="bi bi-pencil-square"></i></a>
-                                                        {% endif %}
-                                                    </div>
-                                                {% else %}
-                                                    <a href="{% url 'sorovnoma:survey_fill' s.pk %}" class="btn btn-sm btn-outline-success"><i class="bi bi-pen"></i> To'ldirish</a>
-                                                {% endif %}
-                                            {% endif %}
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr><td colspan="5" class="text-center text-muted py-4">Aktiv so'rovnomalar yo'q.</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                    {% include 'sorovnoma/_survey_table.html' with surveys=active_surveys status='active' is_site_admin=is_site_admin empty_text="Aktiv so'rovnomalar yo'q." %}
                 </div>
 
                 <!-- Paused -->
                 <div class="tab-pane fade" id="paused-pane" role="tabpanel" aria-labelledby="paused-tab">
-                    <div class="table-responsive rounded border">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 50px;">#</th>
-                                    <th>Nomi</th>
-                                    <th>Ta'rifi</th>
-                                    <th class="text-center">Yaratilgan vaqt</th>
-                                    <th class="text-center">Amallar</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for s in paused_surveys %}
-                                <tr style="border-left: 5px solid #f59e0b;">
-                                    <td>{{ forloop.counter }}</td>
-                                    <td class="fw-semibold">{{ s.title }}</td>
-                                    <td class="text-muted small">{{ s.description|truncatewords:10 }}</td>
-                                    <td class="text-center">{{ s.created_at|date:"d.m.Y H:i" }}</td>
-                                    <td class="text-center">
-                                        {% if is_site_admin %}
-                                            <div class="btn-group btn-group-sm">
-                                                <a href="{% url 'sorovnoma:survey_response_list' s.pk %}" class="btn btn-outline-primary" title="Natijalar"><i class="bi bi-list-columns"></i></a>
-                                                <a href="{% url 'sorovnoma:survey_status_change' s.pk 'active' %}" class="btn btn-outline-success" title="Qayta faollashtirish"><i class="bi bi-play-fill"></i></a>
-                                                <a href="{% url 'sorovnoma:survey_status_change' s.pk 'completed' %}" class="btn btn-outline-danger" title="Tugallash"><i class="bi bi-stop-fill"></i></a>
-                                            </div>
-                                        {% else %}
-                                            {% if s.user_response_id %}
-                                                <div class="btn-group btn-group-sm">
-                                                    <a href="{% url 'sorovnoma:survey_response_detail' s.user_response_id %}" class="btn btn-outline-info" title="Ko'rish"><i class="bi bi-eye"></i> Javobim</a>
-                                                    {% if s.allow_edit %}
-                                                        <a href="{% url 'sorovnoma:survey_response_edit' s.user_response_id %}" class="btn btn-outline-warning" title="O'zgartirish"><i class="bi bi-pencil-square"></i></a>
-                                                    {% endif %}
-                                                </div>
-                                            {% else %}
-                                                <span class="badge bg-secondary">Faol emas</span>
-                                            {% endif %}
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr><td colspan="5" class="text-center text-muted py-4">To'xtatilgan so'rovnomalar yo'q.</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                    {% include 'sorovnoma/_survey_table.html' with surveys=paused_surveys status='paused' is_site_admin=is_site_admin empty_text="To'xtatilgan so'rovnomalar yo'q." %}
                 </div>
 
                 <!-- Completed -->
                 <div class="tab-pane fade" id="completed-pane" role="tabpanel" aria-labelledby="completed-tab">
-                    <div class="table-responsive rounded border">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 50px;">#</th>
-                                    <th>Nomi</th>
-                                    <th>Ta'rifi</th>
-                                    <th class="text-center">Yaratilgan vaqt</th>
-                                    <th class="text-center">Amallar</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for s in completed_surveys %}
-                                <tr style="border-left: 5px solid #ef4444;">
-                                    <td>{{ forloop.counter }}</td>
-                                    <td class="fw-semibold">{{ s.title }}</td>
-                                    <td class="text-muted small">{{ s.description|truncatewords:10 }}</td>
-                                    <td class="text-center">{{ s.created_at|date:"d.m.Y H:i" }}</td>
-                                    <td class="text-center">
-                                        {% if is_site_admin %}
-                                            <div class="btn-group btn-group-sm">
-                                                <a href="{% url 'sorovnoma:survey_response_list' s.pk %}" class="btn btn-outline-primary" title="Natijalar"><i class="bi bi-list-columns"></i></a>
-                                                <a href="{% url 'sorovnoma:survey_status_change' s.pk 'active' %}" class="btn btn-outline-info" title="Arxivdan chiqarib faollashtirish"><i class="bi bi-arrow-counterclockwise"></i> Qayta boshlash</a>
-                                            </div>
-                                        {% else %}
-                                            {% if s.user_response_id %}
-                                                <div class="btn-group btn-group-sm">
-                                                    <a href="{% url 'sorovnoma:survey_response_detail' s.user_response_id %}" class="btn btn-outline-info" title="Ko'rish"><i class="bi bi-eye"></i> Javobim</a>
-                                                    {% if s.allow_edit %}
-                                                        <a href="{% url 'sorovnoma:survey_response_edit' s.user_response_id %}" class="btn btn-outline-warning" title="O'zgartirish"><i class="bi bi-pencil-square"></i></a>
-                                                    {% endif %}
-                                                </div>
-                                            {% else %}
-                                                <span class="badge bg-secondary">Arxivda</span>
-                                            {% endif %}
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr><td colspan="5" class="text-center text-muted py-4">Tugallangan so'rovnomalar yo'q.</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                    {% include 'sorovnoma/_survey_table.html' with surveys=completed_surveys status='completed' is_site_admin=is_site_admin empty_text="Tugallangan so'rovnomalar yo'q." %}
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-/* Override sidebar.css conflicts */
-#surveyTabs {
-    display: flex !important;
-    flex-direction: row !important;
-    flex-wrap: wrap !important;
-    gap: 8px !important;
-}
-
-#surveyTabs .nav-item {
-    display: inline-block !important;
-    flex-direction: row !important;
-    margin-bottom: 0 !important;
-}
-
-#surveyTabs .nav-link {
-    color: #64748b !important;
-    font-weight: 500 !important;
-    padding: .5rem 1.25rem !important;
-    border-radius: 6px !important;
-    transition: all .2s !important;
-    background: transparent !important;
-}
-
-#surveyTabs .nav-link:hover {
-    background-color: #f1f5f9 !important;
-    color: #334155 !important;
-}
-
-#surveyTabs .nav-link.active {
-    background-color: #e2e8f0 !important;
-    color: #0f172a !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,.05) !important;
-}
-
-.card-header-pills {
-    margin: 0 !important;
-}
-</style>
+<script>
+document.addEventListener('submit', function (e) {
+    var f = e.target;
+    if (f.matches && f.matches('form[data-confirm]')) {
+        if (!window.confirm(f.getAttribute('data-confirm'))) {
+            e.preventDefault();
+        }
+    }
+});
+</script>
 {% endblock %}

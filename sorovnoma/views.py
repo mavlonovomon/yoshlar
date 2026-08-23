@@ -23,9 +23,14 @@ def _group_questions_by_section(questions):
 @login_required
 def survey_list(request):
     """Dashboard to see all surveys in tabs."""
-    active_surveys = list(Survey.objects.filter(status=SurveyStatus.ACTIVE))
-    paused_surveys = list(Survey.objects.filter(status=SurveyStatus.PAUSED))
-    completed_surveys = list(Survey.objects.filter(status=SurveyStatus.COMPLETED))
+    q = (request.GET.get("q") or "").strip()
+    qs = Survey.objects.all().order_by("-created_at")
+    if q:
+        qs = qs.filter(title__icontains=q)
+
+    active_surveys = list(qs.filter(status=SurveyStatus.ACTIVE))
+    paused_surveys = list(qs.filter(status=SurveyStatus.PAUSED))
+    completed_surveys = list(qs.filter(status=SurveyStatus.COMPLETED))
     
     # Pre-calculate which surveys this user has already filled
     user_responses_qs = Response.objects.filter(user=request.user).order_by('id')
@@ -45,6 +50,7 @@ def survey_list(request):
         'paused_surveys': paused_surveys,
         'completed_surveys': completed_surveys,
         'is_site_admin': getattr(request.user, 'is_site_admin', request.user.is_superuser),
+        'q': q,
     }
     return render(request, 'sorovnoma/survey_list.html', context)
 
@@ -160,7 +166,9 @@ def export_survey_responses(request, pk):
 
 @login_required
 def survey_status_change(request, pk, status):
-    """Change survey status (Admin/Rahbar only)."""
+    """Change survey status (Admin/Rahbar only). POST only."""
+    if request.method != "POST":
+        return redirect('sorovnoma:survey_list')
     if not getattr(request.user, 'is_site_admin', request.user.is_superuser):
         messages.error(request, "Ruxsat yo'q.")
         return redirect('sorovnoma:survey_list')
