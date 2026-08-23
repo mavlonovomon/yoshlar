@@ -37,37 +37,14 @@
                     </div>
 
                     <div id="assistance-details" class="d-none">
-                        <div class="mb-4">
-                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.assistance_type.label }}</label>
-                            {{ form.assistance_type }}
-                            {% if form.assistance_type.errors %}
-                            <div class="text-danger smaller mt-1 fw-bold">{{ form.assistance_type.errors|striptags }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.date_provided.label }}</label>
-                            {{ form.date_provided }}
-                            {% if form.date_provided.errors %}
-                            <div class="text-danger smaller mt-1 fw-bold">{{ form.date_provided.errors|striptags }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label fw-bold text-dark small text-uppercase mb-2">{{ form.document.label }}</label>
-                            {{ form.document }}
-                            {% if form.document.errors %}
-                            <div class="text-danger smaller mt-1 fw-bold">{{ form.document.errors|striptags }}</div>
-                            {% endif %}
-                        </div>
+                        {% include 'components/form_group.html' with label=form.assistance_type.label field=form.assistance_type errors=form.assistance_type.errors col_class="col-12" %}
+                        {% include 'components/form_group.html' with label=form.date_provided.label field=form.date_provided errors=form.date_provided.errors col_class="col-12" %}
+                        {% include 'components/form_group.html' with label=form.document.label field=form.document errors=form.document.errors col_class="col-12" %}
                     </div>
 
-                    <div class="d-flex gap-2 mt-5 pt-3 border-top">
-                        <button type="submit" class="btn btn-success px-5 py-2 fw-bold shadow-sm">
-                            <i class="bi bi-check-lg me-1"></i> Saqlash
-                        </button>
-                        <a href="{% url 'ishsiz_yoshlar:detail' youth.pk %}" class="btn btn-light px-4 py-2">
-                            Bekor qilish
-                        </a>
-                    </div>
+                    {% with cancel_url="/ishsiz_yoshlar/" show_delete=false %}
+                    {% include 'components/form_actions.html' %}
+                    {% endwith %}
                 </form>
             </div>
         </div>
