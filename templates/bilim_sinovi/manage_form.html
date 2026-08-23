@@ -19,64 +19,17 @@
                         </div>
                         {% endif %}
 
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">{{ form.title.label }}</label>
-                                {{ form.title }}
-                                {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors|striptags }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">{{ form.subject.label }}</label>
-                                {{ form.subject }}
-                                <small class="text-muted d-block mt-1">Paket tanlanmasa, shu kategoriya fallback sifatida ishlatiladi.</small>
-                                {% if form.subject.errors %}<div class="text-danger small mt-1">{{ form.subject.errors|striptags }}</div>{% endif %}
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-semibold">{{ form.question_sets.label }}</label>
-                                {{ form.question_sets }}
-                                {% if form.question_sets.help_text %}
-                                <small class="text-muted d-block mt-1">{{ form.question_sets.help_text }}</small>
-                                {% endif %}
-                                {% if form.question_sets.errors %}<div class="text-danger small mt-1">{{ form.question_sets.errors|striptags }}</div>{% endif %}
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-semibold">{{ form.question_packages.label }}</label>
-                                {{ form.question_packages }}
-                                {% if form.question_packages.help_text %}
-                                <small class="text-muted d-block mt-1">{{ form.question_packages.help_text }}</small>
-                                {% endif %}
-                                {% if form.question_packages.errors %}<div class="text-danger small mt-1">{{ form.question_packages.errors|striptags }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">{{ form.start_time.label }}</label>
-                                {{ form.start_time }}
-                                {% if form.start_time.errors %}<div class="text-danger small mt-1">{{ form.start_time.errors|striptags }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">{{ form.end_time.label }}</label>
-                                {{ form.end_time }}
-                                {% if form.end_time.errors %}<div class="text-danger small mt-1">{{ form.end_time.errors|striptags }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold">{{ form.duration_minutes.label }}</label>
-                                {{ form.duration_minutes }}
-                                {% if form.duration_minutes.errors %}<div class="text-danger small mt-1">{{ form.duration_minutes.errors|striptags }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold">{{ form.questions_count.label }}</label>
-                                {{ form.questions_count }}
-                                {% if form.questions_count.errors %}<div class="text-danger small mt-1">{{ form.questions_count.errors|striptags }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold">{{ form.max_attempts.label }}</label>
-                                {{ form.max_attempts }}
-                                {% if form.max_attempts.errors %}<div class="text-danger small mt-1">{{ form.max_attempts.errors|striptags }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">{{ form.question_order.label }}</label>
-                                {{ form.question_order }}
-                                {% if form.question_order.errors %}<div class="text-danger small mt-1">{{ form.question_order.errors|striptags }}</div>{% endif %}
-                            </div>
+                        <div class="row g-4">
+                            {% include 'components/form_group.html' with label=form.title.label field=form.title errors=form.title.errors col_class="col-md-6" %}
+                            {% include 'components/form_group.html' with label=form.subject.label field=form.subject help_text="Paket tanlanmasa, shu kategoriya fallback sifatida ishlatiladi." errors=form.subject.errors col_class="col-md-6" %}
+                            {% include 'components/form_group.html' with label=form.question_sets.label field=form.question_sets help_text=form.question_sets.help_text errors=form.question_sets.errors col_class="col-12" %}
+                            {% include 'components/form_group.html' with label=form.question_packages.label field=form.question_packages help_text=form.question_packages.help_text errors=form.question_packages.errors col_class="col-12" %}
+                            {% include 'components/form_group.html' with label=form.start_time.label field=form.start_time errors=form.start_time.errors col_class="col-md-6" %}
+                            {% include 'components/form_group.html' with label=form.end_time.label field=form.end_time errors=form.end_time.errors col_class="col-md-6" %}
+                            {% include 'components/form_group.html' with label=form.duration_minutes.label field=form.duration_minutes errors=form.duration_minutes.errors col_class="col-md-4" %}
+                            {% include 'components/form_group.html' with label=form.questions_count.label field=form.questions_count errors=form.questions_count.errors col_class="col-md-4" %}
+                            {% include 'components/form_group.html' with label=form.max_attempts.label field=form.max_attempts errors=form.max_attempts.errors col_class="col-md-4" %}
+                            {% include 'components/form_group.html' with label=form.question_order.label field=form.question_order errors=form.question_order.errors col_class="col-md-6" %}
                             <div class="col-md-6 d-flex align-items-end">
                                 <div class="form-check mt-4">
                                     {{ form.is_active }}
@@ -88,10 +41,9 @@
                             </div>
                         </div>
 
-                        <div class="d-flex gap-2 mt-4">
-                            <button type="submit" class="btn btn-primary">{{ submit_label }}</button>
-                            <a href="{% url 'bilim_sinovi:test_manage_list' %}" class="btn btn-outline-secondary">Bekor qilish</a>
-                        </div>
+                        {% with cancel_url="/bilim_sinovi/manage/" show_delete=false submit_label=submit_label %}
+                        {% include 'components/form_actions.html' %}
+                        {% endwith %}
                     </form>
                 </div>
             </div>
