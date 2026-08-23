@@ -1,0 +1,38 @@
+{% load core_extras %}
+<div class="filter-card">
+    <form method="get" class="filter-grid" {% if form_id %}id="{{ form_id }}"{% endif %}>
+        {% for field in fields %}
+        <div class="filter-item">
+            <label class="form-label text-muted small fw-bold">{{ field.label }}</label>
+            {% if field.type == 'search' %}
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="{{ field.name }}" class="form-control border-start-0"
+                    placeholder="{{ field.placeholder|default:'' }}" value="{{ field.value|default:'' }}">
+            </div>
+            {% elif field.type == 'select' %}
+            <select name="{{ field.name }}" class="form-select {% if field.border_start %}border-start-0{% endif %}"
+                {% if field.autosubmit %}onchange="this.form.submit()"{% endif %}>
+                {% for opt in field.options %}
+                <option value="{{ opt.value }}" {% if opt.selected %}selected{% endif %}>{{ opt.label }}</option>
+                {% endfor %}
+            </select>
+            {% elif field.type == 'date' %}
+            <input type="date" name="{{ field.name }}" class="form-control"
+                value="{{ field.value|default:'' }}">
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="filter-item">
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-funnel-fill me-1"></i> {{ submit_label|default:"Saralash" }}
+            </button>
+            {% if clear_url %}
+            <a href="{{ clear_url }}" class="btn btn-light ms-1" title="Tozalash">
+                <i class="bi bi-x-lg"></i>
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>

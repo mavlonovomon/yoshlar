@@ -1,0 +1,60 @@
+{% load core_extras %}
+<div class="premium-table-card">
+    <div class="table-responsive">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    {% for col in columns %}
+                    <th {% if col.width %}style="width: {{ col.width }};"{% endif %} {% if col.center %}class="text-center"{% endif %}>
+                        {% if col.sort_key %}{% sort_link col.sort_key col.label %}{% else %}{{ col.label }}{% endif %}
+                    </th>
+                    {% endfor %}
+                    {% if actions %}
+                    <th class="text-center" style="width: {{ actions_width|default:'180px' }};">Amallar</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    {% if show_row_number %}
+                    <td class="text-center align-middle">{{ forloop.counter|add:offset|default:forloop.counter }}</td>
+                    {% endif %}
+                    {{ item }}
+                    {% if actions %}
+                    <td class="text-center">
+                        <div class="action-btn-group">
+                            {% for action in actions %}
+                            <a href="{{ action.url|safe }}"
+                                class="action-btn {{ action.class }}"
+                                title="{{ action.title }}">
+                                <i class="{{ action.icon }}"></i>
+                                {% if action.badge %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill {{ action.badge_class }}"
+                                    style="font-size: 0.6rem; padding: 0.25em 0.4em;">
+                                    {{ action.badge }}
+                                </span>
+                                {% endif %}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{{ columns|length|add:show_row_number|add:actions|length }}" class="text-center py-5">
+                        <div class="mb-3 text-muted">
+                            <i class="bi bi-database-exclamation display-4"></i>
+                        </div>
+                        <h5 class="text-muted">{{ empty_message|default:"Ma'lumotlar topilmadi" }}</h5>
+                        {% if empty_hint %}
+                        <p class="text-muted small">{{ empty_hint }}</p>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

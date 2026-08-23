@@ -6,80 +6,9 @@
 <link rel="stylesheet" href="{% static 'css/list_premium.css' %}">
 
 <div class="container-fluid">
-    <!-- Page Header -->
-    <div class="page-header">
-        <div class="page-title-group">
-            <h2>Yoshlar Ro'yxati</h2>
-            <p>Mahalladagi jami yoshlar haqida umumiy ma'lumotlar bazasi</p>
-        </div>
-        <div class="d-flex gap-2">
-            <a href="{% url 'maktab_oquvchi_list' %}" class="btn btn-outline-primary shadow-sm">
-                <i class="bi bi-mortarboard-fill me-1"></i> Maktab o'quvchilari
-            </a>
-            <a href="{% url 'maktab_oquvchi_pending_list' %}" class="btn btn-outline-success shadow-sm">
-                <i class="bi bi-check2-square me-1"></i> Aniqlanmaganlar
-            </a>
-            <a href="{% url 'yosh_create' %}" class="btn btn-primary shadow-sm">
-                <i class="bi bi-person-plus-fill me-1"></i> Yangi yosh qo'shish
-            </a>
-        </div>
-    </div>
+    {% include 'components/page_header.html' with title="Yoshlar Ro'yxati" subtitle="Mahalladagi jami yoshlar haqida umumiy ma'lumotlar bazasi" buttons=header_buttons %}
 
-    <!-- Advanced Filters -->
-    <div class="filter-card">
-        <form method="get" class="filter-grid" id="filterForm">
-            <div class="filter-item">
-                <label class="form-label text-muted small fw-bold">QIDIRISH</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" name="q" class="form-control border-start-0"
-                        placeholder="F.I.Sh, tel, pasport, guvohnoma, jshshir..." value="{{ request.GET.q }}">
-                </div>
-            </div>
-
-            {% if mahallas %}
-            <div class="filter-item">
-                <label class="form-label text-muted small fw-bold">MAHALLA</label>
-                <select name="mahalla" class="form-select" onchange="this.form.submit()">
-                    <option value="">Barcha mahallalar</option>
-                    {% for m in mahallas %}
-                    <option value="{{ m.id }}" {% if selected_mahalla == m.id %}selected{% endif %}>{{ m.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            {% endif %}
-
-            <div class="filter-item">
-                <label class="form-label text-muted small fw-bold">HOLAT</label>
-                <select name="status" class="form-select" onchange="this.form.submit()">
-                    <option value="">Barchasi</option>
-                    <option value="bor" {% if selected_status == 'bor' %}selected{% endif %}>Suhbat o'tkazilgan</option>
-                    <option value="yoq" {% if selected_status == 'yoq' %}selected{% endif %}>Suhbat o'tkazilmagan</option>
-                </select>
-            </div>
-
-            <div class="filter-item">
-                <label class="form-label text-muted small fw-bold">KO'RSATISH</label>
-                <select name="per_page" class="form-select" onchange="this.form.submit()">
-                    <option value="10" {% if per_page == '10' %}selected{% endif %}>10 tadan</option>
-                    <option value="20" {% if per_page == '20' %}selected{% endif %}>20 tadan</option>
-                    <option value="50" {% if per_page == '50' %}selected{% endif %}>50 tadan</option>
-                    <option value="100" {% if per_page == '100' %}selected{% endif %}>100 tadan</option>
-                </select>
-            </div>
-
-            <div class="filter-item">
-                <button type="submit" class="btn btn-primary px-4">
-                    <i class="bi bi-funnel-fill me-1"></i> Saralash
-                </button>
-                {% if request.GET.q or request.GET.mahalla or request.GET.status or per_page != '20' %}
-                <a href="{% url 'yosh_list' %}" class="btn btn-light ms-1" title="Tozalash">
-                    <i class="bi bi-x-lg"></i>
-                </a>
-                {% endif %}
-            </div>
-        </form>
-    </div>
+    {% include 'components/filter_bar.html' with fields=filter_fields clear_url=clear_filter_url form_id="filterForm" %}
 
     <!-- Data Table -->
     <div class="premium-table-card">
@@ -166,18 +95,14 @@
                         </td>
                         <td class="text-center">
                             <div class="action-btn-group">
-                                <!-- 1. Anketa (View) -->
                                 <a href="{% url 'yosh_detail' item.pk %}?readonly=true"
                                     class="action-btn action-btn-view" title="Anketani ko'rish">
                                     <i class="bi bi-file-earmark-person"></i>
                                 </a>
-
-                                <!-- 2. Uchrashuv (Meeting) -->
                                 <a href="{% url 'yosh_detail' item.pk %}" class="action-btn action-btn-meeting pending"
                                     title="Suhbat o'tkazish">
                                     <i class="bi bi-chat-dots"></i>
                                 </a>
-
                             </div>
                         </td>
                     </tr>
