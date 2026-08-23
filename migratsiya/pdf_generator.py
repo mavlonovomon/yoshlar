@@ -1,17 +1,16 @@
 import os
 import io
-import base64
 from datetime import datetime
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import mm, cm
+from reportlab.lib.units import mm
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
-    Image as RLImage, KeepTogether
+    Image as RLImage,
 )
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.enums import TA_CENTER
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from PIL import Image as PILImage
@@ -33,21 +32,6 @@ except Exception:
     BOLD_FONT = 'Helvetica-Bold'
 
 
-def _get_photo_base64(photo_field):
-    if not photo_field:
-        return None
-    try:
-        photo_field.open('rb')
-        data = photo_field.read()
-        photo_field.close()
-        b64 = base64.b64encode(data).decode('utf-8')
-        ext = os.path.splitext(photo_field.name)[1].lower()
-        mime = 'image/jpeg' if ext in ('.jpg', '.jpeg') else 'image/png'
-        return f"data:{mime};base64,{b64}"
-    except Exception:
-        return None
-
-
 def _get_logo_image():
     logo_path = os.path.join(settings.MEDIA_ROOT, 'Yoshlar_ishlari_agentligi_logotipi.svg')
     if not os.path.exists(logo_path):
@@ -67,7 +51,7 @@ def _get_logo_image():
         return None
 
 
-def _get_photo_image(photo_field, max_width=120, max_height=150):
+def _get_photo_image(photo_field, max_width=100, max_height=130):
     if not photo_field:
         return None
     try:
@@ -97,7 +81,7 @@ def _format_date(dt):
     return dt.strftime("%d.%m.%Y") if hasattr(dt, 'strftime') else str(dt)
 
 
-def generate_youth_pdf(youth_obj):
+def generate_migration_pdf(migration_obj):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer, pagesize=A4,
@@ -136,10 +120,8 @@ def generate_youth_pdf(youth_obj):
         fontSize=8, textColor=colors.HexColor('#757575'),
     )
 
-    yosh = youth_obj.yosh
-    leader = youth_obj.leader
-    assistance = getattr(youth_obj, 'assistance', None)
-    meetings = youth_obj.meetings.all().order_by('-meeting_date')[:5]
+    yosh = migration_obj.yosh
+    meetings = migration_obj.meetings.all().order_by('-meeting_date')[:4]
 
     elements = []
 
@@ -148,7 +130,7 @@ def generate_youth_pdf(youth_obj):
 
     if logo_img:
         header_table = Table(
-            [[logo_img, Paragraph("ISHSIZ YOSHLAR ANKETASI", title_style)]],
+            [[logo_img, Paragraph("MIGRATSIYADAGI YOSH BILAN SUHBAT", title_style)]],
             colWidths=[60, 420]
         )
         header_table.setStyle(TableStyle([
@@ -157,10 +139,10 @@ def generate_youth_pdf(youth_obj):
         ]))
         elements.append(header_table)
     else:
-        elements.append(Paragraph("ISHSIZ YOSHLAR ANKETASI", title_style))
+        elements.append(Paragraph("MIGRATSIYADAGI YOSH BILAN SUHBAT", title_style))
 
     elements.append(Paragraph(
-        f"Yil: {youth_obj.year} | Toifa: {youth_obj.get_category_display()}",
+        f"Davlat: {migration_obj.destination_country} | Sabab: {migration_obj.get_reason_display()}",
         ParagraphStyle('SubTitle', parent=styles['Normal'], fontName=DEFAULT_FONT, fontSize=10,
                        alignment=TA_CENTER, textColor=colors.HexColor('#424242'))
     ))
@@ -174,7 +156,6 @@ def generate_youth_pdf(youth_obj):
         [Paragraph("<b>Tug'ilgan sana</b>", label_style), Paragraph(_format_date(yosh.birth_date), value_style)],
         [Paragraph("<b>JSHSHIR</b>", label_style), Paragraph(yosh.jshshir or "-", value_style)],
         [Paragraph("<b>Pasport</b>", label_style), Paragraph(yosh.passport_number or "-", value_style)],
-        [Paragraph("<b>Guvohnoma</b>", label_style), Paragraph(yosh.guvohnoma_raqami or "-", value_style)],
         [Paragraph("<b>Manzil</b>", label_style), Paragraph(yosh.address or "-", value_style)],
         [Paragraph("<b>Telefon</b>", label_style), Paragraph(yosh.phone_number or "-", value_style)],
         [Paragraph("<b>Mahalla</b>", label_style), Paragraph(yosh.mahalla.name if yosh.mahalla else "-", value_style)],
@@ -203,70 +184,69 @@ def generate_youth_pdf(youth_obj):
 
     elements.append(Spacer(1, 5*mm))
 
-    # === TA'LIM MA'LUMOTLARI ===
-    elements.append(Paragraph("TA'LIM MA'LUMOTLARI", section_style))
+    # === MIGRATSIYA MA'LUMOTI ===
+    elements.append(Paragraph("MIGRATSIYA MA'LUMOTI", section_style))
     elements.append(Spacer(1, 3*mm))
 
-    edu_data = [
-        [Paragraph("<b>Toifa</b>", label_style), Paragraph(youth_obj.get_category_display(), value_style)],
-        [Paragraph("<b>Ta'lim tashkiloti</b>", label_style), Paragraph(youth_obj.otm_name or "-", value_style)],
-        [Paragraph("<b>Yo'nalish</b>", label_style), Paragraph(youth_obj.direction or "-", value_style)],
+    migration_data = [
+        [Paragraph("<b>Sabab</b>", label_style), Paragraph(migration_obj.get_reason_display(), value_style)],
+        [Paragraph("<b>Chiqib ketgan sana</b>", label_style), Paragraph(_format_date(migration_obj.departure_date), value_style)],
+        [Paragraph("<b>Davlat</b>", label_style), Paragraph(migration_obj.destination_country or "-", value_style)],
+        [Paragraph("<b>Provinsiya</b>", label_style), Paragraph(migration_obj.destination_province or "-", value_style)],
+        [Paragraph("<b>Manzil</b>", label_style), Paragraph(migration_obj.destination_address or "-", value_style)],
     ]
 
-    edu_table = Table(edu_data, colWidths=[120, 350])
-    edu_table.setStyle(TableStyle([
+    migration_table = Table(migration_data, colWidths=[120, 350])
+    migration_table.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('TOPPADDING', (0, 0), (-1, -1), 2),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
         ('LINEBELOW', (0, 0), (-1, -1), 0.5, colors.HexColor('#e0e0e0')),
     ]))
-    elements.append(edu_table)
+    elements.append(migration_table)
     elements.append(Spacer(1, 5*mm))
 
-    # === MAS'UL RAHBAR ===
-    if leader:
-        elements.append(Paragraph("MAS'UL RAHBAR", section_style))
-        elements.append(Spacer(1, 3*mm))
-
-        leader_data = [
-            [Paragraph("<b>F.I.O.</b>", label_style), Paragraph(leader.full_name or "-", value_style)],
-            [Paragraph("<b>Lavozim</b>", label_style), Paragraph(leader.position or "-", value_style)],
-            [Paragraph("<b>Tashkilot</b>", label_style), Paragraph(leader.organization or "-", value_style)],
-            [Paragraph("<b>Telefon</b>", label_style), Paragraph(leader.phone_number or "-", value_style)],
-            [Paragraph("<b>Daraja</b>", label_style), Paragraph(leader.get_level_display() if leader.level else "-", value_style)],
-        ]
-
-        leader_table = Table(leader_data, colWidths=[120, 350])
-        leader_table.setStyle(TableStyle([
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('TOPPADDING', (0, 0), (-1, -1), 2),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
-            ('LINEBELOW', (0, 0), (-1, -1), 0.5, colors.HexColor('#e0e0e0')),
-        ]))
-        elements.append(leader_table)
-        elements.append(Spacer(1, 5*mm))
-
-    # === UCHRASHUVLAR ===
+    # === SUHBATLAR ===
     if meetings.exists():
-        elements.append(Paragraph("UCHRASHUVLAR TARIXI", section_style))
+        elements.append(Paragraph("SUHBATLAR TARIXI", section_style))
         elements.append(Spacer(1, 3*mm))
 
-        meeting_list = list(meetings[:4])
+        meeting_list = list(meetings)
         for idx, meeting in enumerate(meeting_list, 1):
             meeting_photo = _get_photo_image(meeting.photo, max_width=280, max_height=200) if meeting.photo else None
 
-            left_col = [
+            # Chap ustun — matn
+            left_rows = [
                 [Paragraph(f"<b>#{idx}</b>  |  <b>Sana:</b> {_format_date(meeting.meeting_date)}", value_style)],
                 [Spacer(1, 2*mm)],
-                [Paragraph(meeting.description or "-", small_style)],
             ]
-            left_table = Table(left_col, colWidths=[210])
+
+            if meeting.return_date:
+                left_rows.append([Paragraph(f"<b>Qaytish:</b> {_format_date(meeting.return_date)}", small_style)])
+            if meeting.work_title:
+                left_rows.append([Paragraph(f"<b>Ish:</b> {meeting.work_title}", small_style)])
+            if meeting.work_income:
+                left_rows.append([Paragraph(f"<b>Daromad:</b> ${meeting.work_income:,.0f}", small_style)])
+            if meeting.work_conditions_rating:
+                left_rows.append([Paragraph(f"<b>Ish sharoiti:</b> {meeting.work_conditions_rating}/10", small_style)])
+            if meeting.education_institution:
+                left_rows.append([Paragraph(f"<b>Dargoh:</b> {meeting.education_institution}", small_style)])
+            if meeting.education_direction:
+                left_rows.append([Paragraph(f"<b>Yo'nalish:</b> {meeting.education_direction}", small_style)])
+            if meeting.education_course:
+                left_rows.append([Paragraph(f"<b>Kurs:</b> {meeting.education_course}", small_style)])
+            if meeting.description:
+                left_rows.append([Spacer(1, 2*mm)])
+                left_rows.append([Paragraph(meeting.description, small_style)])
+
+            left_table = Table(left_rows, colWidths=[210])
             left_table.setStyle(TableStyle([
                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                 ('TOPPADDING', (0, 0), (-1, -1), 1),
                 ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
             ]))
 
+            # O'ng ustun — rasm
             if meeting_photo:
                 right_col = [[meeting_photo]]
             else:
@@ -291,34 +271,6 @@ def generate_youth_pdf(youth_obj):
             elements.append(Spacer(1, 2*mm))
 
         elements.append(Spacer(1, 3*mm))
-
-    # === YORDAM MA'LUMOTI ===
-    elements.append(Paragraph("YORDAM MA'LUMOTI", section_style))
-    elements.append(Spacer(1, 3*mm))
-
-    if assistance and assistance.provided:
-        assist_data = [
-            [Paragraph("<b>Yordam ko'rsatilgan</b>", label_style),
-             Paragraph("Ha", ParagraphStyle('Green', parent=value_style, fontName=BOLD_FONT, textColor=colors.HexColor('#2e7d32')))],
-            [Paragraph("<b>Yordam turi</b>", label_style),
-             Paragraph(assistance.get_assistance_type_display() if assistance.assistance_type else "-", value_style)],
-            [Paragraph("<b>Sana</b>", label_style),
-             Paragraph(_format_date(assistance.date_provided), value_style)],
-        ]
-    else:
-        assist_data = [
-            [Paragraph("<b>Yordam ko'rsatilgan</b>", label_style),
-             Paragraph("Yo'q", ParagraphStyle('Red', parent=value_style, fontName=BOLD_FONT, textColor=colors.HexColor('#c62828')))],
-        ]
-
-    assist_table = Table(assist_data, colWidths=[120, 350])
-    assist_table.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('TOPPADDING', (0, 0), (-1, -1), 2),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
-        ('LINEBELOW', (0, 0), (-1, -1), 0.5, colors.HexColor('#e0e0e0')),
-    ]))
-    elements.append(assist_table)
 
     # === YAKUNIY MA'LUMOT ===
     elements.append(Spacer(1, 10*mm))

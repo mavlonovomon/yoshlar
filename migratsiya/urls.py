@@ -9,5 +9,6 @@ urlpatterns = [
     path('create/', views.MigrationYouthCreateView.as_view(), name='create'),
     path('edit/<int:pk>/', views.MigrationYouthUpdateView.as_view(), name='edit'),
     path('detail/<int:pk>/', views.MigrationYouthDetailView.as_view(), name='detail'),
+    path('detail/<int:pk>/pdf/', views.MigrationYouthPDFView.as_view(), name='youth_pdf'),
     path('meeting-create/<int:pk>/', views.MeetingCreateView.as_view(), name='meeting_create'),
 ]

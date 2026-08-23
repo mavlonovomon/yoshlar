@@ -6,10 +6,10 @@ from datetime import datetime
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import mm, cm
+from reportlab.lib.units import mm
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
-    Image as RLImage, KeepTogether
+    Image as RLImage,
 )
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.pdfbase import pdfmetrics
@@ -33,21 +33,6 @@ except Exception:
     BOLD_FONT = 'Helvetica-Bold'
 
 
-def _get_photo_base64(photo_field):
-    if not photo_field:
-        return None
-    try:
-        photo_field.open('rb')
-        data = photo_field.read()
-        photo_field.close()
-        b64 = base64.b64encode(data).decode('utf-8')
-        ext = os.path.splitext(photo_field.name)[1].lower()
-        mime = 'image/jpeg' if ext in ('.jpg', '.jpeg') else 'image/png'
-        return f"data:{mime};base64,{b64}"
-    except Exception:
-        return None
-
-
 def _get_logo_image():
     logo_path = os.path.join(settings.MEDIA_ROOT, 'Yoshlar_ishlari_agentligi_logotipi.svg')
     if not os.path.exists(logo_path):
@@ -67,7 +52,7 @@ def _get_logo_image():
         return None
 
 
-def _get_photo_image(photo_field, max_width=120, max_height=150):
+def _get_photo_image(photo_field, max_width=100, max_height=130):
     if not photo_field:
         return None
     try:
@@ -97,7 +82,7 @@ def _format_date(dt):
     return dt.strftime("%d.%m.%Y") if hasattr(dt, 'strftime') else str(dt)
 
 
-def generate_youth_pdf(youth_obj):
+def generate_otaliq_pdf(otaliq_obj):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer, pagesize=A4,
@@ -136,10 +121,10 @@ def generate_youth_pdf(youth_obj):
         fontSize=8, textColor=colors.HexColor('#757575'),
     )
 
-    yosh = youth_obj.yosh
-    leader = youth_obj.leader
-    assistance = getattr(youth_obj, 'assistance', None)
-    meetings = youth_obj.meetings.all().order_by('-meeting_date')[:5]
+    yosh = otaliq_obj.yosh
+    leader = otaliq_obj.leader
+    assistance = getattr(otaliq_obj, 'assistance', None)
+    meetings = otaliq_obj.meetings.all().order_by('-meeting_date')[:5]
 
     elements = []
 
@@ -148,7 +133,7 @@ def generate_youth_pdf(youth_obj):
 
     if logo_img:
         header_table = Table(
-            [[logo_img, Paragraph("ISHSIZ YOSHLAR ANKETASI", title_style)]],
+            [[logo_img, Paragraph("OTALIQQA OLINGAN YOSHLAR ANKETASI", title_style)]],
             colWidths=[60, 420]
         )
         header_table.setStyle(TableStyle([
@@ -157,10 +142,10 @@ def generate_youth_pdf(youth_obj):
         ]))
         elements.append(header_table)
     else:
-        elements.append(Paragraph("ISHSIZ YOSHLAR ANKETASI", title_style))
+        elements.append(Paragraph("OTALIQQA OLINGAN YOSHLAR ANKETASI", title_style))
 
     elements.append(Paragraph(
-        f"Yil: {youth_obj.year} | Toifa: {youth_obj.get_category_display()}",
+        f"Toifa: {otaliq_obj.get_category_display()}",
         ParagraphStyle('SubTitle', parent=styles['Normal'], fontName=DEFAULT_FONT, fontSize=10,
                        alignment=TA_CENTER, textColor=colors.HexColor('#424242'))
     ))
@@ -174,7 +159,6 @@ def generate_youth_pdf(youth_obj):
         [Paragraph("<b>Tug'ilgan sana</b>", label_style), Paragraph(_format_date(yosh.birth_date), value_style)],
         [Paragraph("<b>JSHSHIR</b>", label_style), Paragraph(yosh.jshshir or "-", value_style)],
         [Paragraph("<b>Pasport</b>", label_style), Paragraph(yosh.passport_number or "-", value_style)],
-        [Paragraph("<b>Guvohnoma</b>", label_style), Paragraph(yosh.guvohnoma_raqami or "-", value_style)],
         [Paragraph("<b>Manzil</b>", label_style), Paragraph(yosh.address or "-", value_style)],
         [Paragraph("<b>Telefon</b>", label_style), Paragraph(yosh.phone_number or "-", value_style)],
         [Paragraph("<b>Mahalla</b>", label_style), Paragraph(yosh.mahalla.name if yosh.mahalla else "-", value_style)],
@@ -203,24 +187,21 @@ def generate_youth_pdf(youth_obj):
 
     elements.append(Spacer(1, 5*mm))
 
-    # === TA'LIM MA'LUMOTLARI ===
-    elements.append(Paragraph("TA'LIM MA'LUMOTLARI", section_style))
+    # === TOIFA ===
+    elements.append(Paragraph("TOIFA MA'LUMOTI", section_style))
     elements.append(Spacer(1, 3*mm))
 
-    edu_data = [
-        [Paragraph("<b>Toifa</b>", label_style), Paragraph(youth_obj.get_category_display(), value_style)],
-        [Paragraph("<b>Ta'lim tashkiloti</b>", label_style), Paragraph(youth_obj.otm_name or "-", value_style)],
-        [Paragraph("<b>Yo'nalish</b>", label_style), Paragraph(youth_obj.direction or "-", value_style)],
+    cat_data = [
+        [Paragraph("<b>Toifa</b>", label_style), Paragraph(otaliq_obj.get_category_display(), value_style)],
     ]
-
-    edu_table = Table(edu_data, colWidths=[120, 350])
-    edu_table.setStyle(TableStyle([
+    cat_table = Table(cat_data, colWidths=[120, 350])
+    cat_table.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('TOPPADDING', (0, 0), (-1, -1), 2),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
         ('LINEBELOW', (0, 0), (-1, -1), 0.5, colors.HexColor('#e0e0e0')),
     ]))
-    elements.append(edu_table)
+    elements.append(cat_table)
     elements.append(Spacer(1, 5*mm))
 
     # === MAS'UL RAHBAR ===
@@ -231,7 +212,8 @@ def generate_youth_pdf(youth_obj):
         leader_data = [
             [Paragraph("<b>F.I.O.</b>", label_style), Paragraph(leader.full_name or "-", value_style)],
             [Paragraph("<b>Lavozim</b>", label_style), Paragraph(leader.position or "-", value_style)],
-            [Paragraph("<b>Tashkilot</b>", label_style), Paragraph(leader.organization or "-", value_style)],
+            [Paragraph("<b>Tashkilot turi</b>", label_style), Paragraph(leader.get_organization_type_display() if leader.organization_type else "-", value_style)],
+            [Paragraph("<b>Tashkilot</b>", label_style), Paragraph(leader.organization_name or "-", value_style)],
             [Paragraph("<b>Telefon</b>", label_style), Paragraph(leader.phone_number or "-", value_style)],
             [Paragraph("<b>Daraja</b>", label_style), Paragraph(leader.get_level_display() if leader.level else "-", value_style)],
         ]
@@ -304,6 +286,8 @@ def generate_youth_pdf(youth_obj):
              Paragraph(assistance.get_assistance_type_display() if assistance.assistance_type else "-", value_style)],
             [Paragraph("<b>Sana</b>", label_style),
              Paragraph(_format_date(assistance.date_provided), value_style)],
+            [Paragraph("<b>Tavsif</b>", label_style),
+             Paragraph(assistance.description or "-", value_style)],
         ]
     else:
         assist_data = [

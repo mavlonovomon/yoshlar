@@ -5,9 +5,14 @@
 <div class="container-fluid">
     <div class="card mb-4 py-3 px-4">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <a href="{% url 'beshtashabbus:list' %}" class="btn btn-light shadow-sm">
-                <i class="bi bi-arrow-left me-1"></i> Ro'yxatga qaytish
-            </a>
+            <div class="d-flex gap-2">
+                <a href="{% url 'beshtashabbus:list' %}" class="btn btn-light shadow-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Ro'yxatga qaytish
+                </a>
+                <a href="{% url 'beshtashabbus:event_pdf' event.pk %}" class="btn btn-danger shadow-sm" target="_blank">
+                    <i class="bi bi-file-earmark-pdf me-1"></i> PDF yuklab olish
+                </a>
+            </div>
             <div class="d-flex gap-2">
                 {% if user.is_authenticated and user.role == 'YETAKCHI' %}
                 <a href="{% url 'beshtashabbus:edit' event.pk %}" class="btn btn-outline-primary shadow-sm">

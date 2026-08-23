@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
+from django.http import HttpResponse
 from django.db.models import Count, Q
 from django.contrib import messages
 
@@ -143,3 +144,16 @@ class RaidEventDetailView(LoginRequiredMixin, MahallaRestrictedMixin, DetailView
         context = super().get_context_data(**kwargs)
         context['photos'] = self.object.photos.all()
         return context
+
+
+class RaidEventPDFView(LoginRequiredMixin, DetailView):
+    model = RaidEvent
+
+    def get(self, request, *args, **kwargs):
+        event_obj = self.get_object()
+        from .pdf_generator import generate_reyd_pdf
+        pdf_buffer = generate_reyd_pdf(event_obj)
+
+        response = HttpResponse(pdf_buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="profilaktika_{event_obj.pk}.pdf"'
+        return response

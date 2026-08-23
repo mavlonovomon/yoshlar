@@ -16,4 +16,5 @@ urlpatterns = [
     path('create/', views.FiveInitiativeCreateView.as_view(), name='create'),
     path('edit/<int:pk>/', views.FiveInitiativeUpdateView.as_view(), name='edit'),
     path('detail/<int:pk>/', views.FiveInitiativeDetailView.as_view(), name='detail'),
+    path('detail/<int:pk>/pdf/', views.FiveInitiativeEventPDFView.as_view(), name='event_pdf'),
 ]

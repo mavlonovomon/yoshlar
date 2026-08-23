@@ -145,3 +145,19 @@ class OtaliqLeaderCreateView(LoginRequiredMixin, CreateView):
     form_class = OtaliqLeaderForm
     template_name = 'otaliq/leader_form.html'
     success_url = reverse_lazy('otaliq:leader_list')
+
+
+class OtaliqYouthPDFView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        item = get_object_or_404(OtaliqYouth, pk=pk)
+        user = request.user
+        if not getattr(user, 'is_site_admin', False) and user.mahalla and item.yosh.mahalla != user.mahalla:
+            return HttpResponse("Ruxsat yo'q", status=403)
+
+        from .pdf_generator import generate_otaliq_pdf
+        pdf_buffer = generate_otaliq_pdf(item)
+
+        response = HttpResponse(pdf_buffer, content_type='application/pdf')
+        filename = f"anketa_{item.yosh.fullname.replace(' ', '_')}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response

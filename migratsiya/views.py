@@ -1,9 +1,10 @@
 from django.shortcuts import get_object_or_404, redirect
-from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.db.models import Count, Q
 from django.contrib import messages
+from django.http import HttpResponse
 
 from core.models import Mahalla
 from core.view_helpers import apply_sorting, normalize_sort_params
@@ -184,3 +185,19 @@ class MeetingCreateView(LoginRequiredMixin, MahallaRestrictedMixin, CreateView):
 
     def get_success_url(self):
         return reverse_lazy('migratsiya:detail', kwargs={'pk': self.kwargs['pk']})
+
+
+class MigrationYouthPDFView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        youth = get_object_or_404(MigrationYouth, pk=pk)
+        user = request.user
+        if not getattr(user, 'is_site_admin', False) and user.mahalla and youth.yosh.mahalla != user.mahalla:
+            return HttpResponse("Ruxsat yo'q", status=403)
+
+        from .pdf_generator import generate_migration_pdf
+        pdf_buffer = generate_migration_pdf(youth)
+
+        response = HttpResponse(pdf_buffer, content_type='application/pdf')
+        filename = f"suhbat_{youth.yosh.fullname.replace(' ', '_')}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response

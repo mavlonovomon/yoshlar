@@ -2,7 +2,9 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Count, Q
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DetailView, ListView, UpdateView
+from django.views.generic import CreateView, DetailView, ListView, UpdateView, View
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 
 from core.models import Mahalla
 from core.view_helpers import apply_sorting, normalize_sort_params
@@ -157,6 +159,22 @@ class FiveInitiativeDetailView(LoginRequiredMixin, MahallaRestrictedMixin, Detai
         context = super().get_context_data(**kwargs)
         context["photos"] = self.object.photos.all()
         return context
+
+
+class FiveInitiativeEventPDFView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        event = get_object_or_404(FiveInitiativeEvent, pk=pk)
+        user = request.user
+        if not getattr(user, 'is_site_admin', False) and user.mahalla and event.mahalla != user.mahalla:
+            return HttpResponse("Ruxsat yo'q", status=403)
+
+        from .pdf_generator import generate_event_pdf
+        pdf_buffer = generate_event_pdf(event)
+
+        response = HttpResponse(pdf_buffer, content_type='application/pdf')
+        filename = f"tadbir_{event.title.replace(' ', '_')}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
 
 
 from .views_applications import (
