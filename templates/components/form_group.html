@@ -1,0 +1,13 @@
+<div class="{{ col_class|default:'col-md-6' }}">
+    <label class="form-label fw-bold text-dark small text-uppercase mb-2">
+        {{ label }}
+        {% if required %}<span class="text-danger">*</span>{% endif %}
+    </label>
+    {{ field }}
+    {% if help_text %}
+    <div class="form-text smaller text-muted opacity-75 mt-1">{{ help_text }}</div>
+    {% endif %}
+    {% if errors %}
+    <div class="text-danger smaller mt-1 fw-bold">{{ errors|striptags }}</div>
+    {% endif %}
+</div>
