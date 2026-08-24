@@ -911,7 +911,98 @@
     async function handleEimzoLogin() {
         showModal();
         if (cancelEimzoBtn && cancelEimzoBtn.parentElement) cancelEimzoBtn.parentElement.style.display = '';
-        eimzoErrorBox.style.display = 'none';
+        if (eimzoErrorBox) eimzoErrorBox.style.display = 'none';
+        renderModeChoice();
+    }
+
+    function renderModeChoice() {
+        eimzoListContainer.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button type="button" id="choosePfxModeBtn" style="padding:12px; border:1px solid #0f3ea9; background:#0f3ea9; color:#fff; border-radius:10px; cursor:pointer; font-weight:700;">PFX fayl bilan kirish</button>
+                <button type="button" id="chooseCapiModeBtn" style="padding:12px; border:1px solid #cbd5e1; background:#fff; color:#334155; border-radius:10px; cursor:pointer; font-weight:600;">E-IMZO dasturi orqali</button>
+            </div>`;
+        document.getElementById('choosePfxModeBtn').addEventListener('click', renderPfxForm);
+        document.getElementById('chooseCapiModeBtn').addEventListener('click', startCapiFlow);
+    }
+
+    function renderPfxForm() {
+        if (eimzoErrorBox) eimzoErrorBox.style.display = 'none';
+        eimzoListContainer.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <label for="pfxFileInput" style="font-size:13px; font-weight:600; color:#334155;">Kalit fayli (.pfx / .p12)</label>
+                <input type="file" id="pfxFileInput" accept=".pfx,.p12,application/x-pkcs12" style="font-size:13px; border:1px solid #cbd5e1; border-radius:8px; padding:8px;">
+                <label for="pfxPasswordInput" style="font-size:13px; font-weight:600; color:#334155; margin-top:6px;">Kalit paroli</label>
+                <input type="password" id="pfxPasswordInput" autocomplete="off" style="border:1px solid #cbd5e1; border-radius:8px; padding:10px; font-size:14px;">
+                <button type="button" id="pfxSubmitBtn" style="margin-top:10px; padding:10px 12px; border:1px solid #0f3ea9; background:#0f3ea9; color:#fff; border-radius:10px; cursor:pointer; font-size:14px; font-weight:700;">Kirish</button>
+                <button type="button" id="pfxBackBtn" style="padding:8px 12px; border:1px solid #cbd5e1; background:#fff; color:#334155; border-radius:10px; cursor:pointer; font-size:13px;">Orqaga</button>
+                <div id="pfxStatusEl" style="font-size:12px; color:#16a34a; min-height:16px;"></div>
+            </div>`;
+        document.getElementById('pfxBackBtn').addEventListener('click', renderModeChoice);
+        document.getElementById('pfxSubmitBtn').addEventListener('click', submitPfxLogin);
+    }
+
+    async function submitPfxLogin() {
+        const fileInput = document.getElementById('pfxFileInput');
+        const passInput = document.getElementById('pfxPasswordInput');
+        const statusEl = document.getElementById('pfxStatusEl');
+        const submitBtn = document.getElementById('pfxSubmitBtn');
+        const setStatus = (m) => { if (statusEl) statusEl.textContent = m; };
+        const fail = (msg) => {
+            eimzoErrorBox.innerHTML = escapeHtml(msg || 'Xatolik yuz berdi');
+            eimzoErrorBox.style.display = 'block';
+            setStatus('');
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+        };
+
+        if (!fileInput.files || fileInput.files.length === 0) {
+            fail('Kalit faylini tanlang');
+            return;
+        }
+        const file = fileInput.files[0];
+        if (file.size > 100 * 1024) {
+            fail('Fayl hajmi juda katta (maks 100 KB)');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.7';
+
+        try {
+            setStatus("Fayl o'qilmoqda...");
+            const buf = await file.arrayBuffer();
+            const bytes = new Uint8Array(buf);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+            const pfxB64 = btoa(binary);
+
+            setStatus('Challenge olinmoqda...');
+            const challenge = await getChallenge();
+
+            setStatus('Serverda imzolanmoqda va tekshirilmoqda...');
+            const res = await fetch(pageConfig.verifyUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({ pfx_b64: pfxB64, password: passInput.value }),
+            });
+            const result = await res.json();
+
+            if (result.ok) {
+                setStatus('Muvaffaqiyatli! Tizimga kirilmoqda...');
+                window.location.href = result.redirect || '/';
+            } else {
+                fail(result.error || 'Backend xatoligi yuz berdi');
+            }
+        } catch (err) {
+            fail(err.message || 'Xatolik yuz berdi');
+        }
+    }
+
+    async function startCapiFlow() {
         eimzoListContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #6b7280;">Dasturga bog\'lanilmoqda...</div>';
 
         try {
