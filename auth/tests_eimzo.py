@@ -207,6 +207,9 @@ User = get_user_model()
 
 class EimzoVerifyViewPfxTests(TestCase):
     def setUp(self):
+        from django.core.cache import cache
+
+        cache.clear()
         self.user = User.objects.create_user(
             username="eimzouser",
             password="django-pass-123",
@@ -295,3 +298,38 @@ class EimzoVerifyViewPfxTests(TestCase):
         data = json_mod.loads(resp.content)
         self.assertFalse(data.get("ok"))
         self.assertEqual(resp.status_code, 400)
+
+    def test_rate_limit_counter_survives_new_session(self):
+        from django.core.cache import cache
+        from django.test import Client
+
+        cache.clear()
+        _key, _cert, pfx_b64 = make_test_pfx()
+        nonce = self._get_challenge(self.client)
+        resp = None
+        for _ in range(6):
+            resp = self._post_json(self.verify_url, {"pfx_b64": pfx_b64, "password": "nope"})
+        self.assertEqual(resp.status_code, 429)
+
+        # Yangi sessiya (cookie yo'q) lekin xuddi shu REMOTE_ADDR — hisoblagich saqlanadi
+        fresh = Client()
+        fresh.get(self.challenge_url)
+        resp = fresh.post(
+            self.verify_url,
+            data=json.dumps({"pfx_b64": pfx_b64, "password": "nope"}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 429)
+
+    def test_non_string_pfx_b64_never_500(self):
+        import json as json_mod
+
+        nonce = self._get_challenge(self.client)
+        for bad_payload in (
+            {"pfx_b64": 12345, "password": {"evil": True}},
+            {"pfx_b64": ["x"], "password": 999},
+        ):
+            resp = self._post_json(self.verify_url, bad_payload)
+            data = json_mod.loads(resp.content)
+            self.assertFalse(data.get("ok"))
+            self.assertIn(resp.status_code, (400, 401))

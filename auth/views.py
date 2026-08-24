@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import json
 import uuid
 from django.conf import settings
@@ -26,8 +27,23 @@ EIMZO_RATE_LIMIT_ERROR = "Juda ko'p urinish. Bir daqiqa kutib turing"
 
 
 def _pfx_rate_limit_ok(request) -> bool:
-    ident = request.session.session_key or request.META.get("REMOTE_ADDR", "anon")
-    key = f"eimzo_pfx_attempts:{ident}"
+    # Hisoblagich sessiya VA IP bo'yicha alohida yuritiladi: cookie tashlab
+    # yuborish yoki sessiyani almashtirish limitni chetlab o'tishga yo'l qo'ymaydi.
+    idents = (
+        request.session.session_key or '',
+        request.META.get('REMOTE_ADDR', 'anon'),
+    )
+    for ident_raw in idents:
+        ident = hashlib.sha256(f"eimzo:{ident_raw}".encode('utf-8')).hexdigest()
+        key = f"eimzo_pfx_attempts:{ident}"
+        try:
+            count = cache.incr(key)
+        except ValueError:
+            cache.add(key, 1, EIMZO_RATE_LIMIT_WINDOW_SECONDS)
+            count = 1
+        if count > EIMZO_RATE_LIMIT_ATTEMPTS:
+            return False
+    return True
     try:
         count = cache.incr(key)
     except ValueError:
@@ -36,30 +52,34 @@ def _pfx_rate_limit_ok(request) -> bool:
     return count <= EIMZO_RATE_LIMIT_ATTEMPTS
 
 
-def _verify_with_server_signing(request, nonce: str, pfx_b64: str, password: str):
+def _verify_with_server_signing(request, nonce: str, pfx_b64, password):
     """
     PFX faylni qabul qilib, nonce ni serverda imzolaydi va qat'iy tekshiradi.
-    Qaytadi: (is_valid, cert_info, error)
+    Qaytadi: (is_valid, cert_info, error, rate_limited)
     """
+    if not isinstance(pfx_b64, str) or not isinstance(password, str):
+        return False, {}, "Noto'g'ri so'rov formati", False
+
     if not pfx_b64 or len(pfx_b64) > EIMZO_PFX_MAX_B64_LEN:
-        return False, {}, "Fayl hajmi juda katta yoki bo'sh"
+        return False, {}, "Fayl hajmi juda katta yoki bo'sh", False
 
     if not _pfx_rate_limit_ok(request):
-        return False, {}, EIMZO_RATE_LIMIT_ERROR
+        return False, {}, EIMZO_RATE_LIMIT_ERROR, True
 
     key_obj, cert_obj, load_err = load_pfx(pfx_b64, password)
     if load_err:
-        return False, {}, load_err
+        return False, {}, load_err, False
 
     try:
         cms_der = sign_nonce(nonce.encode("utf-8"), key_obj, cert_obj)
     except TypeError:
-        return False, {}, "Kalit turi qo'llab-quvvatlanmaydi"
+        return False, {}, "Kalit turi qo'llab-quvvatlanmaydi", False
     except Exception:
-        return False, {}, "Kalitni ishlatishda xatolik"
+        return False, {}, "Kalitni ishlatishda xatolik", False
 
     cms_b64 = base64.b64encode(cms_der).decode("ascii")
-    return verify_cms_signature(cms_b64, nonce)
+    is_valid, cert_info, error = verify_cms_signature(cms_b64, nonce)
+    return is_valid, cert_info, error, False
 
 
 @require_GET
@@ -109,10 +129,10 @@ def eimzo_verify(request):
         return JsonResponse({'ok': False, 'error': 'Nonce muddati tugagan'}, status=400)
 
     if pfx_b64:
-        is_valid, cert_info, error = _verify_with_server_signing(
+        is_valid, cert_info, error, rate_limited = _verify_with_server_signing(
             request, nonce, pfx_b64, password or ""
         )
-        if not is_valid and error == EIMZO_RATE_LIMIT_ERROR:
+        if not is_valid and rate_limited:
             return JsonResponse({'ok': False, 'error': error}, status=429)
     else:
         ca_bundle_path = getattr(settings, 'EIMZO_CA_BUNDLE_PATH', None)

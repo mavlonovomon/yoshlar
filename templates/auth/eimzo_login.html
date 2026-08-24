@@ -185,7 +185,11 @@
 
         function setError(message) {
             statusBox.className = 'status-box error';
-            statusBox.innerHTML = `<i class="bi bi-exclamation-circle me-2"></i>${message}`;
+            statusBox.innerHTML = '';
+            const icon = document.createElement('i');
+            icon.className = 'bi bi-exclamation-circle me-2';
+            statusBox.appendChild(icon);
+            statusBox.appendChild(document.createTextNode(String(message || 'Xatolik yuz berdi')));
             submitBtn.disabled = false;
         }
 
