@@ -1,5 +1,6 @@
 import base64
 import datetime
+import json
 
 from django.test import TestCase
 
@@ -197,3 +198,100 @@ class VerifyCmsSignatureTests(TestCase):
         is_valid, _info, error = verify_cms_signature(garbage_b64, "n")
         self.assertFalse(is_valid)
         self.assertIsNotNone(error)
+
+
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+class EimzoVerifyViewPfxTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="eimzouser",
+            password="django-pass-123",
+            pinfl="12345678901234",
+        )
+        self.challenge_url = "/auth/eimzo/challenge/"
+        self.verify_url = "/auth/eimzo/verify/"
+
+    def _get_challenge(self, client):
+        client.cookies.pop("csrftoken", None)
+        resp = self.client.get(self.challenge_url)
+        # csrf_protect GET da token talab qilmaydi, lekin cookie kerak
+        self.assertEqual(resp.status_code, 200)
+        return resp.json()["nonce"]
+
+    def _post_json(self, url, payload):
+        from django.middleware.csrf import CsrfViewMiddleware
+
+        # TestCase da csrf o'chirilgan — to'g'ridan-to'g'ri POST
+        return self.client.post(
+            url,
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+
+    def test_pfx_login_success(self):
+        import json as json_mod
+
+        _key, _cert, pfx_b64 = make_test_pfx(pinfl="12345678901234")
+        nonce = self._get_challenge(self.client)
+        resp = self._post_json(self.verify_url, {"pfx_b64": pfx_b64, "password": "test1234"})
+        data = json_mod.loads(resp.content)
+        self.assertTrue(data.get("ok"), data)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("_auth_user_id", self.client.session.keys())
+
+    def test_pfx_wrong_password_401(self):
+        import json as json_mod
+
+        _key, _cert, pfx_b64 = make_test_pfx()
+        nonce = self._get_challenge(self.client)
+        resp = self._post_json(self.verify_url, {"pfx_b64": pfx_b64, "password": "nope"})
+        data = json_mod.loads(resp.content)
+        self.assertFalse(data.get("ok"))
+        self.assertEqual(resp.status_code, 401)
+
+    def test_unknown_pinfl_401(self):
+        import json as json_mod
+
+        _key, _cert, pfx_b64 = make_test_pfx(pinfl="99999999999999")
+        nonce = self._get_challenge(self.client)
+        resp = self._post_json(self.verify_url, {"pfx_b64": pfx_b64, "password": "test1234"})
+        data = json_mod.loads(resp.content)
+        self.assertFalse(data.get("ok"))
+        self.assertEqual(resp.status_code, 401)
+
+    def test_expired_cert_401(self):
+        import json as json_mod
+
+        _key, _cert, pfx_b64 = make_test_pfx(expired=True)
+        nonce = self._get_challenge(self.client)
+        resp = self._post_json(self.verify_url, {"pfx_b64": pfx_b64, "password": "test1234"})
+        data = json_mod.loads(resp.content)
+        self.assertFalse(data.get("ok"))
+        self.assertIn("muddati", data.get("error", ""))
+
+    def test_rate_limit_429(self):
+        import json as json_mod
+
+        from django.core.cache import cache
+
+        cache.clear()
+        _key, _cert, pfx_b64 = make_test_pfx()
+        nonce = self._get_challenge(self.client)
+        statuses = []
+        for _ in range(7):
+            resp = self._post_json(self.verify_url, {"pfx_b64": pfx_b64, "password": "nope"})
+            statuses.append(resp.status_code)
+        self.assertIn(429, statuses)
+
+    def test_no_nonce_400(self):
+        import json as json_mod
+
+        _key, _cert, pfx_b64 = make_test_pfx()
+        resp = self._post_json(self.verify_url, {"pfx_b64": pfx_b64, "password": "test1234"})
+        data = json_mod.loads(resp.content)
+        self.assertFalse(data.get("ok"))
+        self.assertEqual(resp.status_code, 400)
