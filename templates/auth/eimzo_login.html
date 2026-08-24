@@ -140,15 +140,23 @@
             <div class="info-box">
                 <h6><i class="bi bi-info-circle"></i> Tizimga kirish uchun:</h6>
                 <ul>
-                    <li>E-IMZO kalitingizni kompyuterga ulang</li>
-                    <li>E-IMZO Web Plugin o'rnatilgan bo'lishi kerak</li>
+                    <li>Kalit faylingizni (.pfx) tanlang</li>
+                    <li>Kalit parolini kiriting</li>
                     <li>"Kirish" tugmasini bosing</li>
                 </ul>
             </div>
 
-            <button id="eimzoLoginBtn" class="eimzo-btn">
-                <i class="bi bi-key-fill me-2"></i>
-                E-IMZO bilan kirish
+            <div class="mb-3">
+                <label for="pfxFileInput" class="form-label">Kalit fayli (.pfx / .p12)</label>
+                <input type="file" class="form-control" id="pfxFileInput" accept=".pfx,.p12">
+            </div>
+            <div class="mb-3">
+                <label for="pfxPasswordInput" class="form-label">Kalit paroli</label>
+                <input type="password" class="form-control" id="pfxPasswordInput" autocomplete="off">
+            </div>
+
+            <button id="pfxSubmitBtn" class="eimzo-btn">
+                <i class="bi bi-key-fill me-2"></i> Kirish
             </button>
 
             <div id="eimzoStatus" class="status-box">
@@ -164,7 +172,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://127.0.0.1:64646/plugin/e-imzo-client.js"></script>
     <script>
         function getCookie(name) {
             const value = `; ${document.cookie}`;
@@ -174,119 +181,73 @@
         }
 
         const statusBox = document.getElementById('eimzoStatus');
-        const loginBtn = document.getElementById('eimzoLoginBtn');
-
-        function setStatus(message, type = 'info') {
-            statusBox.className = 'status-box ' + type;
-            statusBox.innerHTML = message;
-        }
-
-        function setLoading(message) {
-            setStatus(`<span class="spinner-border spinner-border-sm me-2"></span>${message}`, 'loading');
-            loginBtn.disabled = true;
-        }
+        const submitBtn = document.getElementById('pfxSubmitBtn');
 
         function setError(message) {
-            setStatus(`<i class="bi bi-exclamation-circle me-2"></i>${message}`, 'error');
-            loginBtn.disabled = false;
+            statusBox.className = 'status-box error';
+            statusBox.innerHTML = `<i class="bi bi-exclamation-circle me-2"></i>${message}`;
+            submitBtn.disabled = false;
         }
 
-        function setSuccess(message) {
-            setStatus(`<i class="bi bi-check-circle me-2"></i>${message}`, 'success');
+        function setStatus(message) {
+            statusBox.className = 'status-box loading';
+            statusBox.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${message}`;
         }
 
-        async function getChallenge() {
-            const res = await fetch("{% url 'eimzo_auth:eimzo_challenge' %}", {
-                credentials: 'same-origin',
-                headers: { "X-CSRFToken": getCookie("csrftoken") }
-            });
-            if (!res.ok) throw new Error("Challenge olishda xatolik");
-            return res.json();
-        }
+        submitBtn.addEventListener('click', async () => {
+            const fileInput = document.getElementById('pfxFileInput');
+            const passInput = document.getElementById('pfxPasswordInput');
 
-        async function verifySignature(signature, cert, chain) {
-            const res = await fetch("{% url 'eimzo_auth:eimzo_verify' %}", {
-                method: "POST",
-                credentials: "same-origin",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": getCookie("csrftoken")
-                },
-                body: JSON.stringify({ signature, cert, chain })
-            });
-            return res.json();
-        }
-
-        async function signWithEimzo(nonce) {
-            // E-IMZO Web Plugin bilan ishlash
-            if (typeof CAPIWS === 'undefined') {
-                throw new Error("E-IMZO Web Plugin topilmadi. Iltimos, pluginni o'rnating.");
+            if (!fileInput.files || !fileInput.files.length) {
+                setError('Kalit faylini tanlang');
+                return;
+            }
+            const file = fileInput.files[0];
+            if (file.size > 100 * 1024) {
+                setError('Fayl hajmi juda katta (maks 100 KB)');
+                return;
             }
 
-            // Kalitlarni yuklash
-            setLoading("Kalitlar yuklanmoqda...");
-            const keys = await CAPIWS.apikey();
-
-            if (!keys || keys.length === 0) {
-                throw new Error("Kalit topilmadi. Iltimos, E-IMZO kalitingizni ulang.");
-            }
-
-            // Birinchi kalitni tanlash (yoki foydalanuvchiga tanlash imkonini berish)
-            const key = keys[0];
-
-            setLoading("Imzolanmoqda...");
-
-            // Nonce'ni imzolash
-            const signedData = await CAPIWS.createPkcs7(
-                key.disk,
-                nonce,
-                key.path,
-                key.name,
-                key.alias
-            );
-
-            if (!signedData || !signedData.pkcs7_64) {
-                throw new Error("Imzolashda xatolik");
-            }
-
-            return {
-                signature: signedData.pkcs7_64,
-                cert: key.cert,
-                chain: signedData.chain || []
-            };
-        }
-
-        loginBtn.addEventListener("click", async () => {
+            submitBtn.disabled = true;
             try {
-                setLoading("Nonce olinmoqda...");
-                const { nonce } = await getChallenge();
+                setStatus("Fayl o'qilmoqda...");
+                const buf = await file.arrayBuffer();
+                const bytes = new Uint8Array(buf);
+                let binary = '';
+                for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
 
-                const { signature, cert, chain } = await signWithEimzo(nonce);
+                setStatus('Challenge olinmoqda...');
+                const res = await fetch("{% url 'eimzo_auth:eimzo_challenge' %}", {
+                    credentials: 'same-origin',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                });
+                if (!res.ok) throw new Error('Challenge olishda xatolik');
 
-                setLoading("Tekshirilmoqda...");
-                const result = await verifySignature(signature, cert, chain);
+                setStatus('Serverda tekshirilmoqda...');
+                const verifyRes = await fetch("{% url 'eimzo_auth:eimzo_verify' %}", {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify({
+                        pfx_b64: btoa(binary),
+                        password: passInput.value,
+                    }),
+                });
+                const result = await verifyRes.json();
 
                 if (result.ok) {
-                    setSuccess("Muvaffaqiyatli! Yo'naltirilmoqda...");
-                    setTimeout(() => {
-                        window.location.href = result.redirect || "/";
-                    }, 1000);
+                    statusBox.className = 'status-box success';
+                    statusBox.innerHTML = '<i class="bi bi-check-circle me-2"></i>Muvaffaqiyatli!';
+                    window.location.href = result.redirect || '/';
                 } else {
-                    setError(result.error || "Autentifikatsiya xatosi");
+                    setError(result.error || 'Autentifikatsiya xatosi');
                 }
             } catch (err) {
-                console.error(err);
-                setError(err.message || "Xatolik yuz berdi");
+                setError(err.message || 'Xatolik yuz berdi');
             }
-        });
-
-        // Plugin mavjudligini tekshirish
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                if (typeof CAPIWS === 'undefined') {
-                    setError("E-IMZO Web Plugin topilmadi");
-                }
-            }, 2000);
         });
     </script>
 </body>
