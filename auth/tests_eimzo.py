@@ -76,3 +76,66 @@ class LoadPfxTests(TestCase):
         self.assertIsNone(loaded_key)
         self.assertIsNone(loaded_cert)
         self.assertIsNotNone(error)
+
+
+class SignNonceTests(TestCase):
+    def test_produces_parseable_signed_data(self):
+        from asn1crypto import cms as asn1_cms
+
+        from auth.eimzo.cms_signer import sign_nonce
+
+        key, cert, _pfx = make_test_pfx()
+        nonce = b"abc123nonce"
+        cms_der = sign_nonce(nonce, key, cert)
+
+        content_info = asn1_cms.ContentInfo.load(cms_der)
+        self.assertEqual(content_info["content_type"].native, "signed_data")
+        signed_data = content_info["content"]
+        encap = signed_data["encap_content_info"]
+        self.assertEqual(encap["content_type"].native, "data")
+        self.assertEqual(bytes(encap["content"].native), nonce)
+        self.assertEqual(len(signed_data["signer_infos"]), 1)
+
+    def test_signature_verifies_with_public_key(self):
+        from asn1crypto import cms as asn1_cms
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+        from cryptography.hazmat.primitives.serialization import Encoding
+
+        from auth.eimzo.cms_signer import sign_nonce
+
+        key, cert, _pfx = make_test_pfx()
+        nonce = b"another-nonce-42"
+        cms_der = sign_nonce(nonce, key, cert)
+
+        content_info = asn1_cms.ContentInfo.load(cms_der)
+        signed_data = content_info["content"]
+        signer_info = signed_data["signer_infos"][0]
+        signed_attrs = signer_info["signed_attrs"]
+        signature = signer_info["signature"].native
+
+        cert.public_key().verify(
+            signature,
+            signed_attrs.dump(),
+            padding.PKCS1v15(),
+            hashes.SHA256(),
+        )
+
+        md_attr = [
+            a["values"][0].native
+            for a in signed_attrs
+            if a["type"].native == "message_digest"
+        ][0]
+        import hashlib
+        self.assertEqual(md_attr, hashlib.sha256(nonce).digest())
+
+    def test_wrong_key_type_raises_clear_error(self):
+        from auth.eimzo.cms_signer import sign_nonce
+
+        class FakeKey:
+            def sign(self, *args, **kwargs):
+                raise TypeError("unsupported")
+
+        key, cert, _pfx = make_test_pfx()
+        with self.assertRaises(TypeError):
+            sign_nonce(b"x", FakeKey(), cert)
