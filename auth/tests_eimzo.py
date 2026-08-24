@@ -139,3 +139,61 @@ class SignNonceTests(TestCase):
         key, cert, _pfx = make_test_pfx()
         with self.assertRaises(TypeError):
             sign_nonce(b"x", FakeKey(), cert)
+
+
+class VerifyCmsSignatureTests(TestCase):
+    def test_roundtrip_ok(self):
+        import base64 as b64mod
+
+        from auth.eimzo.cms_signer import sign_nonce
+        from auth.eimzo.verifier import verify_cms_signature
+
+        key, cert, _pfx = make_test_pfx(pinfl="12345678901234")
+        nonce = "nonce-value-777"
+        cms_b64 = b64mod.b64encode(sign_nonce(nonce.encode(), key, cert)).decode()
+
+        is_valid, cert_info, error = verify_cms_signature(cms_b64, nonce)
+        self.assertTrue(is_valid, error)
+        self.assertEqual(cert_info.get("pinfl"), "12345678901234")
+        self.assertIn("TESTOV", cert_info.get("cn", "") + cert_info.get("subject", ""))
+
+    def test_nonce_mismatch_rejected(self):
+        import base64 as b64mod
+
+        from auth.eimzo.cms_signer import sign_nonce
+        from auth.eimzo.verifier import verify_cms_signature
+
+        key, cert, _pfx = make_test_pfx()
+        cms_b64 = b64mod.b64encode(sign_nonce(b"real-nonce", key, cert)).decode()
+
+        is_valid, _info, error = verify_cms_signature(cms_b64, "tampered-nonce")
+        self.assertFalse(is_valid)
+        self.assertIn("mos emas", error)
+
+    def test_tampered_signature_rejected(self):
+        import base64
+        from asn1crypto import cms as asn1_cms
+
+        from auth.eimzo.cms_signer import sign_nonce
+        from auth.eimzo.verifier import verify_cms_signature
+
+        key, cert, _pfx = make_test_pfx()
+        cms_der = bytearray(sign_nonce(b"some-nonce", key, cert))
+        # oxirgi baytlar signature joyida — bitta baytni buzamiz (DER oxiri signature octets)
+        cms_der[-1] ^= 0xFF
+        try:
+            tampered_b64 = base64.b64encode(bytes(cms_der)).decode()
+            is_valid, _info, error = verify_cms_signature(tampered_b64, "some-nonce")
+        except Exception:
+            is_valid, error = False, "parse error"
+        self.assertFalse(is_valid)
+
+    def test_garbage_rejected(self):
+        import base64
+
+        from auth.eimzo.verifier import verify_cms_signature
+
+        garbage_b64 = base64.b64encode(b"garbage-data-here").decode()
+        is_valid, _info, error = verify_cms_signature(garbage_b64, "n")
+        self.assertFalse(is_valid)
+        self.assertIsNotNone(error)

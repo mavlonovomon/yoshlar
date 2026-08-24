@@ -179,3 +179,121 @@ def verify_signature(
 
     except Exception as e:
         return False, {}, f"Tekshirishda xatolik: {str(e)}"
+
+
+def verify_cms_signature(signature_b64: str, expected_nonce: str) -> Tuple[bool, dict, str | None]:
+    """
+    Server tomonda yasalgan CMS imzosini qat'iy tekshiradi:
+      1. DER parse
+      2. signer sertifikatini topish
+      3. message_digest == SHA256(expected_nonce)
+      4. signature ni signed_attrs ustida public key bilan tekshirish
+    Qaytadi: (is_valid, cert_info, error)
+    """
+    has_crypto, import_error = _ensure_cryptography()
+    if not has_crypto:
+        return False, {}, f"cryptography kutubxonasi topilmadi ({import_error})"
+
+    try:
+        import hashlib
+
+        from asn1crypto import cms as asn1_cms
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding, rsa as rsa_mod
+
+        if not isinstance(signature_b64, str) or not signature_b64.strip():
+            return False, {}, "Imzo bo'sh"
+
+        try:
+            raw = base64.b64decode(signature_b64, validate=True)
+        except Exception:
+            return False, {}, "Imzo base64 formatida emas"
+
+        try:
+            content_info = asn1_cms.ContentInfo.load(raw)
+        except Exception:
+            return False, {}, "Imzo formati noto'g'ri (CMS parse xatosi)"
+
+        if content_info["content_type"].native != "signed_data":
+            return False, {}, "CMS turi signed_data emas"
+
+        signed_data = content_info["content"]
+
+        signer_infos = signed_data["signer_infos"]
+        if len(signer_infos) != 1:
+            return False, {}, "Imzoda bir nechta signer topildi"
+        signer_info = signer_infos[0]
+
+        signed_attrs = signer_info["signed_attrs"]
+        if signed_attrs is None:
+            return False, {}, "Signed attrs yo'q"
+
+        nonce_bytes = expected_nonce.encode("utf-8")
+
+        message_digest = None
+        for attr in signed_attrs:
+            if attr["type"].native == "message_digest":
+                message_digest = attr["values"][0].native
+        if message_digest is None:
+            return False, {}, "message_digest atributi topilmadi"
+
+        if bytes(message_digest) != hashlib.sha256(nonce_bytes).digest():
+            return False, {}, "Nonce imzo bilan mos emas"
+
+        encap_content = signed_data["encap_content_info"]["content"]
+        if encap_content is not None:
+            content_bytes = bytes(encap_content.native)
+            if content_bytes != nonce_bytes:
+                return False, {}, "Imzolangan ma'lumot nonce bilan mos emas"
+
+        certificates = []
+        for choice in (signed_data["certificates"] or []):
+            if choice.name == "certificate":
+                certificates.append(choice.chosen)
+
+        target_asn1_cert = None
+        sid = signer_info["sid"]
+        if sid.name == "issuer_and_serial_number":
+            ias = sid.chosen
+            serial = int(ias["serial_number"].native)
+            issuer_dump = ias["issuer"].dump()
+            for cand in certificates:
+                if (
+                    int(cand["tbs_certificate"]["serial_number"].native) == serial
+                    and cand["tbs_certificate"]["issuer"].dump() == issuer_dump
+                ):
+                    target_asn1_cert = cand
+                    break
+        elif len(certificates) == 1:
+            target_asn1_cert = certificates[0]
+
+        if target_asn1_cert is None:
+            return False, {}, "Signer sertifikati topilmadi"
+
+        cert = x509.load_der_x509_certificate(target_asn1_cert.dump())
+        public_key = cert.public_key()
+        if not isinstance(public_key, rsa_mod.RSAPublicKey):
+            return False, {}, "Qo'llab-quvvatlanmayan kalit turi"
+
+        signature_bytes = signer_info["signature"].native
+        try:
+            public_key.verify(
+                signature_bytes,
+                signed_attrs.dump(),
+                padding.PKCS1v15(),
+                hashes.SHA256(),
+            )
+        except Exception:
+            return False, {}, "Imzo noto'g'ri (kriptografik tekshiruv muvaffaqiyatsiz)"
+
+        cert_info = {
+            "subject": cert.subject.rfc4514_string(),
+            "serial": hex(cert.serial_number),
+            "not_before": cert.not_valid_before_utc,
+            "not_after": cert.not_valid_after_utc,
+        }
+        cert_info.update(_extract_from_subject_str(cert_info["subject"]))
+        return True, cert_info, None
+
+    except Exception as exc:
+        return False, {}, f"Tekshirishda xatolik: {str(exc)}"
