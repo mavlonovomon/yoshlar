@@ -528,7 +528,6 @@ def build_module_rows(
     ishsiz_total = {}
     ishsiz_assisted = {}
     reyd_count = {}
-    besh_total = {}
     besh_sum = {}
     kredit_total = {}
     kredit_approved = {}
@@ -587,7 +586,6 @@ def build_module_rows(
         besh_qs = FiveInitiativeEvent.objects.filter(mahalla_id__in=mahalla_ids)
         besh_qs = _filter_date_range(besh_qs, 'event_date', range_from, range_to)
         for r in besh_qs.values('mahalla_id').annotate(n=Count('id'), s=Sum('coverage')):
-            besh_total[r['mahalla_id']] = r['n'] or 0
             besh_sum[r['mahalla_id']] = r['s'] or 0
 
         kredit_qs = CreditCandidate.objects.filter(yosh__mahalla_id__in=mahalla_ids)
@@ -599,17 +597,6 @@ def build_module_rows(
             kredit_qs.filter(stage='APPROVED').values('yosh__mahalla_id').annotate(total=Count('id')),
             'yosh__mahalla_id', 'total',
         )
-
-    if leader_ids:
-        for r in AttendanceRecord.objects.filter(
-            leader_id__in=leader_ids, status__isnull=False
-        ).values('leader_id').annotate(
-            total=Count('id'),
-            on_time=Count('id', filter=Q(status='ON_TIME')),
-            excused=Count('id', filter=Q(status='EXCUSED')),
-            late=Count('id', filter=Q(status='LATE')),
-        ):
-            pass  # aggregated per leader below; raw rows needed with session date
 
     # yoqlama: session date orqali davr filtri
     attendance_by_leader = {}
