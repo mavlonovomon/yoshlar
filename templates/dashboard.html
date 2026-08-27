@@ -45,7 +45,7 @@
                     </div>
                 </div>
                 <div class="stats-progress">
-                    <div class="progress-bar bg-success" style="width: 100%"></div>
+                    <div class="progress-bar bg-success" style="width: {% if total_yosh %}{% widthratio suhbat_bor total_yosh 100 %}{% else %}0{% endif %}%"></div>
                 </div>
             </div>
         </div>
@@ -64,7 +64,7 @@
                     </div>
                 </div>
                 <div class="stats-progress">
-                    <div class="progress-bar bg-danger" style="width: 100%"></div>
+                    <div class="progress-bar bg-danger" style="width: {% if total_yosh %}{% widthratio suhbat_yoq total_yosh 100 %}{% else %}0{% endif %}%"></div>
                 </div>
             </div>
         </div>
@@ -83,7 +83,15 @@
                     </div>
                 </div>
                 <div class="stats-progress">
-                    <div class="progress-bar bg-info" style="width: 100%"></div>
+                    {% if total_yosh %}
+                        {% if total_meetings >= total_yosh %}
+                        <div class="progress-bar bg-info" style="width: 100%"></div>
+                        {% else %}
+                        <div class="progress-bar bg-info" style="width: {% widthratio total_meetings total_yosh 100 %}%"></div>
+                        {% endif %}
+                    {% else %}
+                    <div class="progress-bar bg-info" style="width: 0%"></div>
+                    {% endif %}
                 </div>
             </div>
         </div>
