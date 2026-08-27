@@ -620,13 +620,13 @@ def build_module_rows(
             solar_by_mahalla[sp.mahalla_id] = sp
 
         mega_models = [
-            ('mutolaa', MutolaaMahallaStat),
-            ('ustoz_ai', UstozAiMahallaStat),
-            ('uzchess', UzchessMahallaStat),
-            ('qizlar', QizlarAkademiyasiMahallaStat),
+            ('mutolaa', MutolaaMahallaStat, ['user_count', 'users_total', 'foydalanuvchilar']),
+            ('ustoz_ai', UstozAiMahallaStat, ['users', 'user_count', 'users_total', 'active_users']),
+            ('uzchess', UzchessMahallaStat, ['profiles', 'users_total', 'users']),
+            ('qizlar', QizlarAkademiyasiMahallaStat, ['profiles', 'users_total', 'users']),
         ]
         mega_by_key = {}
-        for key, model in mega_models:
+        for key, model, metric_keys in mega_models:
             stats = {}
             for stat in model.objects.filter(
                 mahalla_id__in=mahalla_ids
@@ -634,7 +634,12 @@ def build_module_rows(
                 mid_val = stat.mahalla_id
                 if mid_val not in stats:
                     metrics = stat.metrics or {}
-                    stats[mid_val] = metrics.get('users_total', 0)
+                    users = 0
+                    for mk in metric_keys:
+                        if mk in metrics and metrics[mk] is not None:
+                            users = metrics[mk]
+                            break
+                    stats[mid_val] = users
             mega_by_key[key] = stats
 
     # yoqlama: session date orqali davr filtri
