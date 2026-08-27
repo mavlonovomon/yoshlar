@@ -45,3 +45,14 @@ class KpiViewTest(TestCase):
         self.assertEqual(resp.status_code, 200)
         pref = KpiColumnPref.objects.get(user=self.user, column_key="otaliq")
         self.assertFalse(pref.visible)
+
+    def test_pdf_download(self):
+        resp = self.client.get(reverse("kpi_pdf"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["Content-Type"], "application/pdf")
+        self.assertGreater(len(resp.content), 500)
+
+    def test_excel_download(self):
+        resp = self.client.get(reverse("kpi_excel"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("spreadsheetml", resp["Content-Type"])

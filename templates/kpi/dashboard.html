@@ -106,8 +106,8 @@
             <h4>KPI liderbord</h4>
             <div class="kpi-toolbar">
                 <button type="button" class="btn btn-outline-primary btn-sm" id="btnColumns"><i class="bi bi-gear"></i> Ustunlar</button>
-                <a class="btn btn-outline-danger btn-sm" href="?period={{ selected_period }}&sector={{ selected_sector }}&q={{ q|urlencode }}&export=pdf"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
-                <a class="btn btn-outline-success btn-sm" href="?period={{ selected_period }}&sector={{ selected_sector }}&q={{ q|urlencode }}&export=excel"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+                <a class="btn btn-outline-danger btn-sm" href="{% url 'kpi_pdf' %}?period={{ selected_period }}&sector={{ selected_sector }}&q={{ q|urlencode }}"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+                <a class="btn btn-outline-success btn-sm" href="{% url 'kpi_excel' %}?period={{ selected_period }}&sector={{ selected_sector }}&q={{ q|urlencode }}"><i class="bi bi-file-earmark-excel"></i> Excel</a>
                 <span class="kpi-table-count">{{ leaders_count }} ta yetakchi</span>
             </div>
         </div>

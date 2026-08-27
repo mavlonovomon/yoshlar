@@ -1,15 +1,16 @@
 import json
-from datetime import date
+from datetime import date, datetime
 
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .models import KpiColumnPref, User
 from .services.kpi_service import build_module_rows, MODULE_COLUMNS, traffic_color
+from .kpi_exports import build_excel, build_pdf
 
 
 def _period_start(period):
@@ -172,3 +173,60 @@ def kpi_column_toggle(request):
         defaults={"visible": visible},
     )
     return JsonResponse({"success": True, "column_key": column_key, "visible": visible})
+
+
+def _export_context(request, period, sector, query):
+    start_dt = _period_start(period)
+    today = timezone.localdate()
+    from_date = start_dt.date() if start_dt else None
+    to_date = today if start_dt else None
+    leaders_qs = User.objects.filter(is_active=True, role="YETAKCHI").select_related("mahalla")
+    if sector in {"1", "2", "3", "4"}:
+        leaders_qs = leaders_qs.filter(sector=int(sector))
+    if query:
+        leaders_qs = leaders_qs.filter(
+            Q(full_name__icontains=query)
+            | Q(username__icontains=query)
+            | Q(mahalla__name__icontains=query)
+        )
+    rows = build_module_rows(list(leaders_qs), from_date=from_date, to_date=to_date)
+    for r in rows:
+        r['traffic'] = traffic_color(r['total_score'])
+    for i, r in enumerate(rows, start=1):
+        r['rank'] = i
+    prefs = {p.column_key: p.visible for p in KpiColumnPref.objects.filter(user=request.user)}
+    visible_keys = [c["key"] for c in MODULE_COLUMNS if prefs.get(c["key"], True)]
+    title = f"KPI reytingi - {_period_label(period)}"
+    subtitle = f"{_period_label(period)} | {from_date} - {to_date}" if from_date else "Barcha davr"
+    return rows, visible_keys, title, subtitle
+
+
+@login_required
+def kpi_pdf(request):
+    period = (request.GET.get("period") or "month").strip().lower()
+    if period not in {"month", "quarter", "year", "all"}:
+        period = "month"
+    sector = (request.GET.get("sector") or "").strip()
+    query = (request.GET.get("q") or "").strip()
+    rows, visible_keys, title, subtitle = _export_context(request, period, sector, query)
+    pdf_bytes = build_pdf(rows, visible_keys, title, subtitle)
+    resp = HttpResponse(pdf_bytes, content_type="application/pdf")
+    resp["Content-Disposition"] = f'attachment; filename="kpi_{period}_{datetime.now():%Y%m%d}.pdf"'
+    return resp
+
+
+@login_required
+def kpi_excel(request):
+    period = (request.GET.get("period") or "month").strip().lower()
+    if period not in {"month", "quarter", "year", "all"}:
+        period = "month"
+    sector = (request.GET.get("sector") or "").strip()
+    query = (request.GET.get("q") or "").strip()
+    rows, visible_keys, title, subtitle = _export_context(request, period, sector, query)
+    xlsx_bytes = build_excel(rows, visible_keys, title)
+    resp = HttpResponse(
+        xlsx_bytes,
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    resp["Content-Disposition"] = f'attachment; filename="kpi_{period}_{datetime.now():%Y%m%d}.xlsx"'
+    return resp
