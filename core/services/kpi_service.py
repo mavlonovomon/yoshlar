@@ -443,6 +443,320 @@ def build_kpi_rows(
     return rows
 
 
+MODULE_COLUMNS = [
+    {"key": "otaliq", "label": "Otaliq"},
+    {"key": "migratsiya", "label": "Migratsiya"},
+    {"key": "ishsiz", "label": "Ishsiz yoshlar"},
+    {"key": "reyd", "label": "Reyd"},
+    {"key": "reyd_otkazilishi", "label": "Reyd o'tkazilishi"},
+    {"key": "besh_tashabbus", "label": "Besh tashabbus"},
+    {"key": "yoqlama", "label": "Yoqlama"},
+    {"key": "kredit", "label": "Kredit yo'naltirish"},
+    {"key": "intizom", "label": "Intizom jazo"},
+    {"key": "bilim", "label": "Bilim sinovi"},
+]
+MODULE_KEYS = [c["key"] for c in MODULE_COLUMNS]
+
+
+def traffic_color(score):
+    """Itog bo'yicha svetofor rangini qaytaradi (gradient, rgba)."""
+    try:
+        score = float(score)
+    except (TypeError, ValueError):
+        score = 0.0
+    score = max(0.0, min(100.0, score))
+
+    def _lerp(lo, hi, t):
+        return int(lo + (hi - lo) * t)
+
+    if score >= 80:
+        # yashil: och yashil (60) -> to'q yashil (95 da to'liq to'yingan)
+        t = min(1.0, (score - 80) / 15.0)
+        r = _lerp(60, 25, t)
+        g = _lerp(183, 135, t)
+        b = _lerp(120, 84, t)
+        return f"rgba({r}, {g}, {b}, 0.30)"
+    if score >= 60:
+        # sariq
+        t = (score - 60) / 20.0
+        r = _lerp(255, 230, t)
+        g = _lerp(214, 160, t)
+        b = _lerp(84, 32, t)
+        return f"rgba({r}, {g}, {b}, 0.30)"
+    # qizil: och qizil (255,200,200) 10 gacha saqlanadi, keyin to'q qizilga
+    t = max(0.0, (score - 10) / 50.0)
+    r = _lerp(255, 220, t)
+    g = _lerp(200, 53, t)
+    b = _lerp(200, 69, t)
+    return f"rgba({r}, {g}, {b}, 0.30)"
+
+
+def _months_in_period(from_date, to_date):
+    if from_date is None or to_date is None:
+        return None
+    return (to_date.year - from_date.year) * 12 + (to_date.month - from_date.month) + 1
+
+
+def build_module_rows(
+    leaders,
+    from_date=None,
+    to_date=None,
+):
+    """Har bir yetakchi uchun 10 modul % + Itog (teng vaznli o'rtacha).
+
+    Ma'lumotsiz modul 0% hisoblanadi. Natija total_score bo'yicha
+    kamayish tartibida tartiblanadi.
+    """
+    from bilim_sinovi.models import TestResult
+    from kredit_yo_naltirish.models import CreditCandidate
+
+    leaders = _normalize_leaders(leaders)
+    if not leaders:
+        return []
+
+    start_dt, end_dt = _period_bounds(from_date, to_date)
+    range_from = _as_date(from_date) if from_date is not None else None
+    range_to = _as_date(to_date) if to_date is not None else None
+
+    leader_ids = [leader.id for leader in leaders]
+    mahalla_ids = sorted({leader.mahalla_id for leader in leaders if leader.mahalla_id})
+
+    otaliq_total = {}
+    otaliq_covered = {}
+    migratsiya_total = {}
+    migratsiya_covered = {}
+    ishsiz_total = {}
+    ishsiz_assisted = {}
+    reyd_count = {}
+    besh_total = {}
+    besh_sum = {}
+    kredit_total = {}
+    kredit_approved = {}
+    bilim_by_leader = {}
+
+    if mahalla_ids:
+        otaliq_qs = OtaliqYouth.objects.filter(yosh__mahalla_id__in=mahalla_ids)
+        otaliq_total = _map_from_rows(
+            otaliq_qs.values('yosh__mahalla_id').annotate(total=Count('id')),
+            'yosh__mahalla_id', 'total',
+        )
+        covered = otaliq_qs.filter(meetings__meeting_date__range=(start_dt, end_dt)) if start_dt and end_dt else otaliq_qs.filter(meetings__isnull=False)
+        otaliq_covered = _map_from_rows(
+            covered.values('yosh__mahalla_id').annotate(total=Count('id', distinct=True)),
+            'yosh__mahalla_id', 'total',
+        )
+
+        migratsiya_qs = MigrationYouth.objects.filter(yosh__mahalla_id__in=mahalla_ids)
+        migratsiya_total = _map_from_rows(
+            migratsiya_qs.values('yosh__mahalla_id').annotate(total=Count('id')),
+            'yosh__mahalla_id', 'total',
+        )
+        mcovered = migratsiya_qs.filter(meetings__meeting_date__range=(start_dt, end_dt)) if start_dt and end_dt else migratsiya_qs.filter(meetings__isnull=False)
+        migratsiya_covered = _map_from_rows(
+            mcovered.values('yosh__mahalla_id').annotate(total=Count('id', distinct=True)),
+            'yosh__mahalla_id', 'total',
+        )
+
+        ishsiz_qs = UnemployedYouth.objects.filter(yosh__mahalla_id__in=mahalla_ids)
+        ishsiz_total = _map_from_rows(
+            ishsiz_qs.values('yosh__mahalla_id').annotate(total=Count('id')),
+            'yosh__mahalla_id', 'total',
+        )
+        assisted = ishsiz_qs.filter(assistance__provided=True)
+        if range_from or range_to:
+            dq = Q(assistance__date_provided__isnull=True)
+            if range_from and range_to:
+                dq |= Q(assistance__date_provided__range=(range_from, range_to))
+            elif range_from:
+                dq |= Q(assistance__date_provided__gte=range_from)
+            elif range_to:
+                dq |= Q(assistance__date_provided__lte=range_to)
+            assisted = assisted.filter(dq)
+        ishsiz_assisted = _map_from_rows(
+            assisted.values('yosh__mahalla_id').annotate(total=Count('id')),
+            'yosh__mahalla_id', 'total',
+        )
+
+        reyd_qs = RaidEvent.objects.filter(mahalla_id__in=mahalla_ids)
+        reyd_qs = _filter_date_range(reyd_qs, 'event_date', range_from, range_to)
+        reyd_count = _map_from_rows(
+            reyd_qs.values('mahalla_id').annotate(total=Count('id')),
+            'mahalla_id', 'total',
+        )
+
+        besh_qs = FiveInitiativeEvent.objects.filter(mahalla_id__in=mahalla_ids)
+        besh_qs = _filter_date_range(besh_qs, 'event_date', range_from, range_to)
+        for r in besh_qs.values('mahalla_id').annotate(n=Count('id'), s=Sum('coverage')):
+            besh_total[r['mahalla_id']] = r['n'] or 0
+            besh_sum[r['mahalla_id']] = r['s'] or 0
+
+        kredit_qs = CreditCandidate.objects.filter(yosh__mahalla_id__in=mahalla_ids)
+        kredit_total = _map_from_rows(
+            kredit_qs.values('yosh__mahalla_id').annotate(total=Count('id')),
+            'yosh__mahalla_id', 'total',
+        )
+        kredit_approved = _map_from_rows(
+            kredit_qs.filter(stage='APPROVED').values('yosh__mahalla_id').annotate(total=Count('id')),
+            'yosh__mahalla_id', 'total',
+        )
+
+    if leader_ids:
+        for r in AttendanceRecord.objects.filter(
+            leader_id__in=leader_ids, status__isnull=False
+        ).values('leader_id').annotate(
+            total=Count('id'),
+            on_time=Count('id', filter=Q(status='ON_TIME')),
+            excused=Count('id', filter=Q(status='EXCUSED')),
+            late=Count('id', filter=Q(status='LATE')),
+        ):
+            pass  # aggregated per leader below; raw rows needed with session date
+
+    # yoqlama: session date orqali davr filtri
+    attendance_by_leader = {}
+    att_qs = AttendanceRecord.objects.filter(leader_id__in=leader_ids, status__isnull=False)
+    att_qs = _filter_dt_range(att_qs, 'session__session_date', start_dt, end_dt)
+    for r in att_qs.values('leader_id').annotate(
+        total=Count('id'),
+        on_time=Count('id', filter=Q(status='ON_TIME')),
+        excused=Count('id', filter=Q(status='EXCUSED')),
+        late=Count('id', filter=Q(status='LATE')),
+    ):
+        attendance_by_leader[r['leader_id']] = r
+
+    discipline_by_leader = defaultdict(dict)
+    disc_qs = DisciplineAction.objects.filter(employee_id__in=leader_ids, status='BOR')
+    disc_qs = _filter_date_range(disc_qs, 'action_date', range_from, range_to)
+    for r in disc_qs.values('employee_id', 'action_type').annotate(total=Count('id')):
+        discipline_by_leader[r['employee_id']][r['action_type']] = r['total']
+
+    test_qs = TestResult.objects.filter(user_id__in=leader_ids)
+    test_qs = _filter_dt_range(test_qs, 'started_at', start_dt, end_dt)
+    for r in test_qs.values('user_id').annotate(
+        n=Count('id'), s=Sum('score'), t=Sum('total_questions')
+    ):
+        bilim_by_leader[r['user_id']] = {'n': r['n'], 's': r['s'], 't': r['t']}
+
+    max_reyd = max(reyd_count.values(), default=0)
+    max_besh = max(besh_sum.values(), default=0)
+    months = _months_in_period(range_from, range_to)
+    reyd_months_by_mahalla = {}
+    reyd_month_qs = RaidEvent.objects.filter(mahalla_id__in=mahalla_ids)
+    reyd_month_qs = _filter_date_range(reyd_month_qs, 'event_date', range_from, range_to)
+    for r in reyd_month_qs.values('mahalla_id', 'event_date'):
+        reyd_months_by_mahalla.setdefault(r['mahalla_id'], set()).add((r['event_date'].year, r['event_date'].month))
+
+    rows = []
+    for leader in leaders:
+        mid = leader.mahalla_id
+        modules = {}
+
+        ot = otaliq_total.get(mid, 0)
+        oc = otaliq_covered.get(mid, 0)
+        modules['otaliq'] = {
+            'pct': round((_safe_ratio(oc, ot) or 0) * 100, 1), 'count': oc, 'total': ot,
+        }
+
+        mt = migratsiya_total.get(mid, 0)
+        mc = migratsiya_covered.get(mid, 0)
+        modules['migratsiya'] = {
+            'pct': round((_safe_ratio(mc, mt) or 0) * 100, 1), 'count': mc, 'total': mt,
+        }
+
+        it = ishsiz_total.get(mid, 0)
+        ia = ishsiz_assisted.get(mid, 0)
+        modules['ishsiz'] = {
+            'pct': round((_safe_ratio(ia, it) or 0) * 100, 1), 'count': ia, 'total': it,
+        }
+
+        rc = reyd_count.get(mid, 0)
+        modules['reyd'] = {
+            'pct': round(_safe_ratio(rc, max_reyd) * 100, 1) if max_reyd else 0.0,
+            'count': rc, 'total': max_reyd,
+        }
+
+        reyd_month_count = len(reyd_months_by_mahalla.get(mid, set()))
+        modules['reyd_otkazilishi'] = {
+            'pct': round(_safe_ratio(reyd_month_count, months) * 100, 1) if months else 0.0,
+            'count': reyd_month_count, 'total': months,
+        }
+
+        bc = besh_sum.get(mid, 0)
+        modules['besh_tashabbus'] = {
+            'pct': round(_safe_ratio(bc, max_besh) * 100, 1) if max_besh else 0.0,
+            'count': bc, 'total': max_besh,
+        }
+
+        att = attendance_by_leader.get(leader.id, {})
+        att_total = att.get('total', 0) or 0
+        if att_total:
+            att_ratio = (att.get('on_time', 0) + att.get('excused', 0) + (att.get('late', 0) * 0.6)) / att_total
+            att_ratio = min(1.0, att_ratio)
+        else:
+            att_ratio = 0.0
+        modules['yoqlama'] = {
+            'pct': round(att_ratio * 100, 1), 'count': att_total, 'total': att_total,
+        }
+
+        kt = kredit_total.get(mid, 0)
+        ka = kredit_approved.get(mid, 0)
+        modules['kredit'] = {
+            'pct': round((_safe_ratio(ka, kt) or 0) * 100, 1), 'count': ka, 'total': kt,
+        }
+
+        disc = discipline_by_leader.get(leader.id, {})
+        if disc:
+            penalty = (
+                disc.get('OGOHLANTIRISH', 0) * 5
+                + disc.get('XAYFSAN', 0) * 9
+                + disc.get('ISH_HAQI_30', 0) * 13
+                + disc.get('ISH_HAQI_50', 0) * 18
+            )
+            modules['intizom'] = {
+                'pct': round(max(0.0, 100.0 - penalty), 1),
+                'count': sum(disc.values()), 'total': sum(disc.values()),
+            }
+        else:
+            modules['intizom'] = {'pct': 0.0, 'count': 0, 'total': 0}
+
+        tb = bilim_by_leader.get(leader.id, {})
+        if tb.get('t'):
+            bilim_pct = round((tb['s'] / tb['t']) * 100, 1)
+        else:
+            bilim_pct = 0.0
+        modules['bilim'] = {
+            'pct': bilim_pct, 'count': tb.get('n', 0), 'total': tb.get('t', 0),
+        }
+
+        pcts = [modules[k]['pct'] for k in MODULE_KEYS]
+        total_score = round(sum(pcts) / len(MODULE_KEYS), 2)
+
+        if total_score >= 80:
+            traffic = 'green'
+        elif total_score >= 60:
+            traffic = 'yellow'
+        else:
+            traffic = 'red'
+
+        with_pct = [(k, modules[k]['pct']) for k in MODULE_KEYS]
+        weakest = min(with_pct, key=lambda x: x[1]) if with_pct else None
+        strongest = max(with_pct, key=lambda x: x[1]) if with_pct else None
+
+        rows.append({
+            'leader': leader,
+            'mahalla_name': leader.mahalla.name if leader.mahalla else '-',
+            'modules': modules,
+            'total_score': total_score,
+            'traffic': traffic,
+            'weakest_key': weakest[0] if weakest else None,
+            'strongest_key': strongest[0] if strongest else None,
+        })
+
+    rows.sort(key=lambda r: r['total_score'], reverse=True)
+    for i, r in enumerate(rows, start=1):
+        r['rank'] = i
+    return rows
+
+
 def compute_leader_kpi(user: User, from_date: date, to_date: date) -> dict:
     if user is None or not getattr(user, 'pk', None):
         raise TypeError("user parametri saqlangan foydalanuvchi bo'lishi kerak.")
