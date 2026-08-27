@@ -1,10 +1,15 @@
+import json
+from datetime import date
+
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.http import JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
-from .models import User
-from .services.kpi_service import build_kpi_rows
+from .models import KpiColumnPref, User
+from .services.kpi_service import build_module_rows, MODULE_COLUMNS, traffic_color
 
 
 def _period_start(period):
@@ -29,6 +34,25 @@ def _period_label(period):
     return "Joriy oy"
 
 
+def _prev_period_bounds(period):
+    """Avvalgi davr chegaralarini qaytaradi (from, to) date yoki (None, None)."""
+    now = timezone.localtime().date()
+    if period == "all":
+        return None, None
+    if period == "year":
+        prev_year = now.year - 1
+        return date(prev_year, 1, 1), date(prev_year, 12, 31)
+    if period == "quarter":
+        current_q_start = _period_start(period).date()
+        prev_q_end = current_q_start - timezone.timedelta(days=1)
+        prev_q_start_month = ((prev_q_end.month - 1) // 3) * 3 + 1
+        return date(prev_q_end.year, prev_q_start_month, 1), prev_q_end
+    # month
+    current_month_start = _period_start(period).date()
+    prev_end = current_month_start - timezone.timedelta(days=1)
+    return date(prev_end.year, prev_end.month, 1), prev_end
+
+
 @login_required
 def kpi_dashboard(request):
     period = (request.GET.get("period") or "month").strip().lower()
@@ -37,6 +61,7 @@ def kpi_dashboard(request):
 
     sector = (request.GET.get("sector") or "").strip()
     query = (request.GET.get("q") or "").strip()
+    sort_key = (request.GET.get("sort") or "").strip()
 
     start_dt = _period_start(period)
     today = timezone.localdate()
@@ -58,27 +83,48 @@ def kpi_dashboard(request):
         )
 
     leaders = list(leaders_qs)
-    rows = build_kpi_rows(leaders, from_date=from_date, to_date=to_date)
+    rows = build_module_rows(leaders, from_date=from_date, to_date=to_date)
+
+    # trend: oldingi davr bilan solishtirish
+    prev_from, prev_to = _prev_period_bounds(period)
+    prev_scores = {}
+    if prev_from and prev_to:
+        for r in build_module_rows(leaders, from_date=prev_from, to_date=prev_to):
+            prev_scores[r["leader"].id] = r["total_score"]
+    for r in rows:
+        r["traffic_color"] = traffic_color(r["total_score"])
+        prev = prev_scores.get(r["leader"].id)
+        if prev is None:
+            r["trend"] = None
+        else:
+            r["trend"] = round(r["total_score"] - prev, 2)
+
+    # ustun sozlamalari
+    prefs = {
+        p.column_key: p.visible
+        for p in KpiColumnPref.objects.filter(user=request.user)
+    }
+    module_columns = [
+        {**c, "visible": prefs.get(c["key"], True)}
+        for c in MODULE_COLUMNS
+    ]
+    visible_keys = [c["key"] for c in module_columns if c["visible"]]
+
+    # sortirovka
+    if sort_key in {c["key"] for c in MODULE_COLUMNS}:
+        rows.sort(key=lambda r: r["modules"][sort_key]["pct"], reverse=True)
+    for i, r in enumerate(rows, start=1):
+        r["rank"] = i
 
     top_row = rows[0] if rows else None
-    avg_total = round(sum(row["total_score"] for row in rows) / len(rows), 1) if rows else 0
-    high_result_count = sum(1 for row in rows if row["total_score"] >= 80)
+    avg_total = round(sum(r["total_score"] for r in rows) / len(rows), 1) if rows else 0
+    high_result_count = sum(1 for r in rows if r["total_score"] >= 80)
 
-    direction_avg = {
-        "coverage": round(sum((row["coverage_score"] or 0) for row in rows) / len(rows), 2) if rows else 0,
-        "employment": round(sum((row["employment_score"] or 0) for row in rows) / len(rows), 2) if rows else 0,
-        "risk": round(sum((row["risk_score"] or 0) for row in rows) / len(rows), 2) if rows else 0,
-        "execution": round(sum((row["execution_score"] or 0) for row in rows) / len(rows), 2) if rows else 0,
-        "initiative": round(sum((row["initiative_score"] or 0) for row in rows) / len(rows), 2) if rows else 0,
-    }
-    best_direction_key = max(direction_avg, key=direction_avg.get) if rows else "coverage"
-    direction_labels = {
-        "coverage": "Qamrov",
-        "employment": "Bandlik",
-        "risk": "Xavf guruhlari",
-        "execution": "Ijro-intizom",
-        "initiative": "Tadbirlar",
-    }
+    direction_avg = {c["key"]: round(
+        sum((r["modules"].get(c["key"], {}).get("pct") or 0) for r in rows) / len(rows), 1
+    ) if rows else 0 for c in MODULE_COLUMNS}
+    best_direction_key = max(direction_avg, key=direction_avg.get) if rows else MODULE_COLUMNS[0]["key"]
+    best_label = next((c["label"] for c in MODULE_COLUMNS if c["key"] == best_direction_key), "-")
 
     period_range = (
         f"{start_dt.strftime('%d.%m.%Y')} - {today.strftime('%d.%m.%Y')}"
@@ -88,17 +134,41 @@ def kpi_dashboard(request):
 
     context = {
         "rows": rows,
+        "module_columns": module_columns,
+        "visible_keys": visible_keys,
+        "column_prefs": prefs,
         "top_row": top_row,
         "avg_total": avg_total,
         "high_result_count": high_result_count,
         "leaders_count": len(rows),
         "direction_avg": direction_avg,
-        "best_direction": direction_labels[best_direction_key],
+        "best_direction": best_label,
         "best_direction_score": direction_avg.get(best_direction_key, 0),
         "selected_period": period,
         "selected_sector": sector,
+        "sort_key": sort_key,
         "q": query,
         "period_label": _period_label(period),
         "period_range": period_range,
     }
     return render(request, "kpi/dashboard.html", context)
+
+
+@login_required
+@require_POST
+def kpi_column_toggle(request):
+    try:
+        data = json.loads(request.body or b"{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"success": False, "error": "JSON noto'g'ri"}, status=400)
+    column_key = str(data.get("column_key") or "")
+    valid_keys = {c["key"] for c in MODULE_COLUMNS}
+    if column_key not in valid_keys:
+        return JsonResponse({"success": False, "error": "Noma'lum ustun"}, status=400)
+    visible = bool(data.get("visible"))
+    KpiColumnPref.objects.update_or_create(
+        user=request.user,
+        column_key=column_key,
+        defaults={"visible": visible},
+    )
+    return JsonResponse({"success": True, "column_key": column_key, "visible": visible})

@@ -10,6 +10,7 @@ urlpatterns = [
     path('auth/oneid/callback/', views_auth.callback_oneid, name='callback_oneid'),
     path('logout/', views_auth.logout_view, name='logout'),
     path('kpi/', views_kpi.kpi_dashboard, name='kpi_dashboard'),
+    path('kpi/columns/', views_kpi.kpi_column_toggle, name='kpi_column_toggle'),
     path('', views_yosh.dashboard, name='dashboard'),
     path('dashboard/', views_yosh.dashboard, name='dashboard_alias'),
     path('xarita/', views_yosh.mahalla_map, name='mahalla_map'),

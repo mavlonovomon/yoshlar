@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load kpi_tags %}
 
 {% block content %}
 <div class="kpi-page">
@@ -103,95 +104,69 @@
     <section class="kpi-table-card">
         <div class="kpi-table-head">
             <h4>KPI liderbord</h4>
-            <span class="kpi-table-count">{{ leaders_count }} ta yetakchi</span>
+            <div class="kpi-toolbar">
+                <button type="button" class="btn btn-outline-primary btn-sm" id="btnColumns"><i class="bi bi-gear"></i> Ustunlar</button>
+                <a class="btn btn-outline-danger btn-sm" href="?period={{ selected_period }}&sector={{ selected_sector }}&q={{ q|urlencode }}&export=pdf"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+                <a class="btn btn-outline-success btn-sm" href="?period={{ selected_period }}&sector={{ selected_sector }}&q={{ q|urlencode }}&export=excel"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+                <span class="kpi-table-count">{{ leaders_count }} ta yetakchi</span>
+            </div>
         </div>
-        <div class="table-responsive">
-            <table class="table kpi-table align-middle mb-0">
+
+        <div id="columnPanel" class="column-panel" style="display:none;">
+            {% for col in module_columns %}
+            <label class="column-panel-item">
+                <input type="checkbox" class="col-toggle" data-key="{{ col.key }}" {% if col.visible %}checked{% endif %}>
+                {{ col.label }}
+            </label>
+            {% endfor %}
+        </div>
+
+        <div class="table-responsive kpi-spreadsheet-wrap">
+            <table class="table kpi-spreadsheet align-middle mb-0" id="kpiTable">
                 <thead>
                     <tr>
-                        <th class="text-center">O'rin</th>
-                        <th>Yetakchi</th>
-                        <th class="text-center">Qamrov (25)</th>
-                        <th class="text-center">Bandlik (30)</th>
-                        <th class="text-center">Xavf (20)</th>
-                        <th class="text-center">Ijro (15)</th>
-                        <th class="text-center">Tadbir (10)</th>
-                        <th class="text-center">Umumiy ball</th>
+                        <th class="text-center th-sticky-col">O'rin</th>
+                        <th class="td-sticky">Mahalla / Yetakchi</th>
+                        {% for col in module_columns %}
+                        <th class="text-center col-{{ col.key }} {% if not col.visible %}d-none{% endif %}">
+                            <a class="sort-link" href="?period={{ selected_period }}&sector={{ selected_sector }}&q={{ q|urlencode }}&sort={{ col.key }}">
+                                {{ col.label }}{% if sort_key == col.key %} &#9660;{% endif %}
+                            </a>
+                        </th>
+                        {% endfor %}
+                        <th class="text-center">Itog</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for row in rows %}
-                    <tr>
-                        <td class="text-center">
-                            <span class="rank-badge {% if row.rank == 1 %}rank-gold{% elif row.rank == 2 %}rank-silver{% elif row.rank == 3 %}rank-bronze{% endif %}">
-                                {{ row.rank }}
-                            </span>
+                    <tr class="traffic-{{ row.traffic }}" style="background: {{ row.traffic_color }}">
+                        <td class="text-center th-sticky-col">{{ row.rank }}</td>
+                        <td class="td-sticky">
+                            <div class="leader-name">{{ row.mahalla_name }}</div>
+                            <div class="leader-meta">{{ row.leader.full_name|default:row.leader.username }}</div>
                         </td>
-                        <td>
-                            <div class="leader-cell">
-                                {% if row.leader.profile_image %}
-                                <img src="{{ row.leader.profile_image.url }}" alt="{{ row.leader.full_name }}" class="leader-avatar">
-                                {% else %}
-                                <div class="leader-avatar-fallback">
-                                    {{ row.leader.full_name|default:row.leader.username|first|upper }}
-                                </div>
-                                {% endif %}
-                                <div>
-                                    <div class="leader-name">{{ row.leader.full_name|default:row.leader.username }}</div>
-                                    <div class="leader-meta">
-                                        <span>{{ row.mahalla_name }}</span>
-                                        <span>•</span>
-                                        <span>{{ row.leader.get_sector_display|default:"Sektor yo'q" }}</span>
-                                        {% if row.discipline_count %}
-                                        <span>•</span>
-                                        <span class="text-danger">Faol jazo: {{ row.discipline_count }}</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
+                        {% for col in module_columns %}
+                        <td class="text-center col-{{ col.key }} {% if not col.visible %}d-none{% endif %}"
+                            title="{{ row.modules|module_meta:col.key }}"
+                            data-toggle="tooltip">
+                            {{ row.modules|get_item:col.key }}<small>%</small>
+                            {% if row.weakest_key == col.key %}<span class="flag-w">&#9888;</span>{% endif %}
+                            {% if row.strongest_key == col.key %}<span class="flag-s">&#9733;</span>{% endif %}
                         </td>
-                        <td class="text-center">
-                            <div class="score-chip chip-blue">
-                                {% if row.coverage_score is not None %}{{ row.coverage_score|floatformat:1 }}{% else %}-{% endif %}
-                            </div>
-                            <div class="score-sub">{{ row.coverage_ratio|floatformat:1 }}%</div>
-                        </td>
-                        <td class="text-center">
-                            <div class="score-chip chip-green">
-                                {% if row.employment_score is not None %}{{ row.employment_score|floatformat:1 }}{% else %}-{% endif %}
-                            </div>
-                            <div class="score-sub">{{ row.employment_ratio|floatformat:1 }}%</div>
-                        </td>
-                        <td class="text-center">
-                            <div class="score-chip chip-cyan">
-                                {% if row.risk_score is not None %}{{ row.risk_score|floatformat:1 }}{% else %}-{% endif %}
-                            </div>
-                            <div class="score-sub">M: {{ row.migration_ratio|floatformat:0 }}% | O: {{ row.otaliq_ratio|floatformat:0 }}%</div>
-                        </td>
-                        <td class="text-center">
-                            <div class="score-chip chip-purple">
-                                {% if row.execution_score is not None %}{{ row.execution_score|floatformat:1 }}{% else %}-{% endif %}
-                            </div>
-                            <div class="score-sub">Task {{ row.task_ratio|floatformat:0 }}% / Yo'qlama {{ row.attendance_ratio|floatformat:0 }}%</div>
-                        </td>
-                        <td class="text-center">
-                            <div class="score-chip chip-orange">
-                                {% if row.initiative_score is not None %}{{ row.initiative_score|floatformat:1 }}{% else %}-{% endif %}
-                            </div>
-                            <div class="score-sub">Reyd + 5 tashabbus</div>
-                        </td>
+                        {% endfor %}
                         <td class="text-center total-score-cell">
                             <div class="total-score">{{ row.total_score|floatformat:1 }}</div>
-                            <div class="total-progress">
-                                <span style="width: {{ row.total_score|floatformat:0 }}%"></span>
+                            <div class="score-sub">
+                                {% if row.trend is not None %}
+                                <span class="trend-{% if row.trend >= 0 %}up{% else %}down{% endif %}">
+                                    {% if row.trend >= 0 %}&#8593;{% else %}&#8595;{% endif %} {{ row.trend|abs|floatformat:1 }}
+                                </span>
+                                {% endif %}
                             </div>
-                            <div class="score-sub">Ishonchlilik: {{ row.available_weight|floatformat:0 }}%</div>
                         </td>
                     </tr>
                     {% empty %}
-                    <tr>
-                        <td colspan="8" class="text-center py-5 text-muted">Tanlangan filtr bo'yicha yetakchilar topilmadi.</td>
-                    </tr>
+                    <tr><td colspan="13" class="text-center py-5 text-muted">Yetakchilar topilmadi.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -589,5 +564,53 @@
             justify-content: center;
         }
     }
+
+    .kpi-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .column-panel { padding: 10px 12px; margin-bottom: 10px; border: 1px dashed #c6d0e0; border-radius: 10px; background: #f8faff; display: flex; flex-wrap: wrap; gap: 10px; }
+    .column-panel-item { display: inline-flex; gap: 5px; align-items: center; font-size: 12px; font-weight: 600; color: #3a4c68; }
+    .kpi-spreadsheet { font-size: 12px; }
+    .kpi-spreadsheet thead th { position: sticky; top: 0; z-index: 2; background: #f5f8fe; }
+    .kpi-spreadsheet .th-sticky-col, .kpi-spreadsheet .td-sticky { position: sticky; left: 0; z-index: 3; background: #f5f8fe; }
+    .kpi-spreadsheet tbody td { padding: 5px 6px; }
+    .sort-link { color: inherit; text-decoration: none; font-weight: 800; }
+    .sort-link:hover { color: #0f5ce0; }
+    .flag-w { color: #d97706; margin-left: 2px; }
+    .flag-s { color: #b8860b; margin-left: 2px; }
+    .trend-up { color: #198754; font-size: 11px; }
+    .trend-down { color: #dc3545; font-size: 11px; }
+    .traffic-green td, .traffic-yellow td, .traffic-red td { border-bottom: 1px solid rgba(0,0,0,0.05); }
+    @media (max-width: 768px) { .kpi-toolbar { flex-direction: column; align-items: stretch; } .kpi-toolbar .btn { width: 100%; } }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const panel = document.getElementById('columnPanel');
+    const btn = document.getElementById('btnColumns');
+    if (btn && panel) {
+        btn.addEventListener('click', function () {
+            panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+        });
+    }
+    document.querySelectorAll('.col-toggle').forEach(function (chk) {
+        chk.addEventListener('change', function () {
+            const key = chk.dataset.key;
+            const visible = chk.checked;
+            fetch("{% url 'kpi_column_toggle' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ column_key: key, visible: visible })
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                if (data.success) {
+                    document.querySelectorAll('.col-' + key).forEach(function (el) {
+                        el.classList.toggle('d-none', !visible);
+                    });
+                }
+            });
+        });
+    });
+});
+</script>
 {% endblock %}
