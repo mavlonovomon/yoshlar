@@ -454,6 +454,7 @@ MODULE_COLUMNS = [
     {"key": "kredit", "label": "Kredit yo'naltirish"},
     {"key": "intizom", "label": "Intizom jazo"},
     {"key": "bilim", "label": "Bilim sinovi"},
+    {"key": "eco_energiya", "label": "Eco energiya"},
 ]
 MODULE_KEYS = [c["key"] for c in MODULE_COLUMNS]
 
@@ -508,6 +509,7 @@ def build_module_rows(
     kamayish tartibida tartiblanadi.
     """
     from bilim_sinovi.models import TestResult
+    from eco_energiya.models import SolarPanel
     from kredit_yo_naltirish.models import CreditCandidate
 
     leaders = _normalize_leaders(leaders)
@@ -597,6 +599,10 @@ def build_module_rows(
             kredit_qs.filter(stage='APPROVED').values('yosh__mahalla_id').annotate(total=Count('id')),
             'yosh__mahalla_id', 'total',
         )
+
+        solar_by_mahalla = {}
+        for sp in SolarPanel.objects.filter(mahalla_id__in=mahalla_ids):
+            solar_by_mahalla[sp.mahalla_id] = sp
 
     # yoqlama: session date orqali davr filtri
     attendance_by_leader = {}
@@ -712,6 +718,17 @@ def build_module_rows(
             bilim_pct = 0.0
         modules['bilim'] = {
             'pct': bilim_pct, 'count': tb.get('n', 0), 'total': tb.get('t', 0),
+        }
+
+        sp = solar_by_mahalla.get(mid)
+        if sp and sp.is_installed and sp.capacity_kw:
+            eco_pct = round(min(float(sp.capacity_kw) / 10.0, 1.0) * 100, 1)
+            eco_count = float(sp.capacity_kw)
+        else:
+            eco_pct = 0.0
+            eco_count = 0
+        modules['eco_energiya'] = {
+            'pct': eco_pct, 'count': eco_count, 'total': 10,
         }
 
         pcts = [modules[k]['pct'] for k in MODULE_KEYS]

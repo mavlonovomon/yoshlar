@@ -36,11 +36,11 @@ class BuildModuleRowsTest(TestCase):
             mahalla=cls.mahalla,
         )
 
-    def test_module_columns_has_ten(self):
-        self.assertEqual(len(MODULE_COLUMNS), 10)
+    def test_module_columns_has_eleven(self):
+        self.assertEqual(len(MODULE_COLUMNS), 11)
         keys = [c["key"] for c in MODULE_COLUMNS]
         self.assertEqual(keys[0], "otaliq")
-        self.assertEqual(keys[-1], "bilim")
+        self.assertEqual(keys[-1], "eco_energiya")
 
     def test_empty_leaders_returns_empty(self):
         self.assertEqual(build_module_rows([]), [])
@@ -167,3 +167,47 @@ class ModuleFormulasTest(TestCase):
 
     def test_bilim_pct(self):
         self.assertEqual(self._row()["modules"]["bilim"]["pct"], 80.0)
+
+
+class EcoEnergiyaModuleTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from eco_energiya.models import SolarPanel
+        cls.mahalla = Mahalla.objects.create(name="Eco Test Mahalla")
+        cls.leader = get_user_model().objects.create_user(
+            username="ecoleader", full_name="Eco Leader", role="YETAKCHI", mahalla=cls.mahalla,
+        )
+        cls.panel = SolarPanel.objects.create(
+            mahalla=cls.mahalla, is_installed=True, capacity_kw=8.5,
+        )
+
+    def test_eco_energiya_installed(self):
+        rows = build_module_rows([self.leader])
+        eco = rows[0]['modules']['eco_energiya']
+        self.assertAlmostEqual(eco['pct'], 85.0, places=1)
+
+    def test_eco_energiya_cap_at_100(self):
+        from eco_energiya.models import SolarPanel
+        self.panel.capacity_kw = 15.0
+        self.panel.save()
+        rows = build_module_rows([self.leader])
+        eco = rows[0]['modules']['eco_energiya']
+        self.assertEqual(eco['pct'], 100.0)
+
+    def test_eco_energiya_not_installed(self):
+        self.panel.is_installed = False
+        self.panel.save()
+        rows = build_module_rows([self.leader])
+        eco = rows[0]['modules']['eco_energiya']
+        self.assertEqual(eco['pct'], 0.0)
+
+    def test_eco_energiya_no_panel(self):
+        from eco_energiya.models import SolarPanel
+        SolarPanel.objects.all().delete()
+        mahalla2 = Mahalla.objects.create(name="No Panel")
+        leader2 = get_user_model().objects.create_user(
+            username="noleader", full_name="No Panel Leader", role="YETAKCHI", mahalla=mahalla2,
+        )
+        rows = build_module_rows([leader2])
+        eco = rows[0]['modules']['eco_energiya']
+        self.assertEqual(eco['pct'], 0.0)
