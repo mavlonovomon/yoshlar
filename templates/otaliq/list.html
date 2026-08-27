@@ -15,32 +15,7 @@
     </div>
 
     <!-- Filters -->
-    <div class="filter-card mb-4">
-        <form method="GET" class="filter-grid">
-            <div class="filter-item">
-                <label class="form-label text-muted small fw-bold">QIDIRISH</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" name="q" class="form-control border-start-0" placeholder="F.I.Sh yoki Pasport..."
-                        value="{{ request.GET.q }}">
-                </div>
-            </div>
-            <div class="filter-item">
-                <label class="form-label text-muted small fw-bold">TOIFA</label>
-                <select name="category" class="form-select">
-                    <option value="">Barcha toifalar</option>
-                    {% for val, label in categories %}
-                    <option value="{{ val }}" {% if request.GET.category == val %}selected{% endif %}>{{ label }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="filter-item d-flex gap-2">
-                <button type="submit" class="btn btn-primary px-4">Filtrlash</button>
-                <a href="{% url 'otaliq:list' %}" class="btn btn-light"><i class="bi bi-x-lg"></i></a>
-            </div>
-        </form>
-    </div>
+    {% include 'components/filter_bar.html' with fields=filter_fields clear_url=clear_filter_url form_id="filterForm" %}
 
     <!-- Table -->
     <div class="premium-table-card">

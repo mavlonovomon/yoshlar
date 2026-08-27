@@ -6,7 +6,7 @@ from django.db.models import Count, Q
 from .models import OtaliqYouth, OtaliqLeader, OtaliqMeeting
 from .forms import OtaliqYouthForm, OtaliqMeetingForm, OtaliqAssistanceForm, OtaliqLeaderForm
 from core.models import Mahalla, Yosh
-from core.view_helpers import apply_sorting, normalize_sort_params
+from core.view_helpers import apply_sorting, normalize_sort_params, is_management_user
 from django.contrib import messages
 import openpyxl
 from openpyxl.styles import Alignment, Border, Side, Font, PatternFill
@@ -34,6 +34,17 @@ class OtaliqListView(LoginRequiredMixin, ListView):
         if category:
             qs = qs.filter(category=category)
 
+        mahalla_id = self.request.GET.get('mahalla')
+        if mahalla_id and mahalla_id.isdigit():
+            qs = qs.filter(yosh__mahalla_id=mahalla_id)
+
+        leader_id = self.request.GET.get('leader')
+        if leader_id == 'none':
+            qs = qs.filter(leader__isnull=True)
+        elif leader_id and leader_id.isdigit():
+            qs = qs.filter(leader_id=leader_id)
+
+
         sort_field, sort_direction = normalize_sort_params(
             self.request,
             {'fullname', 'mahalla', 'category', 'leader', 'status', 'assistance'},
@@ -53,7 +64,72 @@ class OtaliqListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['categories'] = OtaliqYouth.CATEGORY_CHOICES
+        request = self.request
+        categories = context.get('categories', OtaliqYouth.CATEGORY_CHOICES)
+        selected_category = request.GET.get('category') or ''
+        selected_leader = request.GET.get('leader') or ''
+        selected_mahalla = request.GET.get('mahalla') or ''
+
+        leaders = list(OtaliqLeader.objects.all())
+        leader_options = [
+            {'value': '', 'label': 'Barcha rahbarlar', 'selected': not selected_leader},
+            {'value': 'none', 'label': "Biriktirilmagan", 'selected': selected_leader == 'none'},
+        ] + [
+            {'value': l.pk, 'label': str(l), 'selected': selected_leader == str(l.pk)}
+            for l in leaders
+        ]
+
+        filter_fields = [
+            {
+                'type': 'search',
+                'name': 'q',
+                'label': 'Qidirish',
+                'placeholder': 'F.I.Sh yoki Pasport...',
+                'value': request.GET.get('q') or '',
+            },
+            {
+                'type': 'select',
+                'name': 'leader',
+                'label': "Mas'ul rahbar",
+                'autosubmit': True,
+                'options': leader_options,
+            },
+            {
+                'type': 'select',
+                'name': 'category',
+                'label': 'Toifa',
+                'autosubmit': True,
+                'options': [{'value': '', 'label': 'Barcha toifalar', 'selected': not selected_category}]
+                + [
+                    {'value': val, 'label': label, 'selected': selected_category == val}
+                    for val, label in categories
+                ],
+            },
+        ]
+
+        if is_management_user(request.user):
+            mahallas = Mahalla.objects.all().order_by('name')
+            filter_fields.insert(
+                2,
+                {
+                    'type': 'select',
+                    'name': 'mahalla',
+                    'label': 'Mahalla',
+                    'autosubmit': True,
+                    'options': [{'value': '', 'label': 'Barcha mahallalar', 'selected': not selected_mahalla}]
+                    + [
+                        {'value': m.pk, 'label': m.name, 'selected': selected_mahalla == str(m.pk)}
+                        for m in mahallas
+                    ],
+                },
+            )
+            context['mahallas'] = mahallas
+
+        context['filter_fields'] = filter_fields
+        context['clear_filter_url'] = reverse_lazy('otaliq:list')
+        context['selected_leader'] = selected_leader
+        context['selected_mahalla'] = selected_mahalla
+        context['categories'] = categories
         context['sort_field'] = getattr(self, 'sort_field', 'fullname')
         context['sort_direction'] = getattr(self, 'sort_direction', 'asc')
         return context

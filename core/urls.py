@@ -12,6 +12,7 @@ urlpatterns = [
     path('kpi/', views_kpi.kpi_dashboard, name='kpi_dashboard'),
     path('', views_yosh.dashboard, name='dashboard'),
     path('dashboard/', views_yosh.dashboard, name='dashboard_alias'),
+    path('xarita/', views_yosh.mahalla_map, name='mahalla_map'),
     path('yoshlar/', views_yosh.yosh_list, name='yosh_list'),
     path('yoshlar/maktab-oquvchilar/', views_yosh.maktab_oquvchi_list, name='maktab_oquvchi_list'),
     path('yoshlar/maktab-aniqlanmagan/', views_yosh.maktab_oquvchi_pending_list, name='maktab_oquvchi_pending_list'),

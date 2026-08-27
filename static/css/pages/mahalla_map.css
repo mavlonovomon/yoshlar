@@ -1,0 +1,66 @@
+/* Mahalla Map Page */
+.mahalla-map-card {
+    border-radius: var(--border-radius-lg, 16px) !important;
+    overflow: hidden;
+}
+
+#mahalla-map {
+    height: calc(100vh - 220px);
+    min-height: 500px;
+    width: 100%;
+    border-radius: 0 0 16px 16px;
+    z-index: 1;
+}
+
+/* Leaflet popup custom styles */
+.mahalla-popup .popup-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #1a1a2e;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.mahalla-popup .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.3rem 0;
+    font-size: 0.85rem;
+}
+
+.mahalla-popup .stat-label {
+    color: #6c757d;
+}
+
+.mahalla-popup .stat-value {
+    font-weight: 600;
+    color: #1a1a2e;
+}
+
+.mahalla-popup .stat-value.text-primary {
+    color: #0d6efd !important;
+}
+
+.mahalla-popup .stat-value.text-success {
+    color: #198754 !important;
+}
+
+.mahalla-popup .stat-value.text-warning {
+    color: #ffc107 !important;
+}
+
+.mahalla-popup .stat-value.text-info {
+    color: #0dcaf0 !important;
+}
+
+.mahalla-popup .stat-value.text-danger {
+    color: #dc3545 !important;
+}
+
+@media (max-width: 767.98px) {
+    #mahalla-map {
+        height: 500px;
+    }
+}

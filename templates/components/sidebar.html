@@ -10,10 +10,10 @@
             <span class="material-symbols-outlined">dashboard</span>
             <span>Dashboard</span>
         </a>
-        <a href="{% url 'hisobot:index' %}"
-            class="nav-item {% if '/hisobot/' in request.path %}active{% endif %}">
-            <span class="material-symbols-outlined">description</span>
-            <span>Hisobot</span>
+        <a href="{% url 'mahalla_map' %}"
+            class="nav-item {% if request.path == '/xarita/' %}active{% endif %}">
+            <span class="material-symbols-outlined">map</span>
+            <span>Xarita</span>
         </a>
 
         <!-- Yoshlar ro'yxati -->
@@ -293,6 +293,12 @@
             class="nav-item {% if '/eco-energiya/' in request.path %}active{% endif %}">
             <span class="material-symbols-outlined">eco</span>
             <span>Eco Energiya</span>
+        </a>
+
+        <a href="{% url 'hisobot:index' %}"
+            class="nav-item {% if '/hisobot/' in request.path %}active{% endif %}">
+            <span class="material-symbols-outlined">description</span>
+            <span>Hisobot</span>
         </a>
 
         {% if user.is_superuser %}

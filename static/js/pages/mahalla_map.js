@@ -7,13 +7,14 @@
         try { return JSON.parse(el.textContent); } catch (e) { return null; }
     }
 
-    function getColor(youthCount) {
-        // Green gradient based on youth count
-        if (youthCount > 500) return "#166534";
-        if (youthCount > 300) return "#16a34a";
-        if (youthCount > 150) return "#22c55e";
-        if (youthCount > 50) return "#4ade80";
-        return "#86efac";
+    function getBaseStyle(youthCount, isSatellite) {
+        return {
+            color: "#ffffff",
+            weight: isSatellite ? 2.5 : 2,
+            opacity: 0.9,
+            fill: false,
+            fillOpacity: 0,
+        };
     }
 
     function findMahallaName(sectionId) {
@@ -82,11 +83,50 @@
             scrollWheelZoom: true,
         }).setView([41.15, 61.24], 11);
 
-        // Add tile layer
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        // Tile layers: standard + satellite
+        var osmLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
             maxZoom: 18,
-        }).addTo(map);
+        });
+
+        var satelliteLayer = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+            attribution: "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics",
+            maxZoom: 18,
+        });
+
+        // Custom pane for labels: above tiles, below polygons
+        map.createPane("labelsPane");
+        map.getPane("labelsPane").style.zIndex = 350;
+        map.getPane("labelsPane").style.pointerEvents = "none";
+
+        var labelsLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            maxZoom: 18,
+            pane: "labelsPane",
+        });
+
+        osmLayer.addTo(map);
+
+        var satelliteActive = false;
+
+        var polygonRecords = [];
+
+        function applyPolygonStyles() {
+            polygonRecords.forEach(function (record) {
+                record.group.setStyle(getBaseStyle(record.youthCount, satelliteActive));
+                record.group._baseStyle = getBaseStyle(record.youthCount, satelliteActive);
+            });
+        }
+
+        L.control.layers({
+            "Oddiy": osmLayer,
+            "Sputnik": L.layerGroup([satelliteLayer, labelsLayer]),
+        }, null, { position: "topright", collapsed: true }).addTo(map);
+
+        map.on("baselayerchange", function (e) {
+            satelliteActive = e.name === "Sputnik";
+            applyPolygonStyles();
+        });
 
         // Process polygons
         if (!window.MAHALLA_POLYGONS) return;
@@ -123,32 +163,26 @@
 
             if (allParts.length === 0) return;
 
-            var color = getColor(youthCount);
-
             // Create a feature group for all polygon parts
             var group = L.featureGroup();
+            var baseStyle = getBaseStyle(youthCount, satelliteActive);
 
             allParts.forEach(function(partCoords) {
-                var polygon = L.polygon(partCoords, {
-                    color: color,
-                    weight: 2,
-                    opacity: 0.9,
-                    fillColor: color,
-                    fillOpacity: 0.35,
-                });
+                var polygon = L.polygon(partCoords, baseStyle);
                 group.addLayer(polygon);
             });
 
+            group._baseStyle = baseStyle;
             group.addTo(map);
-            allPolygons.push(group);
+            polygonRecords.push({ group: group, youthCount: youthCount });
 
             // Hover effect on all parts
             group.eachLayer(function(layer) {
                 layer.on("mouseover", function() {
-                    group.eachLayer(function(l) { l.setStyle({ weight: 3, fillOpacity: 0.55 }); });
+                    group.eachLayer(function(l) { l.setStyle({ weight: 4 }); });
                 });
                 layer.on("mouseout", function() {
-                    group.eachLayer(function(l) { l.setStyle({ weight: 2, fillOpacity: 0.35 }); });
+                    group.eachLayer(function(l) { l.setStyle(group._baseStyle); });
                 });
                 layer.on("click", function() {
                     var popupHtml = buildPopupContent(name, mahallaStats);
@@ -158,10 +192,10 @@
         });
 
         // Fit map to show all polygons
-        if (allPolygons.length > 0) {
+        if (polygonRecords.length > 0) {
             var bounds = L.latLngBounds([]);
-            allPolygons.forEach(function(polygon) {
-                bounds.extend(polygon.getBounds());
+            polygonRecords.forEach(function (record) {
+                bounds.extend(record.group.getBounds());
             });
             map.fitBounds(bounds, { padding: [20, 20] });
         }

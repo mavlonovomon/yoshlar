@@ -3,7 +3,7 @@ import re
 import requests
 import uuid
 from collections import Counter, defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.contrib import messages
@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
 from django.db.models import BooleanField, Case, Count, Q, Sum, When
+from django.db.models.functions import TruncMonth
 from django.db import transaction
 from django.contrib.sessions.models import Session
 from django.http import JsonResponse, StreamingHttpResponse
@@ -26,9 +27,9 @@ from beshtashabbus.views_applications import (
     _read_4_letters_from_png,
     _wait_before_next_attempt,
 )
-from ishsiz_yoshlar.models import UnemployedYouth
+from ishsiz_yoshlar.models import AssistanceInfo, UnemployedYouth
 from migratsiya.models import MigrationYouth
-from otaliq.models import OtaliqYouth
+from otaliq.models import OtaliqYouth, OtaliqAssistance
 from reyd.models import RaidEvent
 
 from .forms import UchrashuvForm, UserProfileForm, YoshForm
@@ -273,115 +274,15 @@ def _get_online_users(limit: int = 20):
     return online_users[:limit]
 
 
-@login_required
-def dashboard(request):
-    user = request.user
-    context = {}
-    can_view_online_users = is_management_user(user)
-
-    if can_view_online_users:
-        qs = Yosh.objects.all()
-        meetings = Uchrashuv.objects.select_related("yosh", "yetakchi", "yosh__mahalla").all().order_by("-meeting_date")[:10]
-        total_meetings_count = Uchrashuv.objects.count()
-    else:
-        qs = Yosh.objects.filter(mahalla=user.mahalla)
-        meetings = (
-            Uchrashuv.objects.select_related("yosh", "yetakchi", "yosh__mahalla")
-            .filter(yosh__mahalla=user.mahalla)
-            .order_by("-meeting_date")[:10]
-        )
-        total_meetings_count = Uchrashuv.objects.filter(yosh__mahalla=user.mahalla).count()
-
-    context["total_yosh"] = qs.count()
-    context["suhbat_bor"] = qs.annotate(has_meeting=Count("uchrashuvlar")).filter(has_meeting__gt=0).count()
-    context["suhbat_yoq"] = context["total_yosh"] - context["suhbat_bor"]
-    context["total_meetings"] = total_meetings_count
-
-    if can_view_online_users:
-        unemployed_qs = UnemployedYouth.objects.all()
-        otaliq_qs = OtaliqYouth.objects.all()
-        migration_qs = MigrationYouth.objects.all()
-        reyd_qs = RaidEvent.objects.all()
-        besh_qs = FiveInitiativeEvent.objects.all()
-    else:
-        unemployed_qs = UnemployedYouth.objects.filter(yosh__mahalla=user.mahalla)
-        otaliq_qs = OtaliqYouth.objects.filter(yosh__mahalla=user.mahalla)
-        migration_qs = MigrationYouth.objects.filter(yosh__mahalla=user.mahalla)
-        reyd_qs = RaidEvent.objects.filter(mahalla=user.mahalla)
-        besh_qs = FiveInitiativeEvent.objects.filter(mahalla=user.mahalla)
-
-    context["module_summary"] = [
-        {
-            "title": "Ishsiz yoshlar",
-            "value": unemployed_qs.count(),
-            "icon": "bi-briefcase",
-            "accent": "text-primary",
-            "list_url": "ishsiz_yoshlar:list",
-            "meta": f"Yordam berilgan: {unemployed_qs.filter(assistance__provided=True).count()}",
-        },
-        {
-            "title": "Otaliqdagi yoshlar",
-            "value": otaliq_qs.count(),
-            "icon": "bi-shield-check",
-            "accent": "text-success",
-            "list_url": "otaliq:list",
-            "meta": f"Suhbat o'tgan: {otaliq_qs.filter(meetings__isnull=False).distinct().count()}",
-        },
-        {
-            "title": "Migratsiyadagi yoshlar",
-            "value": migration_qs.count(),
-            "icon": "bi-airplane",
-            "accent": "text-info",
-            "list_url": "migratsiya:list",
-            "meta": f"Suhbat o'tgan: {migration_qs.filter(meetings__isnull=False).distinct().count()}",
-        },
-        {
-            "title": "Reyd tadbirlari",
-            "value": reyd_qs.count(),
-            "icon": "bi-shield-exclamation",
-            "accent": "text-warning",
-            "list_url": "reyd:list",
-            "meta": "Jinoyatchilik profilaktikasi",
-        },
-        {
-            "title": "Besh tashabbus",
-            "value": besh_qs.count(),
-            "icon": "bi-award",
-            "accent": "text-danger",
-            "list_url": "beshtashabbus:list",
-            "meta": f"Qamrov: {besh_qs.aggregate(total=Sum('coverage'))['total'] or 0}",
-        },
-    ]
-
-    if can_view_online_users:
-        context["show_online_users"] = True
-        context["online_users"] = _get_online_users()
-        context["online_users_count"] = len(context["online_users"])
-    else:
-        context["show_online_users"] = False
-        context["online_users"] = []
-        context["online_users_count"] = 0
-
-    latest_meetings = list(meetings)
-    for meeting in latest_meetings:
-        if meeting.meeting_date:
-            local_dt = timezone.localtime(meeting.meeting_date)
-            meeting.meeting_date_str = local_dt.strftime("%d.%m.%Y")
-            meeting.meeting_time_str = local_dt.strftime("%H:%M")
-        else:
-            meeting.meeting_date_str = ""
-            meeting.meeting_time_str = ""
-    context["latest_meetings"] = latest_meetings
-
-    # Mahalla statistics for map
-    mahalla_stats = []
+def _build_mahalla_stats():
+    stats = []
     for mahalla in Mahalla.objects.all():
         yosh_count = Yosh.objects.filter(mahalla=mahalla).count()
         ishsiz_count = UnemployedYouth.objects.filter(yosh__mahalla=mahalla, is_deleted=False).count()
         migratsiya_count = MigrationYouth.objects.filter(yosh__mahalla=mahalla).count()
         otaliq_count = OtaliqYouth.objects.filter(yosh__mahalla=mahalla, is_deleted=False).count()
         suhbat_count = Uchrashuv.objects.filter(yosh__mahalla=mahalla).count()
-        mahalla_stats.append({
+        stats.append({
             "id": mahalla.pk,
             "name": mahalla.name,
             "yosh_count": yosh_count,
@@ -390,10 +291,188 @@ def dashboard(request):
             "otaliq_count": otaliq_count,
             "suhbat_count": suhbat_count,
         })
+    return stats
 
-    context["mahalla_stats"] = mahalla_stats
+
+def _build_meeting_timeline(months: int = 12, base_qs=None):
+    qs = base_qs if base_qs is not None else Uchrashuv.objects.all()
+    start_date = timezone.now() - timedelta(days=30 * months)
+    rows = (
+        qs.filter(meeting_date__gte=start_date)
+        .annotate(bucket=TruncMonth("meeting_date"))
+        .values("bucket")
+        .annotate(total=Count("id"))
+        .order_by("bucket")
+    )
+    counts = {row["bucket"] if isinstance(row["bucket"], datetime) is False else row["bucket"].date(): row["total"] for row in rows if row["bucket"]}
+
+    today = timezone.localdate()
+    current = today.replace(day=1)
+    month_list = []
+    for _ in range(months):
+        month_list.append(current)
+        current = (current - timedelta(days=1)).replace(day=1)
+    month_list.reverse()
+
+    timeline = []
+    for month_start in month_list:
+        total = counts.get(month_start, 0)
+        timeline.append({
+            "label": month_start.strftime("%m.%Y"),
+            "count": total,
+        })
+    return timeline
+
+
+def _choice_stats(model, field, choices, base_qs=None, extra_filters=None, aggregate=None):
+    qs = base_qs if base_qs is not None else model.objects.all()
+    if extra_filters:
+        qs = qs.filter(**extra_filters)
+    value_field = aggregate or field
+    rows = (
+        qs.values(field)
+        .annotate(total=Sum(value_field) if aggregate else Count("id"))
+    )
+    counts = {row[field]: row["total"] or 0 for row in rows}
+    return [
+        {"label": label, "count": counts.get(code, 0)}
+        for code, label in choices
+    ]
+
+
+def _choice_timeline(model, date_field, base_qs=None, months: int = 12):
+    qs = base_qs if base_qs is not None else model.objects.all()
+    start_date = timezone.now() - timedelta(days=30 * months)
+    date_filter = {f"{date_field}__gte": start_date}
+    rows = (
+        qs.filter(**date_filter)
+        .annotate(bucket=TruncMonth(date_field))
+        .values("bucket")
+        .annotate(total=Count("id"))
+        .order_by("bucket")
+    )
+    counts = {row["bucket"] if isinstance(row["bucket"], datetime) is False else row["bucket"].date(): row["total"] for row in rows if row["bucket"]}
+
+    today = timezone.localdate()
+    current = today.replace(day=1)
+    month_list = []
+    for _ in range(months):
+        month_list.append(current)
+        current = (current - timedelta(days=1)).replace(day=1)
+    month_list.reverse()
+
+    return [
+        {"label": m.strftime("%m.%Y"), "count": counts.get(m, 0)}
+        for m in month_list
+    ]
+
+
+def _build_module_charts(user):
+    if is_management_user(user):
+        unemployed_base = UnemployedYouth.objects.all()
+        otaliq_base = OtaliqYouth.objects.filter(is_deleted=False)
+        migratsiya_base = MigrationYouth.objects.all()
+        reyd_base = RaidEvent.objects.all()
+        besh_base = FiveInitiativeEvent.objects.all()
+    else:
+        mahalla = user.mahalla
+        unemployed_base = UnemployedYouth.objects.filter(yosh__mahalla=mahalla)
+        otaliq_base = OtaliqYouth.objects.filter(yosh__mahalla=mahalla, is_deleted=False)
+        migratsiya_base = MigrationYouth.objects.filter(yosh__mahalla=mahalla)
+        reyd_base = RaidEvent.objects.filter(mahalla=mahalla)
+        besh_base = FiveInitiativeEvent.objects.filter(mahalla=mahalla)
+
+    return {
+        "unemployed": {
+            "categories": _choice_stats(
+                UnemployedYouth, "category", UnemployedYouth.CATEGORY_CHOICES, base_qs=unemployed_base
+            ),
+            "assistance_types": _choice_stats(
+                UnemployedYouth,
+                "assistance__assistance_type",
+                AssistanceInfo.ASSISTANCE_TYPES,
+                base_qs=unemployed_base,
+                extra_filters={
+                    "assistance__provided": True,
+                    "assistance__assistance_type__isnull": False,
+                },
+            ),
+        },
+        "otaliq": {
+            "categories": _choice_stats(
+                OtaliqYouth, "category", OtaliqYouth.CATEGORY_CHOICES, base_qs=otaliq_base
+            ),
+            "assistance_types": _choice_stats(
+                OtaliqYouth,
+                "assistance__assistance_type",
+                OtaliqAssistance.ASSISTANCE_TYPES,
+                base_qs=otaliq_base,
+                extra_filters={
+                    "assistance__provided": True,
+                    "assistance__assistance_type__isnull": False,
+                },
+            ),
+        },
+        "migratsiya": {
+            "reasons": _choice_stats(
+                MigrationYouth, "reason", MigrationYouth.REASON_CHOICES, base_qs=migratsiya_base
+            ),
+            "top_countries": [
+                {"label": row["destination_country"] or "Noma'lum", "count": row["total"]}
+                for row in migratsiya_base.values("destination_country")
+                .annotate(total=Count("id"))
+                .order_by("-total")[:10]
+            ],
+        },
+        "reyd": {
+            "types": _choice_stats(
+                RaidEvent, "event_type", RaidEvent.TYPE_CHOICES, base_qs=reyd_base
+            ),
+            "timeline": _choice_timeline(RaidEvent, "event_date", reyd_base),
+        },
+        "besh": {
+            "directions": _choice_stats(
+                FiveInitiativeEvent,
+                "direction",
+                FiveInitiativeEvent.DIRECTION_CHOICES,
+                base_qs=besh_base,
+                aggregate="coverage",
+            ),
+            "timeline": _choice_timeline(FiveInitiativeEvent, "event_date", besh_base),
+        },
+    }
+
+
+@login_required
+def dashboard(request):
+    user = request.user
+    context = {}
+
+    if is_management_user(user):
+        qs = Yosh.objects.all()
+        total_meetings_count = Uchrashuv.objects.count()
+        timeline_qs = Uchrashuv.objects.all()
+    else:
+        qs = Yosh.objects.filter(mahalla=user.mahalla)
+        total_meetings_count = Uchrashuv.objects.filter(yosh__mahalla=user.mahalla).count()
+        timeline_qs = Uchrashuv.objects.filter(yosh__mahalla=user.mahalla)
+
+    context["total_yosh"] = qs.count()
+    context["suhbat_bor"] = qs.annotate(has_meeting=Count("uchrashuvlar")).filter(has_meeting__gt=0).count()
+    context["suhbat_yoq"] = context["total_yosh"] - context["suhbat_bor"]
+    context["total_meetings"] = total_meetings_count
+    context["meeting_timeline"] = _build_meeting_timeline(12, base_qs=timeline_qs)
+    context["module_charts"] = _build_module_charts(user)
 
     return render(request, "dashboard.html", context)
+
+
+@login_required
+def mahalla_map(request):
+    context = {
+        "mahalla_stats": _build_mahalla_stats(),
+    }
+    return render(request, "mahalla_map.html", context)
 
 
 @login_required
@@ -495,14 +574,70 @@ def yosh_list(request):
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
+    selected_mahalla = (
+        int(request.GET.get("mahalla"))
+        if request.GET.get("mahalla") and request.GET.get("mahalla").isdigit()
+        else None
+    )
+    selected_status = request.GET.get("status")
+
+    filter_fields = [
+        {
+            "type": "search",
+            "name": "q",
+            "label": "Qidirish",
+            "placeholder": "F.I.Sh, tel, pasport, guvohnoma, jshshir...",
+            "value": q or "",
+        }
+    ]
+    if mahallas:
+        filter_fields.append(
+            {
+                "type": "select",
+                "name": "mahalla",
+                "label": "Mahalla",
+                "autosubmit": True,
+                "options": [{"value": "", "label": "Barcha mahallalar", "selected": selected_mahalla is None}]
+                + [
+                    {"value": m.pk, "label": m.name, "selected": selected_mahalla == m.pk}
+                    for m in mahallas
+                ],
+            }
+        )
+    filter_fields.append(
+        {
+            "type": "select",
+            "name": "status",
+            "label": "Holat",
+            "autosubmit": True,
+            "options": [
+                {"value": "", "label": "Barchasi", "selected": not selected_status},
+                {"value": "bor", "label": "Suhbat o'tkazilgan", "selected": selected_status == "bor"},
+                {"value": "yoq", "label": "Suhbat o'tkazilmagan", "selected": selected_status == "yoq"},
+            ],
+        }
+    )
+    filter_fields.append(
+        {
+            "type": "select",
+            "name": "per_page",
+            "label": "Ko'rsatish",
+            "autosubmit": True,
+            "options": [
+                {"value": value, "label": f"{value} tadan", "selected": per_page == value}
+                for value in ["10", "20", "50", "100", "200"]
+            ],
+        }
+    )
+
     context = {
         "page_obj": page_obj,
         "per_page": per_page,
         "mahallas": mahallas,
-        "selected_mahalla": int(request.GET.get("mahalla"))
-        if request.GET.get("mahalla") and request.GET.get("mahalla").isdigit()
-        else None,
-        "selected_status": request.GET.get("status"),
+        "selected_mahalla": selected_mahalla,
+        "selected_status": selected_status,
+        "filter_fields": filter_fields,
+        "clear_filter_url": request.path,
         "sort_field": sort_field,
         "sort_direction": sort_direction,
     }

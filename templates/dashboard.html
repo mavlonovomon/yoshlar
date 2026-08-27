@@ -4,7 +4,6 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pages/dashboard_page.css' %}">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
 {% endblock %}
 
 {% block content %}
@@ -90,218 +89,196 @@
         </div>
     </div>
 
-    <!-- Charts Row -->
-    <div class="row g-4 mb-4">
-        <div class="col-xl-5">
-            <div class="card border-0 shadow-sm chart-card">
-                <div class="card-header bg-white border-0 py-3 px-4">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <h5 class="chart-title fw-bold mb-0">Suhbat holati</h5>
-                    </div>
+    <!-- Meetings Timeline Chart -->
+    <div class="card border-0 shadow-sm chart-card mb-4">
+        <div class="card-header bg-white border-0 py-3 px-4">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                    <h5 class="chart-title fw-bold mb-0">Suhbatlar dinamikasi</h5>
+                    <p class="text-muted small mb-0">Oxirgi 12 oy davomida yoshlar bilan o'tkazilgan suhbatlar chastotasi</p>
                 </div>
-                <div class="card-body p-4 pt-0">
-                    <div class="chart-container">
-                        <canvas id="meetingStatusChart" height="240"></canvas>
-                    </div>
-                </div>
+                <span class="badge bg-primary-subtle text-primary border">Oylik</span>
             </div>
         </div>
-
-        <div class="col-xl-7">
-            <div class="card border-0 shadow-sm chart-card">
-                <div class="card-header bg-white border-0 py-3 px-4">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <h5 class="chart-title fw-bold mb-0">Bo'limlar bo'yicha qamrov</h5>
-                    </div>
-                </div>
-                <div class="card-body p-4 pt-0">
-                    <div class="chart-container">
-                        <canvas id="moduleSummaryChart" height="240"></canvas>
-                    </div>
-                </div>
+        <div class="card-body p-4 pt-0">
+            <div class="timeline-chart-container">
+                <canvas id="meetingTimelineChart" height="120"></canvas>
             </div>
         </div>
     </div>
 
-    <!-- Mahalla Map Section -->
-    <div class="mahalla-map-section mb-4">
-        <div class="dashboard-section-head mb-3">
-            <h5 class="fw-bold mb-1 text-dark">Mahallalar xaritasi</h5>
-            <p class="text-muted small mb-0">Mahallani bosib batafsil statistikani ko'ring</p>
-        </div>
-        <div class="card border-0 shadow-sm mahalla-map-card">
-            <div id="mahalla-map"></div>
-        </div>
-    </div>
-
-    <!-- Module Summary Section -->
-    <div class="dashboard-section-head mb-4">
-        <h5 class="fw-bold mb-1 text-dark">Bo'limlar bo'yicha umumiy holat</h5>
-        <p class="text-muted small mb-0">Alohida dashboardlar o'rniga yagona ko'rinish</p>
+    <!-- Ishsiz yoshlar -->
+    <div class="dashboard-section-head mb-3">
+        <h5 class="fw-bold mb-1 text-dark">Ishsiz yoshlar</h5>
+        <p class="text-muted small mb-0">Toifalar va ko'rsatilgan yordam turlari bo'yicha taqsimot</p>
     </div>
     <div class="row g-4 mb-4">
-        {% for module in module_summary %}
-        <div class="col-xl col-md-4 col-sm-6">
-            <div class="card border-0 shadow-sm h-100 module-card">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div class="stats-icon-wrapper {{ module.accent }}">
-                            <i class="bi {{ module.icon }} fs-5"></i>
-                        </div>
-                        <a href="{% url module.list_url %}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
-                            Ro'yxat
-                        </a>
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm chart-card h-100">
+                <div class="card-header bg-white border-0 py-3 px-4">
+                    <h6 class="chart-title fw-bold mb-0">Toifalar bo'yicha</h6>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="half-chart-container">
+                        <canvas id="unemployedCategoryChart"></canvas>
                     </div>
-                    <h6 class="text-muted text-uppercase small fw-bold mb-2">{{ module.title }}</h6>
-                    <h3 class="fw-black mb-1">{{ module.value|intcomma }}</h3>
-                    <div class="text-muted smaller">{{ module.meta }}</div>
                 </div>
             </div>
         </div>
-        {% endfor %}
-    </div>
 
-    {% if show_online_users %}
-    <!-- Online Users Section -->
-    <div class="dashboard-section-head mb-4">
-        <h5 class="fw-bold mb-1 text-dark">Hozir onlayn foydalanuvchilar</h5>
-        <p class="text-muted small mb-0">Sessiyada faol bo'lgan foydalanuvchilar oxirgi faollik vaqtiga ko'ra ko'rsatiladi.</p>
-    </div>
-    <div class="card border-0 shadow-sm mb-4 online-users-card">
-        <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
-            <div>
-                <h5 class="fw-bold mb-0 text-dark">Onlayn userlar</h5>
-                <div class="text-muted small">{{ online_users_count }} ta faol foydalanuvchi</div>
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm chart-card h-100">
+                <div class="card-header bg-white border-0 py-3 px-4">
+                    <h6 class="chart-title fw-bold mb-0">Ko'rsatilgan yordam turlari</h6>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="half-chart-container">
+                        <canvas id="assistanceTypeChart"></canvas>
+                    </div>
+                </div>
             </div>
-            <span class="badge bg-success-subtle text-success border">{{ online_users_count }}</span>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th class="ps-4 py-3 border-0">Foydalanuvchi</th>
-                        <th class="py-3 border-0">Rol</th>
-                        <th class="py-3 border-0">Mahalla</th>
-                        <th class="py-3 border-0">So'nggi faollik</th>
-                        <th class="py-3 border-0 text-center">Sessiyalar</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for online_user in online_users %}
-                    <tr>
-                        <td class="ps-4">
-                            <div class="fw-bold text-dark">{{ online_user.full_name|default:online_user.username }}</div>
-                            <div class="text-muted smaller">#{{ online_user.pk }}</div>
-                        </td>
-                        <td>
-                            <span class="badge bg-primary-subtle text-primary border">{{ online_user.get_role_display }}</span>
-                            {% if online_user.is_sector_coordinator %}
-                            <span class="badge bg-warning-subtle text-warning border ms-1">Koordinator</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="text-dark small">{{ online_user.mahalla.name|default:"-" }}</div>
-                        </td>
-                        <td>
-                            <div class="text-dark small">
-                                <i class="bi bi-clock-history me-2 text-success"></i>{{ online_user.online_last_activity|date:"d.m.Y H:i" }}
-                            </div>
-                            <div class="text-muted smaller">{{ online_user.online_last_activity|timesince }} oldin</div>
-                        </td>
-                        <td class="text-center">
-                            <span class="badge bg-success">{{ online_user.online_session_count }}</span>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="py-5 text-center text-muted">Hozircha onlayn foydalanuvchi yo'q</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
     </div>
-    {% endif %}
 
-    <!-- Recent Meetings Table -->
-    <div class="card border-0 shadow-sm overflow-hidden recent-meetings-card">
-        <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
-            <h5 class="fw-bold mb-0 text-dark">Oxirgi Suhbatlar</h5>
-            <a href="{% url 'yosh_list' %}" class="btn btn-primary btn-sm rounded-pill px-4">Barcha yoshlar</a>
+    <!-- Otaliqdagi yoshlar -->
+    <div class="dashboard-section-head mb-3">
+        <h5 class="fw-bold mb-1 text-dark">Otaliqdagi yoshlar</h5>
+        <p class="text-muted small mb-0">Profilaktik hisob toifalari va ko'rsatilgan yordam turlari bo'yicha taqsimot</p>
+    </div>
+    <div class="row g-4 mb-4">
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm chart-card h-100">
+                <div class="card-header bg-white border-0 py-3 px-4">
+                    <h6 class="chart-title fw-bold mb-0">Toifalar bo'yicha</h6>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="half-chart-container">
+                        <canvas id="otaliqCategoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th class="ps-4 py-3 border-0">Yoshlar Ma'lumotlari</th>
-                        <th class="py-3 border-0">Yetakchi</th>
-                        <th class="py-3 border-0">Sana va Vaqt</th>
-                        <th class="py-3 border-0">Qisqacha Mazmun</th>
-                        <th class="py-3 border-0 text-center">Harakat</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for meeting in latest_meetings %}
-                    <tr>
-                        <td class="ps-4">
-                            <div class="fw-bold text-dark">{{ meeting.yosh.fullname }}</div>
-                            <div class="text-muted smaller">ID: #{{ meeting.yosh.pk }}</div>
-                        </td>
-                        <td>
-                            <div class="text-dark fw-medium small">{{ meeting.yetakchi.full_name }}</div>
-                            <div class="text-muted smaller">{{ meeting.yetakchi.mahalla.name|default:"Admin" }}</div>
-                        </td>
-                        <td>
-                            {% if meeting.meeting_date %}
-                            <div class="text-dark small">
-                                <i class="bi bi-calendar3 me-2 text-primary"></i>{{ meeting.meeting_date_str|default:"-" }}
-                            </div>
-                            <div class="text-muted smaller">
-                                <i class="bi bi-clock me-2"></i>{{ meeting.meeting_time_str|default:"-" }}
-                            </div>
-                            {% else %}
-                            <div class="text-muted small">-</div>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="text-muted small recent-meeting-snippet">
-                                <i class="bi bi-quote text-primary opacity-25 me-1"></i>
-                                {% if meeting.conversation_text %}
-                                    {{ meeting.conversation_text|truncatewords:12 }}
-                                {% else %}
-                                    <span class="text-muted">-</span>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td class="text-center">
-                            <a href="{% url 'yosh_detail' meeting.yosh.pk %}"
-                                class="btn btn-outline-primary btn-sm px-4 rounded-pill">
-                                Ko'rish
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="py-5 text-center text-muted">Hozircha suhbatlar mavjud emas</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm chart-card h-100">
+                <div class="card-header bg-white border-0 py-3 px-4">
+                    <h6 class="chart-title fw-bold mb-0">Ko'rsatilgan yordam turlari</h6>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="half-chart-container">
+                        <canvas id="otaliqAssistanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Migratsiyadagi yoshlar -->
+    <div class="dashboard-section-head mb-3">
+        <h5 class="fw-bold mb-1 text-dark">Migratsiyadagi yoshlar</h5>
+        <p class="text-muted small mb-0">Chiqib ketish sabablari va ketgan davlatlar bo'yicha taqsimot</p>
+    </div>
+    <div class="row g-4 mb-4">
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm chart-card h-100">
+                <div class="card-header bg-white border-0 py-3 px-4">
+                    <h6 class="chart-title fw-bold mb-0">Sabablar bo'yicha</h6>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="half-chart-container">
+                        <canvas id="migratsiyaReasonChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm chart-card h-100">
+                <div class="card-header bg-white border-0 py-3 px-4">
+                    <h6 class="chart-title fw-bold mb-0">Ketgan davlatlar (top-10)</h6>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="half-chart-container">
+                        <canvas id="migratsiyaCountryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reyd tadbirlari -->
+    <div class="dashboard-section-head mb-3">
+        <h5 class="fw-bold mb-1 text-dark">Reyd tadbirlari</h5>
+        <p class="text-muted small mb-0">Reyd turlari va o'tkazilgan tadbirlar dinamikasi</p>
+    </div>
+    <div class="row g-4 mb-4">
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm chart-card h-100">
+                <div class="card-header bg-white border-0 py-3 px-4">
+                    <h6 class="chart-title fw-bold mb-0">Reyd turlari bo'yicha</h6>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="half-chart-container">
+                        <canvas id="reydTypeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm chart-card h-100">
+                <div class="card-header bg-white border-0 py-3 px-4">
+                    <h6 class="chart-title fw-bold mb-0">Tadbirlar dinamikasi (oylik)</h6>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="half-chart-container">
+                        <canvas id="reydTimelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Besh tashabbus -->
+    <div class="dashboard-section-head mb-3">
+        <h5 class="fw-bold mb-1 text-dark">Besh tashabbus</h5>
+        <p class="text-muted small mb-0">Yo'nalishlar bo'yicha qamrov va tadbirlar dinamikasi</p>
+    </div>
+    <div class="row g-4 mb-4">
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm chart-card h-100">
+                <div class="card-header bg-white border-0 py-3 px-4">
+                    <h6 class="chart-title fw-bold mb-0">Yo'nalishlar bo'yicha qamrov</h6>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="half-chart-container">
+                        <canvas id="beshDirectionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm chart-card h-100">
+                <div class="card-header bg-white border-0 py-3 px-4">
+                    <h6 class="chart-title fw-bold mb-0">Tadbirlar dinamikasi (oylik)</h6>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="half-chart-container">
+                        <canvas id="beshTimelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-{{ module_summary|json_script:"module-summary-data" }}
-{{ suhbat_bor|json_script:"meeting-covered-count" }}
-{{ suhbat_yoq|json_script:"meeting-pending-count" }}
-{{ mahalla_stats|json_script:"mahalla-stats-data" }}
+{{ meeting_timeline|json_script:"meeting-timeline-data" }}
+{{ module_charts|json_script:"module-charts-data" }}
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="{% static 'js/components/charts.js' %}"></script>
-<script src="{% static 'js/pages/dashboard_page.js' %}"></script>
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="{% static 'js/data/mahalla_polygons.js' %}"></script>
-<script src="{% static 'js/pages/dashboard_map.js' %}"></script>
+<script src="{% static 'js/components/charts.js' %}?v=2"></script>
+<script src="{% static 'js/pages/dashboard_page.js' %}?v=2"></script>
 {% endblock %}

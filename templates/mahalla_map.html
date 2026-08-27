@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/mahalla_map.css' %}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 mahalla-map-page">
+    {% include 'components/page_header.html' with title="Mahallalar xaritasi" subtitle="Mahallani bosib batafsil statistikani ko'ring" show_refresh=True %}
+
+    <div class="card border-0 shadow-sm mahalla-map-card">
+        <div id="mahalla-map"></div>
+    </div>
+</div>
+
+{{ mahalla_stats|json_script:"mahalla-stats-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{% static 'js/data/mahalla_polygons.js' %}"></script>
+<script src="{% static 'js/pages/mahalla_map.js' %}"></script>
+{% endblock %}
