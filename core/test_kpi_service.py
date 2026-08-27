@@ -36,11 +36,11 @@ class BuildModuleRowsTest(TestCase):
             mahalla=cls.mahalla,
         )
 
-    def test_module_columns_has_eleven(self):
-        self.assertEqual(len(MODULE_COLUMNS), 11)
+    def test_module_columns_has_fifteen(self):
+        self.assertEqual(len(MODULE_COLUMNS), 15)
         keys = [c["key"] for c in MODULE_COLUMNS]
         self.assertEqual(keys[0], "otaliq")
-        self.assertEqual(keys[-1], "eco_energiya")
+        self.assertEqual(keys[-1], "qizlar")
 
     def test_empty_leaders_returns_empty(self):
         self.assertEqual(build_module_rows([]), [])
@@ -211,3 +211,115 @@ class EcoEnergiyaModuleTest(TestCase):
         rows = build_module_rows([leader2])
         eco = rows[0]['modules']['eco_energiya']
         self.assertEqual(eco['pct'], 0.0)
+
+
+class MegaloyihaModulesTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from core.models import (
+            MutolaaStatSnapshot, MutolaaMahallaStat,
+            UstozAiStatSnapshot, UstozAiMahallaStat,
+            UzchessStatSnapshot, UzchessMahallaStat,
+            QizlarAkademiyasiStatSnapshot, QizlarAkademiyasiMahallaStat,
+        )
+        cls.mahalla = Mahalla.objects.create(name="Mega Test Mahalla")
+        cls.leader = get_user_model().objects.create_user(
+            username="megaleader", full_name="Mega Leader", role="YETAKCHI", mahalla=cls.mahalla,
+        )
+        for i in range(20):
+            Yosh.objects.create(
+                fullname=f"Youth {i}", mahalla=cls.mahalla,
+                birth_date=date(2000, 1, 1), jshshir=f"99{i:012d}", address="Test",
+            )
+        cls.total_yosh = 20
+
+        snap_m = MutolaaStatSnapshot.objects.create(
+            snapshot_date=date(2026, 8, 1), source_url="http://test",
+        )
+        MutolaaMahallaStat.objects.create(
+            snapshot=snap_m, mahalla=cls.mahalla, mahalla_name="Mega Test",
+            metrics={"users_total": 8},
+        )
+
+        snap_u = UstozAiStatSnapshot.objects.create(
+            snapshot_date=date(2026, 8, 1), source_url="http://test",
+        )
+        UstozAiMahallaStat.objects.create(
+            snapshot=snap_u, mahalla=cls.mahalla, area_name="Mega Test",
+            metrics={"users_total": 12},
+        )
+
+        snap_c = UzchessStatSnapshot.objects.create(
+            snapshot_date=date(2026, 8, 1), source_url="http://test",
+        )
+        UzchessMahallaStat.objects.create(
+            snapshot=snap_c, mahalla=cls.mahalla, area_name="Mega Test",
+            metrics={"users_total": 5},
+        )
+
+        snap_q = QizlarAkademiyasiStatSnapshot.objects.create(
+            snapshot_date=date(2026, 8, 1), source_url="http://test",
+        )
+        QizlarAkademiyasiMahallaStat.objects.create(
+            snapshot=snap_q, mahalla=cls.mahalla, area_name="Mega Test",
+            metrics={"users_total": 15},
+        )
+
+    def test_mutolaa_pct(self):
+        rows = build_module_rows([self.leader])
+        m = rows[0]['modules']['mutolaa']
+        self.assertAlmostEqual(m['pct'], 40.0, places=1)
+
+    def test_ustoz_ai_pct(self):
+        rows = build_module_rows([self.leader])
+        m = rows[0]['modules']['ustoz_ai']
+        self.assertAlmostEqual(m['pct'], 60.0, places=1)
+
+    def test_uzchess_pct(self):
+        rows = build_module_rows([self.leader])
+        m = rows[0]['modules']['uzchess']
+        self.assertAlmostEqual(m['pct'], 25.0, places=1)
+
+    def test_qizlar_pct(self):
+        rows = build_module_rows([self.leader])
+        m = rows[0]['modules']['qizlar']
+        self.assertAlmostEqual(m['pct'], 75.0, places=1)
+
+    def test_mega_cap_at_100(self):
+        from core.models import MutolaaStatSnapshot, MutolaaMahallaStat
+        snap = MutolaaStatSnapshot.objects.create(
+            snapshot_date=date(2026, 8, 2), source_url="http://test2",
+        )
+        MutolaaMahallaStat.objects.create(
+            snapshot=snap, mahalla=self.mahalla, mahalla_name="Mega Test",
+            metrics={"users_total": 50},
+        )
+        rows = build_module_rows([self.leader])
+        m = rows[0]['modules']['mutolaa']
+        self.assertEqual(m['pct'], 100.0)
+
+    def test_mega_no_snapshot(self):
+        from core.models import (
+            MutolaaMahallaStat, UstozAiMahallaStat,
+            UzchessMahallaStat, QizlarAkademiyasiMahallaStat,
+        )
+        MutolaaMahallaStat.objects.all().delete()
+        UstozAiMahallaStat.objects.all().delete()
+        UzchessMahallaStat.objects.all().delete()
+        QizlarAkademiyasiMahallaStat.objects.all().delete()
+        rows = build_module_rows([self.leader])
+        for key in ['mutolaa', 'ustoz_ai', 'uzchess', 'qizlar']:
+            self.assertEqual(rows[0]['modules'][key]['pct'], 0.0)
+
+    def test_mega_latest_snapshot_used(self):
+        from core.models import MutolaaStatSnapshot, MutolaaMahallaStat
+        snap_old = MutolaaStatSnapshot.objects.create(
+            snapshot_date=date(2026, 7, 1), source_url="http://old",
+        )
+        MutolaaMahallaStat.objects.create(
+            snapshot=snap_old, mahalla=self.mahalla, mahalla_name="Mega Test",
+            metrics={"users_total": 2},
+        )
+        rows = build_module_rows([self.leader])
+        m = rows[0]['modules']['mutolaa']
+        self.assertAlmostEqual(m['pct'], 40.0, places=1)

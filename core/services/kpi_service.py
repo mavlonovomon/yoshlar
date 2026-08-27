@@ -15,7 +15,11 @@ from otaliq.models import OtaliqYouth
 from reyd.models import RaidEvent
 from yoqlama.models import AttendanceRecord
 
-from core.models import LeaderKpiSnapshot, User, Yosh
+from core.models import (
+    LeaderKpiSnapshot, User, Yosh,
+    MutolaaMahallaStat, UstozAiMahallaStat,
+    UzchessMahallaStat, QizlarAkademiyasiMahallaStat,
+)
 
 
 DEFAULT_WEIGHTS = {
@@ -455,6 +459,10 @@ MODULE_COLUMNS = [
     {"key": "intizom", "label": "Intizom jazo"},
     {"key": "bilim", "label": "Bilim sinovi"},
     {"key": "eco_energiya", "label": "Eco energiya"},
+    {"key": "mutolaa", "label": "Mutolaa"},
+    {"key": "ustoz_ai", "label": "Ustoz AI"},
+    {"key": "uzchess", "label": "UzChess"},
+    {"key": "qizlar", "label": "Qizlar Akademiyasi"},
 ]
 MODULE_KEYS = [c["key"] for c in MODULE_COLUMNS]
 
@@ -534,8 +542,15 @@ def build_module_rows(
     kredit_total = {}
     kredit_approved = {}
     bilim_by_leader = {}
+    total_yosh_by_mahalla = {}
+    mega_by_key = {}
 
     if mahalla_ids:
+        total_yosh_by_mahalla = _map_from_rows(
+            Yosh.objects.filter(mahalla_id__in=mahalla_ids).values('mahalla_id').annotate(total=Count('id')),
+            'mahalla_id', 'total',
+        )
+
         otaliq_qs = OtaliqYouth.objects.filter(yosh__mahalla_id__in=mahalla_ids)
         otaliq_total = _map_from_rows(
             otaliq_qs.values('yosh__mahalla_id').annotate(total=Count('id')),
@@ -603,6 +618,24 @@ def build_module_rows(
         solar_by_mahalla = {}
         for sp in SolarPanel.objects.filter(mahalla_id__in=mahalla_ids):
             solar_by_mahalla[sp.mahalla_id] = sp
+
+        mega_models = [
+            ('mutolaa', MutolaaMahallaStat),
+            ('ustoz_ai', UstozAiMahallaStat),
+            ('uzchess', UzchessMahallaStat),
+            ('qizlar', QizlarAkademiyasiMahallaStat),
+        ]
+        mega_by_key = {}
+        for key, model in mega_models:
+            stats = {}
+            for stat in model.objects.filter(
+                mahalla_id__in=mahalla_ids
+            ).select_related('snapshot').order_by('-snapshot__snapshot_date'):
+                mid_val = stat.mahalla_id
+                if mid_val not in stats:
+                    metrics = stat.metrics or {}
+                    stats[mid_val] = metrics.get('users_total', 0)
+            mega_by_key[key] = stats
 
     # yoqlama: session date orqali davr filtri
     attendance_by_leader = {}
@@ -730,6 +763,14 @@ def build_module_rows(
         modules['eco_energiya'] = {
             'pct': eco_pct, 'count': eco_count, 'total': 10,
         }
+
+        for key in ['mutolaa', 'ustoz_ai', 'uzchess', 'qizlar']:
+            users = mega_by_key.get(key, {}).get(mid, 0)
+            ty = total_yosh_by_mahalla.get(mid, 0)
+            mega_pct = round(min(users / ty * 100, 100), 1) if ty else 0.0
+            modules[key] = {
+                'pct': mega_pct, 'count': users, 'total': ty,
+            }
 
         pcts = [modules[k]['pct'] for k in MODULE_KEYS]
         total_score = round(sum(pcts) / len(MODULE_KEYS), 2)
