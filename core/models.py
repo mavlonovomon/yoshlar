@@ -111,6 +111,27 @@ class LeaderKpiSnapshot(models.Model):
         return f"{self.user.full_name or self.user.username}: {self.date_from} - {self.date_to}"
 
 
+class KpiColumnPref(models.Model):
+    """Foydalanuvchining KPI jadval ustunlari ko'rinish sozlamasi."""
+    user = models.ForeignKey(
+        'core.User',
+        on_delete=models.CASCADE,
+        related_name='kpi_column_prefs',
+        verbose_name="Foydalanuvchi",
+    )
+    column_key = models.CharField(max_length=50, verbose_name="Ustun kaliti")
+    visible = models.BooleanField(default=True, verbose_name="Ko'rinadimi")
+
+    class Meta:
+        ordering = ['column_key']
+        verbose_name = "KPI ustun sozlamasi"
+        verbose_name_plural = "KPI ustun sozlamalari"
+        unique_together = ('user', 'column_key')
+
+    def __str__(self):
+        return f"{self.user}: {self.column_key}={'on' if self.visible else 'off'}"
+
+
 class Yosh(models.Model):
     fullname = models.CharField(max_length=255, verbose_name="F.I.Sh", db_index=True)
     birth_date = models.DateField(verbose_name="Tug'ilgan sana")
