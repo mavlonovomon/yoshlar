@@ -448,23 +448,31 @@ def build_kpi_rows(
 
 
 MODULE_COLUMNS = [
-    {"key": "otaliq", "label": "Otaliq"},
-    {"key": "migratsiya", "label": "Migratsiya"},
-    {"key": "ishsiz", "label": "Ishsiz yoshlar"},
-    {"key": "reyd", "label": "Reyd"},
-    {"key": "reyd_otkazilishi", "label": "Reyd o'tkazilishi"},
-    {"key": "besh_tashabbus", "label": "Besh tashabbus"},
-    {"key": "yoqlama", "label": "Yoqlama"},
-    {"key": "kredit", "label": "Kredit yo'naltirish"},
-    {"key": "intizom", "label": "Intizom jazo"},
-    {"key": "bilim", "label": "Bilim sinovi"},
-    {"key": "eco_energiya", "label": "Eco energiya"},
-    {"key": "mutolaa", "label": "Mutolaa"},
-    {"key": "ustoz_ai", "label": "Ustoz AI"},
-    {"key": "uzchess", "label": "UzChess"},
-    {"key": "qizlar", "label": "Qizlar Akademiyasi"},
+    {"key": "otaliq", "label": "Otaliq", "group": "bandlik"},
+    {"key": "migratsiya", "label": "Migratsiya", "group": "bandlik"},
+    {"key": "ishsiz", "label": "Ishsiz yoshlar", "group": "bandlik"},
+    {"key": "eco_energiya", "label": "Eco energiya", "group": "bandlik"},
+    {"key": "reyd", "label": "Reyd", "group": "tashabbon"},
+    {"key": "reyd_otkazilishi", "label": "Reyd o'tkazilishi", "group": "tashabbon"},
+    {"key": "besh_tashabbus", "label": "Besh tashabbus", "group": "tashabbon"},
+    {"key": "yoqlama", "label": "Yoqlama", "group": "intizom"},
+    {"key": "kredit", "label": "Kredit yo'naltirish", "group": "intizom"},
+    {"key": "intizom", "label": "Intizom jazo", "group": "intizom"},
+    {"key": "bilim", "label": "Bilim sinovi", "group": "bilim"},
+    {"key": "mutolaa", "label": "Mutolaa", "group": "megaloYiha"},
+    {"key": "ustoz_ai", "label": "Ustoz AI", "group": "megaloYiha"},
+    {"key": "uzchess", "label": "UzChess", "group": "megaloYiha"},
+    {"key": "qizlar", "label": "Qizlar Akademiyasi", "group": "megaloYiha"},
 ]
 MODULE_KEYS = [c["key"] for c in MODULE_COLUMNS]
+
+MODULE_GROUPS = [
+    {"key": "bandlik", "label": "Bandlik", "open": True},
+    {"key": "tashabbon", "label": "Tashabbon", "open": True},
+    {"key": "intizom", "label": "Intizom", "open": True},
+    {"key": "bilim", "label": "Bilim", "open": True},
+    {"key": "megaloYiha", "label": "Megaloyihalar", "open": False},
+]
 
 
 def traffic_color(score):

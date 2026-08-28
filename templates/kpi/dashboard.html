@@ -112,6 +112,14 @@
             </div>
         </div>
 
+        <div class="kpi-group-bar">
+            {% for grp in module_groups %}
+            <button type="button" class="group-toggle {% if grp.open %}active{% endif %}" data-group="{{ grp.key }}">
+                {{ grp.label }}
+            </button>
+            {% endfor %}
+        </div>
+
         <div id="columnPanel" class="column-panel" style="display:none;">
             {% for col in module_columns %}
             <label class="column-panel-item">
@@ -125,16 +133,16 @@
             <table class="table kpi-spreadsheet align-middle mb-0" id="kpiTable">
                 <thead>
                     <tr>
-                        <th class="text-center th-sticky-col">O'rin</th>
-                        <th class="td-sticky">Mahalla / Yetakchi</th>
+                        <th class="text-center th-sticky-col">#</th>
+                        <th class="td-sticky">Mahalla</th>
                         {% for col in module_columns %}
-                        <th class="text-center col-{{ col.key }} {% if not col.visible %}d-none{% endif %}">
+                        <th class="text-center col-{{ col.key }} group-{{ col.group }} {% if not col.visible %}d-none{% endif %}">
                             <a class="sort-link" href="?period={{ selected_period }}&sector={{ selected_sector }}&q={{ q|urlencode }}&sort={{ col.key }}">
                                 {{ col.label }}{% if sort_key == col.key %} &#9660;{% endif %}
                             </a>
                         </th>
                         {% endfor %}
-                        <th class="text-center">Itog</th>
+                        <th class="text-center th-sticky-right">Itog</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -146,15 +154,17 @@
                             <div class="leader-meta">{{ row.leader.full_name|default:row.leader.username }}</div>
                         </td>
                         {% for col in module_columns %}
-                        <td class="text-center col-{{ col.key }} {% if not col.visible %}d-none{% endif %}"
-                            title="{{ row.modules|module_meta:col.key }}"
-                            data-toggle="tooltip">
-                            {{ row.modules|get_item:col.key }}<small>%</small>
+                        <td class="text-center col-{{ col.key }} group-{{ col.group }} {% if not col.visible %}d-none{% endif %}"
+                            title="{{ row.modules|module_meta:col.key }}">
+                            <div class="module-cell">
+                                <span class="module-pct">{{ row.modules|get_item:col.key }}</span>
+                                <div class="module-bar-wrap"><div class="module-bar {% if row.modules|get_item:col.key >= 80 %}bar-green{% elif row.modules|get_item:col.key >= 60 %}bar-yellow{% else %}bar-red{% endif %}" style="width: {{ row.modules|get_item:col.key }}%"></div></div>
+                            </div>
                             {% if row.weakest_key == col.key %}<span class="flag-w">&#9888;</span>{% endif %}
                             {% if row.strongest_key == col.key %}<span class="flag-s">&#9733;</span>{% endif %}
                         </td>
                         {% endfor %}
-                        <td class="text-center total-score-cell">
+                        <td class="text-center th-sticky-right total-score-cell">
                             <div class="total-score">{{ row.total_score|floatformat:1 }}</div>
                             <div class="score-sub">
                                 {% if row.trend is not None %}
@@ -566,16 +576,43 @@
     }
 
     .kpi-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    .kpi-group-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .group-toggle {
+        padding: 5px 14px; border-radius: 8px; border: 1.5px solid #c6d0e0;
+        background: #f8faff; color: #4a5d7b; font-size: 12px; font-weight: 700;
+        cursor: pointer; transition: all .15s;
+    }
+    .group-toggle:hover { border-color: #0f5ce0; color: #0f5ce0; }
+    .group-toggle.active { background: #0f5ce0; color: #fff; border-color: #0f5ce0; }
+
     .column-panel { padding: 10px 12px; margin-bottom: 10px; border: 1px dashed #c6d0e0; border-radius: 10px; background: #f8faff; display: flex; flex-wrap: wrap; gap: 10px; }
     .column-panel-item { display: inline-flex; gap: 5px; align-items: center; font-size: 12px; font-weight: 600; color: #3a4c68; }
+
     .kpi-spreadsheet { font-size: 12px; }
     .kpi-spreadsheet thead th { position: sticky; top: 0; z-index: 2; background: #f5f8fe; }
-    .kpi-spreadsheet .th-sticky-col, .kpi-spreadsheet .td-sticky { position: sticky; left: 0; z-index: 3; background: #f5f8fe; }
-    .kpi-spreadsheet tbody td { padding: 5px 6px; }
+    .kpi-spreadsheet .th-sticky-col, .kpi-spreadsheet .td-sticky { position: sticky; left: 0; z-index: 3; background: inherit; }
+    .kpi-spreadsheet .th-sticky-right { position: sticky; right: 0; z-index: 3; background: #f5f8fe; box-shadow: -2px 0 4px rgba(0,0,0,.06); }
+    .kpi-spreadsheet tbody td { padding: 4px 5px; }
+
+    .group-bandlik { border-left: 2.5px solid #198754; }
+    .group-tashabbon { border-left: 2.5px solid #0d6efd; }
+    .group-intizom { border-left: 2.5px solid #ffc107; }
+    .group-bilim { border-left: 2.5px solid #6f42c1; }
+    .group-megaloYiha { border-left: 2.5px solid #fd7e14; }
+
+    .module-cell { display: flex; flex-direction: column; gap: 2px; min-width: 44px; }
+    .module-pct { font-size: 11px; font-weight: 700; line-height: 1; }
+    .module-bar-wrap { height: 3px; background: #e9ecef; border-radius: 2px; overflow: hidden; }
+    .module-bar { height: 100%; border-radius: 2px; transition: width .3s; }
+    .bar-green { background: #198754; }
+    .bar-yellow { background: #ffc107; }
+    .bar-red { background: #dc3545; }
+
     .sort-link { color: inherit; text-decoration: none; font-weight: 800; }
     .sort-link:hover { color: #0f5ce0; }
-    .flag-w { color: #d97706; margin-left: 2px; }
-    .flag-s { color: #b8860b; margin-left: 2px; }
+    .flag-w { color: #d97706; margin-left: 2px; font-size: 10px; }
+    .flag-s { color: #b8860b; margin-left: 2px; font-size: 10px; }
     .trend-up { color: #198754; font-size: 11px; }
     .trend-down { color: #dc3545; font-size: 11px; }
     .traffic-green td, .traffic-yellow td, .traffic-red td { border-bottom: 1px solid rgba(0,0,0,0.05); }
@@ -584,23 +621,52 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const panel = document.getElementById('columnPanel');
-    const btn = document.getElementById('btnColumns');
+    var panel = document.getElementById('columnPanel');
+    var btn = document.getElementById('btnColumns');
     if (btn && panel) {
         btn.addEventListener('click', function () {
             panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
         });
     }
+
+    var groups = {
+        bandlik: ['otaliq', 'migratsiya', 'ishsiz', 'eco_energiya'],
+        tashabbon: ['reyd', 'reyd_otkazilishi', 'besh_tashabbus'],
+        intizom: ['yoqlama', 'kredit', 'intizom'],
+        bilim: ['bilim'],
+        megaloYiha: ['mutolaa', 'ustoz_ai', 'uzchess', 'qizlar']
+    };
+
+    document.querySelectorAll('.group-toggle').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var g = btn.dataset.group;
+            var keys = groups[g] || [];
+            var turningOn = !btn.classList.contains('active');
+            btn.classList.toggle('active', turningOn);
+            keys.forEach(function (key) {
+                document.querySelectorAll('.col-' + key).forEach(function (el) {
+                    el.classList.toggle('d-none', !turningOn);
+                });
+                var chk = document.querySelector('.col-toggle[data-key="' + key + '"]');
+                if (chk) {
+                    chk.checked = turningOn;
+                    fetch("{% url 'kpi_column_toggle' %}", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                        body: JSON.stringify({ column_key: key, visible: turningOn })
+                    });
+                }
+            });
+        });
+    });
+
     document.querySelectorAll('.col-toggle').forEach(function (chk) {
         chk.addEventListener('change', function () {
-            const key = chk.dataset.key;
-            const visible = chk.checked;
+            var key = chk.dataset.key;
+            var visible = chk.checked;
             fetch("{% url 'kpi_column_toggle' %}", {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
                 body: JSON.stringify({ column_key: key, visible: visible })
             }).then(function (r) { return r.json(); }).then(function (data) {
                 if (data.success) {

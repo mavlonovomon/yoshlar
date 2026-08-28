@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .models import KpiColumnPref, User
-from .services.kpi_service import build_module_rows, MODULE_COLUMNS, traffic_color
+from .services.kpi_service import build_module_rows, MODULE_COLUMNS, MODULE_GROUPS, traffic_color
 from .kpi_exports import build_excel, build_pdf
 
 
@@ -136,6 +136,7 @@ def kpi_dashboard(request):
     context = {
         "rows": rows,
         "module_columns": module_columns,
+        "module_groups": MODULE_GROUPS,
         "visible_keys": visible_keys,
         "column_prefs": prefs,
         "top_row": top_row,
