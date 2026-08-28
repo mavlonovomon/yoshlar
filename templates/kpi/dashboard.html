@@ -329,6 +329,8 @@
 
     .kpi-filters-card,
     .kpi-table-card {
+        min-width: 0;
+        max-width: 100%;
         border: 1px solid #e2e8f3;
         border-radius: 18px;
         background: #fff;
@@ -567,8 +569,8 @@
     .kpi-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .column-panel { padding: 10px 12px; margin-bottom: 10px; border: 1px dashed #c6d0e0; border-radius: 10px; background: #f8faff; display: flex; flex-wrap: wrap; gap: 10px; }
     .column-panel-item { display: inline-flex; gap: 5px; align-items: center; font-size: 12px; font-weight: 600; color: #3a4c68; }
-    .kpi-spreadsheet-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .kpi-spreadsheet { font-size: 12px; }
+    .kpi-spreadsheet-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; min-width: 0; max-width: 100%; }
+    .kpi-spreadsheet { font-size: 12px; width: 100%; min-width: 1500px; }
     .kpi-spreadsheet thead th { position: sticky; top: 0; z-index: 2; background: #f5f8fe; white-space: nowrap; }
     .kpi-spreadsheet .th-sticky-col, .kpi-spreadsheet .td-sticky { position: sticky; left: 0; z-index: 3; background: #f5f8fe; }
     .kpi-spreadsheet .th-sticky-right { position: sticky; right: 0; z-index: 3; background: #f5f8fe; box-shadow: -2px 0 6px rgba(0,0,0,.08); }
