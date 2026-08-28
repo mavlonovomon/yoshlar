@@ -47,7 +47,7 @@ class BuildModuleRowsTest(TestCase):
         self.assertEqual(keys[0], "otaliq")
         self.assertEqual(keys[-1], "arizalar")
         arizalar = MODULE_COLUMNS[-1]
-        self.assertTrue(arizalar.get("key") == "arizalar")
+        self.assertEqual(arizalar.get("key"), "arizalar")
         self.assertEqual(arizalar.get("display"), "count_pct")
         self.assertEqual(MODULE_KEYS[-1], "arizalar")
 
@@ -391,13 +391,33 @@ class ArizalarModuleTest(TestCase):
         self.assertEqual(a["count"], 0)
         self.assertEqual(a["pct"], 0.0)
 
+    def test_no_snapshot_returns_zero(self):
+        from beshtashabbus.models import FiveInitiativeApplicationSnapshot
+        FiveInitiativeApplicationSnapshot.objects.all().delete()
+        rows = build_module_rows([self.leader2])
+        a = rows[0]["modules"]["arizalar"]
+        self.assertEqual(a, {"count": 0, "pct": 0.0, "total": 0})
+
     def test_latest_snapshot_only(self):
+        """Only the most-recent snapshot (a.xlsx) counts; an older snapshot is ignored."""
+        from datetime import timedelta
         from beshtashabbus.models import FiveInitiativeApplicationSnapshot, FiveInitiativeApplicationEntry
         old = FiveInitiativeApplicationSnapshot.objects.create(year=2025, source_file_name="old.xlsx")
+        # Backdate so it is genuinely older than the setUpTestData snapshot
+        FiveInitiativeApplicationSnapshot.objects.filter(pk=old.pk).update(
+            created_at=timezone.now() - timedelta(days=1)
+        )
         FiveInitiativeApplicationEntry.objects.create(
             snapshot=old, mahalla=self.mahalla2, mahalla_name_raw="Ariza 2",
             participant_name="Old", pinfl="10000000000009",
             selection_category="K1", direction="D1",
         )
+        FiveInitiativeApplicationEntry.objects.create(
+            snapshot=old, mahalla=self.mahalla2, mahalla_name_raw="Ariza 2",
+            participant_name="Older", pinfl="10000000000010",
+            selection_category="K1", direction="D1",
+        )
         rows = {r["leader"].id: r for r in build_module_rows([self.leader1, self.leader2])}
+        # the older `old` snapshot contains 2 entries for mahalla2, a.xlsx only 1.
+        # count must be 1 (latest a.xlsx wins), proving the older snapshot is ignored.
         self.assertEqual(rows[self.leader2.id]["modules"]["arizalar"]["count"], 1)
