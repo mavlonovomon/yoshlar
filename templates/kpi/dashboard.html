@@ -148,7 +148,12 @@
                         {% for col in module_columns %}
                         <td class="text-center col-{{ col.key }} {% if not col.visible %}d-none{% endif %}"
                             title="{{ row.modules|module_meta:col.key }}">
+                            {% if col.display == "count_pct" %}
+                            <div class="kpi-count-big">{{ row.modules|get_count:col.key }}</div>
+                            <div class="kpi-count-sub">{{ row.modules|get_item:col.key }}%</div>
+                            {% else %}
                             {{ row.modules|get_item:col.key }}<small>%</small>
+                            {% endif %}
                             {% if row.weakest_key == col.key %}<span class="flag-w">&#9888;</span>{% endif %}
                             {% if row.strongest_key == col.key %}<span class="flag-s">&#9733;</span>{% endif %}
                         </td>
@@ -575,6 +580,8 @@
     .kpi-spreadsheet .th-sticky-col, .kpi-spreadsheet .td-sticky { position: sticky; left: 0; z-index: 3; background: #f5f8fe; }
     .kpi-spreadsheet .th-sticky-right { position: sticky; right: 0; z-index: 3; background: #f5f8fe; box-shadow: -2px 0 6px rgba(0,0,0,.08); }
     .kpi-spreadsheet tbody td { padding: 6px 8px; white-space: nowrap; }
+    .kpi-count-big { font-size: 13px; font-weight: 800; line-height: 1.1; }
+    .kpi-count-sub { font-size: 9px; color: #6c757d; line-height: 1.1; }
     .sort-link { color: inherit; text-decoration: none; font-weight: 800; }
     .sort-link:hover { color: #0f5ce0; }
     .flag-w { color: #d97706; margin-left: 2px; }
