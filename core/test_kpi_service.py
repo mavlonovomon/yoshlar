@@ -332,3 +332,72 @@ class MegaloyihaModulesTest(TestCase):
         rows = build_module_rows([self.leader])
         m = rows[0]['modules']['mutolaa']
         self.assertAlmostEqual(m['pct'], 40.0, places=1)
+
+
+class ArizalarModuleTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from beshtashabbus.models import FiveInitiativeApplicationSnapshot, FiveInitiativeApplicationEntry
+        cls.mahalla1 = Mahalla.objects.create(name="Ariza 1")
+        cls.mahalla2 = Mahalla.objects.create(name="Ariza 2")
+        cls.leader1 = get_user_model().objects.create_user(
+            username="ariza1", full_name="Ariza L1", role="YETAKCHI", mahalla=cls.mahalla1,
+        )
+        cls.leader2 = get_user_model().objects.create_user(
+            username="ariza2", full_name="Ariza L2", role="YETAKCHI", mahalla=cls.mahalla2,
+        )
+        snap = FiveInitiativeApplicationSnapshot.objects.create(year=2026, source_file_name="a.xlsx")
+        FiveInitiativeApplicationEntry.objects.create(
+            snapshot=snap, mahalla=cls.mahalla1, mahalla_name_raw="Ariza 1",
+            participant_name="A", pinfl="10000000000001",
+            selection_category="K1", direction="D1",
+        )
+        FiveInitiativeApplicationEntry.objects.create(
+            snapshot=snap, mahalla=cls.mahalla1, mahalla_name_raw="Ariza 1",
+            participant_name="B", pinfl="10000000000002",
+            selection_category="K1", direction="D1",
+        )
+        FiveInitiativeApplicationEntry.objects.create(
+            snapshot=snap, mahalla=cls.mahalla1, mahalla_name_raw="Ariza 1",
+            participant_name="C", pinfl="10000000000001",
+            selection_category="K2", direction="D2",
+        )
+        FiveInitiativeApplicationEntry.objects.create(
+            snapshot=snap, mahalla=cls.mahalla2, mahalla_name_raw="Ariza 2",
+            participant_name="D", pinfl="10000000000003",
+            selection_category="K1", direction="D1",
+        )
+
+    def _rows(self):
+        return {r["leader"].id: r for r in build_module_rows([self.leader1, self.leader2])}
+
+    def test_distinct_pinfl_count_and_max_norm(self):
+        rows = self._rows()
+        a1 = rows[self.leader1.id]["modules"]["arizalar"]  # 3 entry, 2 distinct PINFL -> max = 2
+        a2 = rows[self.leader2.id]["modules"]["arizalar"]  # 1/2
+        self.assertEqual(a1["count"], 2)
+        self.assertEqual(a1["total"], 2)
+        self.assertEqual(a1["pct"], 100.0)
+        self.assertEqual(a2["count"], 1)
+        self.assertEqual(a2["pct"], round(1 / 2 * 100, 1))
+
+    def test_no_entry_returns_zero(self):
+        mahalla3 = Mahalla.objects.create(name="Ariza 3")
+        leader3 = get_user_model().objects.create_user(
+            username="ariza3", full_name="Ariza L3", role="YETAKCHI", mahalla=mahalla3,
+        )
+        rows = build_module_rows([leader3])
+        a = rows[0]["modules"]["arizalar"]
+        self.assertEqual(a["count"], 0)
+        self.assertEqual(a["pct"], 0.0)
+
+    def test_latest_snapshot_only(self):
+        from beshtashabbus.models import FiveInitiativeApplicationSnapshot, FiveInitiativeApplicationEntry
+        old = FiveInitiativeApplicationSnapshot.objects.create(year=2025, source_file_name="old.xlsx")
+        FiveInitiativeApplicationEntry.objects.create(
+            snapshot=old, mahalla=self.mahalla2, mahalla_name_raw="Ariza 2",
+            participant_name="Old", pinfl="10000000000009",
+            selection_category="K1", direction="D1",
+        )
+        rows = {r["leader"].id: r for r in build_module_rows([self.leader1, self.leader2])}
+        self.assertEqual(rows[self.leader2.id]["modules"]["arizalar"]["count"], 1)

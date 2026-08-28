@@ -520,6 +520,7 @@ def build_module_rows(
     from bilim_sinovi.models import TestResult
     from eco_energiya.models import SolarPanel
     from kredit_yo_naltirish.models import CreditCandidate
+    from beshtashabbus.models import FiveInitiativeApplicationEntry, FiveInitiativeApplicationSnapshot
 
     leaders = _normalize_leaders(leaders)
     if not leaders:
@@ -545,6 +546,7 @@ def build_module_rows(
     bilim_by_leader = {}
     total_yosh_by_mahalla = {}
     mega_by_key = {}
+    arizalar_count = {}
 
     if mahalla_ids:
         total_yosh_by_mahalla = _map_from_rows(
@@ -642,6 +644,16 @@ def build_module_rows(
                             break
                     stats[mid_val] = users
             mega_by_key[key] = stats
+
+        arizalar_snap = FiveInitiativeApplicationSnapshot.objects.order_by("-created_at").first()
+        if arizalar_snap:
+            arizalar_qs = FiveInitiativeApplicationEntry.objects.filter(
+                snapshot=arizalar_snap, mahalla_id__in=mahalla_ids
+            )
+            for r in arizalar_qs.values("mahalla_id").annotate(
+                total=Count("pinfl", distinct=True)
+            ):
+                arizalar_count[r["mahalla_id"]] = r["total"]
 
     # yoqlama: session date orqali davr filtri
     attendance_by_leader = {}
@@ -777,6 +789,14 @@ def build_module_rows(
             modules[key] = {
                 'pct': mega_pct, 'count': users, 'total': ty,
             }
+
+        ar_c = arizalar_count.get(mid, 0)
+        ar_max = max(arizalar_count.values(), default=0) if arizalar_count else 0
+        modules["arizalar"] = {
+            "pct": round((ar_c / ar_max) * 100, 1) if ar_max else 0.0,
+            "count": ar_c,
+            "total": ar_max,
+        }
 
         for key in MODULE_KEYS:
             modules.setdefault(key, {'pct': 0.0, 'count': 0, 'total': 0})
