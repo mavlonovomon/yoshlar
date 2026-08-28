@@ -14,7 +14,12 @@ from reyd.models import RaidEvent
 from yoqlama.models import AttendanceRecord, AttendanceSession
 
 from core.models import KpiColumnPref, Mahalla, Yosh
-from core.services.kpi_service import MODULE_COLUMNS, build_module_rows, traffic_color
+from core.services.kpi_service import (
+    MODULE_COLUMNS,
+    MODULE_KEYS,
+    build_module_rows,
+    traffic_color,
+)
 
 
 class KpiColumnPrefModelTest(TestCase):
@@ -36,11 +41,15 @@ class BuildModuleRowsTest(TestCase):
             mahalla=cls.mahalla,
         )
 
-    def test_module_columns_has_fifteen(self):
-        self.assertEqual(len(MODULE_COLUMNS), 15)
+    def test_module_columns_has_sixteen(self):
+        self.assertEqual(len(MODULE_COLUMNS), 16)
         keys = [c["key"] for c in MODULE_COLUMNS]
         self.assertEqual(keys[0], "otaliq")
-        self.assertEqual(keys[-1], "qizlar")
+        self.assertEqual(keys[-1], "arizalar")
+        arizalar = MODULE_COLUMNS[-1]
+        self.assertTrue(arizalar.get("key") == "arizalar")
+        self.assertEqual(arizalar.get("display"), "count_pct")
+        self.assertEqual(MODULE_KEYS[-1], "arizalar")
 
     def test_empty_leaders_returns_empty(self):
         self.assertEqual(build_module_rows([]), [])

@@ -463,6 +463,7 @@ MODULE_COLUMNS = [
     {"key": "ustoz_ai", "label": "Ustoz AI"},
     {"key": "uzchess", "label": "UzChess"},
     {"key": "qizlar", "label": "Qizlar Akademiyasi"},
+    {"key": "arizalar", "label": "Arizalar", "display": "count_pct"},
 ]
 MODULE_KEYS = [c["key"] for c in MODULE_COLUMNS]
 
@@ -776,6 +777,9 @@ def build_module_rows(
             modules[key] = {
                 'pct': mega_pct, 'count': users, 'total': ty,
             }
+
+        for key in MODULE_KEYS:
+            modules.setdefault(key, {'pct': 0.0, 'count': 0, 'total': 0})
 
         pcts = [modules[k]['pct'] for k in MODULE_KEYS]
         total_score = round(sum(pcts) / len(MODULE_KEYS), 2)
