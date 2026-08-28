@@ -121,7 +121,7 @@
             {% endfor %}
         </div>
 
-        <div class="table-responsive kpi-spreadsheet-wrap">
+        <div class="kpi-spreadsheet-wrap">
             <table class="table kpi-spreadsheet align-middle mb-0" id="kpiTable">
                 <thead>
                     <tr>
@@ -140,8 +140,8 @@
                 <tbody>
                     {% for row in rows %}
                     <tr class="traffic-{{ row.traffic }}" style="background: {{ row.traffic_color }}">
-                        <td class="text-center th-sticky-col">{{ row.rank }}</td>
-                        <td class="td-sticky">
+                        <td class="text-center th-sticky-col" style="background: {{ row.traffic_color }}">{{ row.rank }}</td>
+                        <td class="td-sticky" style="background: {{ row.traffic_color }}">
                             <div class="leader-name">{{ row.mahalla_name }}</div>
                             <div class="leader-meta">{{ row.leader.full_name|default:row.leader.username }}</div>
                         </td>
@@ -153,7 +153,7 @@
                             {% if row.strongest_key == col.key %}<span class="flag-s">&#9733;</span>{% endif %}
                         </td>
                         {% endfor %}
-                        <td class="text-center th-sticky-right total-score-cell">
+                        <td class="text-center th-sticky-right total-score-cell" style="background: {{ row.traffic_color }}">
                             <div class="total-score">{{ row.total_score|floatformat:1 }}</div>
                             <div class="score-sub">
                                 {% if row.trend is not None %}
@@ -567,9 +567,10 @@
     .kpi-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .column-panel { padding: 10px 12px; margin-bottom: 10px; border: 1px dashed #c6d0e0; border-radius: 10px; background: #f8faff; display: flex; flex-wrap: wrap; gap: 10px; }
     .column-panel-item { display: inline-flex; gap: 5px; align-items: center; font-size: 12px; font-weight: 600; color: #3a4c68; }
-    .kpi-spreadsheet { font-size: 12px; min-width: 100%; }
+    .kpi-spreadsheet-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .kpi-spreadsheet { font-size: 12px; }
     .kpi-spreadsheet thead th { position: sticky; top: 0; z-index: 2; background: #f5f8fe; white-space: nowrap; }
-    .kpi-spreadsheet .th-sticky-col, .kpi-spreadsheet .td-sticky { position: sticky; left: 0; z-index: 3; background: inherit; }
+    .kpi-spreadsheet .th-sticky-col, .kpi-spreadsheet .td-sticky { position: sticky; left: 0; z-index: 3; background: #f5f8fe; }
     .kpi-spreadsheet .th-sticky-right { position: sticky; right: 0; z-index: 3; background: #f5f8fe; box-shadow: -2px 0 6px rgba(0,0,0,.08); }
     .kpi-spreadsheet tbody td { padding: 6px 8px; white-space: nowrap; }
     .sort-link { color: inherit; text-decoration: none; font-weight: 800; }
