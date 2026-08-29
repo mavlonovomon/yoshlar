@@ -97,6 +97,24 @@
         </div>
     </div>
 
+    <!-- Yoshlar taqsimoti chart -->
+    <div class="card border-0 shadow-sm chart-card mb-4">
+        <div class="card-header bg-white border-0 py-3 px-4">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                    <h5 class="chart-title fw-bold mb-0">Yoshlar taqsimoti</h5>
+                    <p class="text-muted small mb-0">14-30 yosh oralig'ida erkaklar va ayollar soni</p>
+                </div>
+                <span class="badge bg-primary-subtle text-primary border">Yosh/Jins</span>
+            </div>
+        </div>
+        <div class="card-body p-4 pt-0">
+            <div class="timeline-chart-container">
+                <canvas id="ageGenderChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+
     <!-- Meetings Timeline Chart -->
     <div class="card border-0 shadow-sm chart-card mb-4">
         <div class="card-header bg-white border-0 py-3 px-4">
@@ -281,6 +299,7 @@
     </div>
 </div>
 
+{{ age_gender_distribution|json_script:"age-gender-data" }}
 {{ meeting_timeline|json_script:"meeting-timeline-data" }}
 {{ module_charts|json_script:"module-charts-data" }}
 {% endblock %}
