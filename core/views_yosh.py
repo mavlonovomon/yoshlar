@@ -324,6 +324,32 @@ def _build_meeting_timeline(months: int = 12, base_qs=None):
     return timeline
 
 
+def _build_age_gender_distribution(base_qs=None):
+    qs = base_qs if base_qs is not None else Yosh.objects.all()
+    today = timezone.localdate()
+
+    age_gender_data = []
+    for age in range(14, 31):
+        max_birth_date = today.replace(year=today.year - age)
+        min_birth_date = today.replace(year=today.year - age - 1)
+
+        age_qs = qs.filter(
+            birth_date__gt=min_birth_date,
+            birth_date__lte=max_birth_date,
+        )
+
+        erkaklar = age_qs.filter(school_gender="Мужской").count()
+        ayollar = age_qs.filter(school_gender="Женский").count()
+
+        age_gender_data.append({
+            "age": age,
+            "erkaklar": erkaklar,
+            "ayollar": ayollar,
+        })
+
+    return age_gender_data
+
+
 def _choice_stats(model, field, choices, base_qs=None, extra_filters=None, aggregate=None):
     qs = base_qs if base_qs is not None else model.objects.all()
     if extra_filters:
@@ -462,6 +488,7 @@ def dashboard(request):
     context["suhbat_yoq"] = context["total_yosh"] - context["suhbat_bor"]
     context["total_meetings"] = total_meetings_count
     context["meeting_timeline"] = _build_meeting_timeline(12, base_qs=timeline_qs)
+    context["age_gender_distribution"] = _build_age_gender_distribution(base_qs=qs)
     context["module_charts"] = _build_module_charts(user)
 
     return render(request, "dashboard.html", context)
