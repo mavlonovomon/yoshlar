@@ -50,7 +50,7 @@ def _format_number(value):
     return round(value, 2)
 
 
-def _build_mega_view_context(request, snapshot_model, table_builder, compare_fields, *, gender_filter=None, age_min=None):
+def _build_mega_view_context(request, snapshot_model, table_builder, compare_fields, *, gender_filter=None, age_min=None, age_max=None):
     snapshot_history = list(snapshot_model.objects.order_by("-snapshot_date", "-fetched_at")[:50])
     latest_snapshot = snapshot_history[0] if snapshot_history else None
 
@@ -58,10 +58,15 @@ def _build_mega_view_context(request, snapshot_model, table_builder, compare_fie
     yosh_qs = Yosh.objects.values("mahalla").annotate(count=Count("id"))
     if gender_filter:
         yosh_qs = yosh_qs.filter(school_gender=gender_filter)
-    if age_min is not None:
+    if age_min is not None or age_max is not None:
         from datetime import date, timedelta
-        max_birth = date.today() - timedelta(days=age_min * 365)
-        yosh_qs = yosh_qs.filter(birth_date__lte=max_birth)
+        today = date.today()
+        if age_min is not None:
+            max_birth = today - timedelta(days=age_min * 365)
+            yosh_qs = yosh_qs.filter(birth_date__lte=max_birth)
+        if age_max is not None:
+            min_birth = today - timedelta(days=(age_max + 1) * 365)
+            yosh_qs = yosh_qs.filter(birth_date__gt=min_birth)
     youth_counts = {
         item["mahalla"]: item["count"]
         for item in yosh_qs
@@ -269,8 +274,9 @@ def _render_mega_stats_page(
     column_labels,
     gender_filter=None,
     age_min=None,
+    age_max=None,
 ):
-    context = _build_mega_view_context(request, snapshot_model, table_builder, compare_fields, gender_filter=gender_filter, age_min=age_min)
+    context = _build_mega_view_context(request, snapshot_model, table_builder, compare_fields, gender_filter=gender_filter, age_min=age_min, age_max=age_max)
 
     mega_projects = [
         {"key": "mutolaa", "name": "Mutolaa", "url": "/mega-loyihalar/mutolaa/"},
@@ -316,11 +322,13 @@ def mega_mutolaa(request):
         refresh_url_name="mega_mutolaa_refresh",
         column_labels={
             "mahalla_name": "Mahalla",
-            "total_youth": "Jami yoshlar",
+            "total_youth": "14-30 yoshlar",
             "users_total": "Foydalanuvchilar",
             "users_ratio_percent": "Foydalanuvchi / yoshlar (%)",
             "reading_books": "O'qilayotgan kitoblar",
         },
+        age_min=14,
+        age_max=30,
     )
 
 
@@ -339,12 +347,14 @@ def mega_ustoz_ai(request):
         refresh_url_name="mega_ustoz_ai_refresh",
         column_labels={
             "mahalla_name": "Mahalla",
-            "total_youth": "Jami yoshlar",
+            "total_youth": "14-30 yoshlar",
             "users_total": "Foydalanuvchilar",
             "users_ratio_percent": "Foydalanuvchi / yoshlar (%)",
             "video_views": "Video ko'rishlar",
             "certificates_count": "Olingan sertifikatlar",
         },
+        age_min=14,
+        age_max=30,
     )
 
 
@@ -375,13 +385,15 @@ def mega_uzchess(request):
         refresh_url_name="mega_uzchess_refresh",
         column_labels={
             "mahalla_name": "Mahalla",
-            "total_youth": "Jami yoshlar",
+            "total_youth": "14-30 yoshlar",
             "users_total": "Profiles",
             "users_ratio_percent": "Ishtirokchi / yoshlar (%)",
             "submissions_count": "Yechilgan boshqotirmalar",
             "games_count": "O'ynalgan o'yinlar",
             "certificates_count": "Olingan sertifikatlar",
         },
+        age_min=14,
+        age_max=30,
     )
 
 
@@ -421,6 +433,7 @@ def mega_girls_academy(request):
         },
         gender_filter="Женский",
         age_min=14,
+        age_max=30,
     )
 
 
