@@ -119,6 +119,91 @@
         return "rgba(" + r + ", " + g + ", " + b + ", " + alpha + ")";
     }
 
+    function renderMultiLine(canvasId, items) {
+        if (!items || !items.length) return;
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+
+        const labels = items.map(function(item) { return item.age + " yosh"; });
+        const erkaklarData = items.map(function(item) { return Number(item.erkaklar) || 0; });
+        const ayollarData = items.map(function(item) { return Number(item.ayollar) || 0; });
+
+        const erkaklarColor = "#3b82f6";
+        const ayollarColor = "#ef4444";
+
+        window.dashboardCharts.createChart(canvasId, {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Erkaklar",
+                        data: erkaklarData,
+                        borderColor: erkaklarColor,
+                        backgroundColor: hexToRgba(erkaklarColor, 0.1),
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: "#ffffff",
+                        pointBorderColor: erkaklarColor,
+                        pointBorderWidth: 2,
+                    },
+                    {
+                        label: "Ayollar",
+                        data: ayollarData,
+                        borderColor: ayollarColor,
+                        backgroundColor: hexToRgba(ayollarColor, 0.1),
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: "#ffffff",
+                        pointBorderColor: ayollarColor,
+                        pointBorderWidth: 2,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: "index", intersect: false },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { maxRotation: 0, autoSkipPadding: 10 },
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { precision: 0 },
+                        grid: { color: "rgba(0, 0, 0, 0.06)" },
+                    },
+                },
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: { boxWidth: 12, padding: 16 },
+                    },
+                    tooltip: {
+                        backgroundColor: "#1a1a2e",
+                        padding: 12,
+                        cornerRadius: 8,
+                        callbacks: {
+                            title: function(items) {
+                                return items[0].label;
+                            },
+                            label: function(context) {
+                                return context.dataset.label + ": " + context.parsed.y + " ta";
+                            },
+                        },
+                    },
+                },
+            },
+        });
+    }
+
     function renderTimeline(canvasId, items, options) {
         const chartData = toChartData(items);
         if (!chartData.labels.length) return;
@@ -247,6 +332,10 @@
                 },
             });
         }
+
+        // Age-gender distribution chart
+        const ageGender = window.dashboardCharts.parseJsonScript("age-gender-data") || [];
+        renderMultiLine("ageGenderChart", ageGender);
 
         const unemployed = charts.unemployed || {};
         renderDoughnut("unemployedCategoryChart", unemployed.categories, "ta");
