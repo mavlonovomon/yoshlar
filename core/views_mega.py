@@ -50,14 +50,21 @@ def _format_number(value):
     return round(value, 2)
 
 
-def _build_mega_view_context(request, snapshot_model, table_builder, compare_fields):
+def _build_mega_view_context(request, snapshot_model, table_builder, compare_fields, *, gender_filter=None, age_min=None):
     snapshot_history = list(snapshot_model.objects.order_by("-snapshot_date", "-fetched_at")[:50])
     latest_snapshot = snapshot_history[0] if snapshot_history else None
 
     mahallas = list(Mahalla.objects.all().order_by("name"))
+    yosh_qs = Yosh.objects.values("mahalla").annotate(count=Count("id"))
+    if gender_filter:
+        yosh_qs = yosh_qs.filter(school_gender=gender_filter)
+    if age_min is not None:
+        from datetime import date, timedelta
+        max_birth = date.today() - timedelta(days=age_min * 365)
+        yosh_qs = yosh_qs.filter(birth_date__lte=max_birth)
     youth_counts = {
         item["mahalla"]: item["count"]
-        for item in Yosh.objects.values("mahalla").annotate(count=Count("id"))
+        for item in yosh_qs
     }
 
     columns, rows, total_row = table_builder(latest_snapshot, mahallas=mahallas, youth_counts=youth_counts)
@@ -260,8 +267,10 @@ def _render_mega_stats_page(
     page_title,
     refresh_url_name,
     column_labels,
+    gender_filter=None,
+    age_min=None,
 ):
-    context = _build_mega_view_context(request, snapshot_model, table_builder, compare_fields)
+    context = _build_mega_view_context(request, snapshot_model, table_builder, compare_fields, gender_filter=gender_filter, age_min=age_min)
 
     mega_projects = [
         {"key": "mutolaa", "name": "Mutolaa", "url": "/mega-loyihalar/mutolaa/"},
@@ -403,13 +412,15 @@ def mega_girls_academy(request):
         refresh_url_name="mega_girls_academy_refresh",
         column_labels={
             "mahalla_name": "Mahalla",
-            "total_youth": "Jami yoshlar",
+            "total_youth": "14+ ayol-qizlar",
             "users_total": "Profiles",
-            "users_ratio_percent": "Ishtirokchi / yoshlar (%)",
+            "users_ratio_percent": "Ishtirokchi / 14+ ayol-qizlar (%)",
             "submissions_count": "Yechilgan boshqotirmalar",
             "games_count": "O'ynalgan o'yinlar",
             "certificates_count": "Olingan sertifikatlar",
         },
+        gender_filter="Женский",
+        age_min=14,
     )
 
 

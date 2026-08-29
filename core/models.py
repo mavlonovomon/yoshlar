@@ -143,11 +143,11 @@ class Yosh(models.Model):
     phone_number = models.CharField(max_length=20, verbose_name="Telefon raqami", blank=True)
     mahalla = models.ForeignKey(Mahalla, on_delete=models.CASCADE, related_name='yoshlar', verbose_name="Mahalla")
     school_external_id = models.BigIntegerField(null=True, blank=True, unique=True, db_index=True, verbose_name="Maktab ID")
-    school_gender = models.CharField(max_length=20, blank=True, default="", verbose_name="Maktab jinsi")
-    school_nationality = models.CharField(max_length=100, blank=True, default="", verbose_name="Maktab millati")
-    school_citizenship = models.CharField(max_length=100, blank=True, default="", verbose_name="Maktab fuqaroligi")
-    school_document_series = models.CharField(max_length=10, blank=True, default="", verbose_name="Maktab seriyasi")
-    school_document_number = models.CharField(max_length=20, blank=True, default="", verbose_name="Maktab hujjat raqami")
+    school_gender = models.CharField(max_length=20, blank=True, default="", verbose_name="Jinsi")
+    school_nationality = models.CharField(max_length=100, blank=True, default="", verbose_name="Millati")
+    school_citizenship = models.CharField(max_length=100, blank=True, default="", verbose_name="Fuqaroligi")
+    school_document_series = models.CharField(max_length=10, blank=True, default="", verbose_name="Seriya")
+    school_document_number = models.CharField(max_length=20, blank=True, default="", verbose_name="Hujjat raqami")
     school_organization = models.CharField(max_length=255, blank=True, default="", verbose_name="Maktab tashkiloti", db_index=True)
     school_organization_region = models.CharField(max_length=255, blank=True, default="", verbose_name="Maktab hududi", db_index=True)
     school_class = models.CharField(max_length=50, blank=True, default="", verbose_name="Maktab sinfi", db_index=True)
@@ -223,6 +223,43 @@ class Yosh(models.Model):
         return today.year - self.birth_date.year - (
             (today.month, today.day) < (self.birth_date.month, self.birth_date.day)
         )
+
+    @staticmethod
+    def detect_gender(fullname, jshshir):
+        jshshir = (jshshir or "").strip()
+        fullname = (fullname or "").strip()
+        if jshshir and jshshir[0].isdigit():
+            first = jshshir[0]
+            if first in ("3", "5"):
+                return "Мужской"
+            if first in ("4", "6"):
+                return "Женский"
+        upper = fullname.upper()
+        if " QIZI" in upper or upper.endswith("QIZI"):
+            return "Женский"
+        if " ВНА" in upper or upper.endswith("ВНА"):
+            return "Женский"
+        if upper.endswith("ИЗИ"):
+            return "Женский"
+        male_markers = (
+            "O'G'LI", "O\u2018G\u2018LI", "OGLI", "O`G`LI", "O'GLI",
+            "OG'LI", "O\u2019GLI", "OVICH", "EVICH", "OVCH", "EVCH",
+            "O'G'LO", "O\u2018G\u2018LO", "O\u2019G\u2019LI",
+            "\u04E3\u0413\u041B\u0418", "\u04E2\u0492\u041B\u0418",
+            "\u045E\u0493\u043B\u0438", "\u040E\u0492\u041B\u0418",
+        )
+        for marker in male_markers:
+            if upper.endswith(marker) or f" {marker}" in upper:
+                return "Мужской"
+        female_markers = ("OVNA", "EVNA")
+        for marker in female_markers:
+            if upper.endswith(marker):
+                return "Женский"
+        if upper.endswith("OVA") or upper.endswith("EVA"):
+            return "Женский"
+        if "QIZI" in upper:
+            return "Женский"
+        return ""
 
 
 class MaktabOquvchi(models.Model):

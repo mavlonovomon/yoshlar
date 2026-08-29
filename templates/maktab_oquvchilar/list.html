@@ -109,6 +109,7 @@
                         <th>{% sort_link 'organization_region' 'Hudud' %}</th>
                         <th>{% sort_link 'klass' 'Sinf' %}</th>
                         <th>{% sort_link 'document_series' 'Hujjat' %}</th>
+                        <th>Jinsi</th>
                         <th class="text-center" style="width: 120px;">Amal</th>
                     </tr>
                 </thead>
@@ -135,6 +136,7 @@
                             <span class="text-muted">-</span>
                             {% endif %}
                         </td>
+                        <td>{{ item.school_gender|default:"-" }}</td>
                         <td class="text-center">
                             <a href="{% url 'yosh_detail' item.pk %}?readonly=true"
                                class="action-btn action-btn-view" title="Anketani ko'rish">
@@ -144,7 +146,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="10" class="text-center py-5">
+                        <td colspan="11" class="text-center py-5">
                             <div class="mb-3 text-muted">
                                 <i class="bi bi-database-exclamation display-4"></i>
                             </div>
