@@ -1,6 +1,14 @@
 
 from pathlib import Path
 import os
+import socket
+
+# Prioritize IPv4 over IPv6 in socket.getaddrinfo to prevent connection hangs on servers with unreachable IPv6
+_orig_getaddrinfo = socket.getaddrinfo
+def _patched_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+    res = _orig_getaddrinfo(host, port, family, type, proto, flags)
+    return sorted(res, key=lambda x: 0 if x[0] == socket.AF_INET else 1)
+socket.getaddrinfo = _patched_getaddrinfo
 
 
 def _load_env_file(path: Path) -> None:

@@ -9,7 +9,7 @@
 
     function getBaseStyle(youthCount, isSatellite) {
         return {
-            color: "#ffffff",
+            color: "#0099ff",
             weight: isSatellite ? 2.5 : 2,
             opacity: 0.9,
             fill: false,
