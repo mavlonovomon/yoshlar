@@ -41,10 +41,11 @@ class BuildModuleRowsTest(TestCase):
             mahalla=cls.mahalla,
         )
 
-    def test_module_columns_has_sixteen(self):
-        self.assertEqual(len(MODULE_COLUMNS), 16)
+    def test_module_columns_has_seventeen(self):
+        self.assertEqual(len(MODULE_COLUMNS), 17)
         keys = [c["key"] for c in MODULE_COLUMNS]
         self.assertEqual(keys[0], "otaliq")
+        self.assertIn("ibrat", keys)
         self.assertEqual(keys[-1], "arizalar")
         arizalar = MODULE_COLUMNS[-1]
         self.assertEqual(arizalar.get("key"), "arizalar")

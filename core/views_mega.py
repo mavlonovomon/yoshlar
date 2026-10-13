@@ -7,6 +7,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
 from .models import (
+    IbratFarzandlariStatSnapshot,
     Mahalla,
     MutolaaStatSnapshot,
     QizlarAkademiyasiStatSnapshot,
@@ -14,6 +15,8 @@ from .models import (
     UzchessStatSnapshot,
     Yosh,
 )
+from .ibrat import build_table as build_ibrat_table
+from .ibrat import fetch_and_store_ibrat_snapshot
 from .mutolaa import build_table, fetch_and_store_mutolaa_snapshot
 from .qizlar_akademiyasi import build_table as build_qizlar_table
 from .qizlar_akademiyasi import fetch_and_store_qizlar_snapshot
@@ -259,6 +262,14 @@ def mega_projects(request):
             "status": "API ulanmagan",
             "updated": "-",
         },
+        {
+            "key": "ibrat-farzandlari",
+            "name": "Ibrat Farzandlari",
+            "icon": "bi-translate",
+            "accent": "var(--mega-purple, #6f42c1)",
+            "status": "API ulangan",
+            "updated": "-",
+        },
     ]
     return render(request, "mega_loyihalar/mega_projects.html", {"projects": projects})
 
@@ -283,6 +294,7 @@ def _render_mega_stats_page(
         {"key": "ustoz-ai", "name": "Ustoz AI", "url": "/mega-loyihalar/ustoz-ai/"},
         {"key": "uzchess", "name": "UzChess", "url": "/mega-loyihalar/uzchess/"},
         {"key": "qizlar-akademiyasi", "name": "Qizlar akademiyasi", "url": "/mega-loyihalar/qizlar-akademiyasi/"},
+        {"key": "ibrat-farzandlari", "name": "Ibrat Farzandlari", "url": "/mega-loyihalar/ibrat-farzandlari/"},
     ]
 
     current_index = 0
@@ -460,3 +472,42 @@ def mega_mutolaa_refresh(request):
     else:
         messages.success(request, "Mutolaa statistikasi yangilandi.")
     return redirect("mega_mutolaa")
+
+
+@login_required
+def mega_ibrat(request):
+    return _render_mega_stats_page(
+        request,
+        snapshot_model=IbratFarzandlariStatSnapshot,
+        table_builder=build_ibrat_table,
+        compare_fields=[
+            ("users_total", "Foydalanuvchilar"),
+            ("certificates_count", "Olingan sertifikatlar"),
+        ],
+        page_title="Ibrat Farzandlari",
+        refresh_url_name="mega_ibrat_refresh",
+        column_labels={
+            "mahalla_name": "Mahalla",
+            "total_youth": "14-30 yoshlar",
+            "users_total": "Foydalanuvchilar",
+            "users_ratio_percent": "Foydalanuvchi / yoshlar (%)",
+            "certificates_count": "Olingan sertifikatlar",
+        },
+        age_min=14,
+        age_max=30,
+    )
+
+
+@login_required
+@require_POST
+def mega_ibrat_refresh(request):
+    if not is_management_user(request.user):
+        messages.error(request, "Yangilash faqat mas'ul foydalanuvchilar uchun ruxsat etilgan.")
+        return redirect("mega_ibrat")
+    snapshot, error = fetch_and_store_ibrat_snapshot()
+    if error:
+        messages.error(request, f"Ibrat Farzandlari statistikasi yangilanmadi: {error}")
+    else:
+        messages.success(request, "Ibrat Farzandlari statistikasi yangilandi.")
+    return redirect("mega_ibrat")
+

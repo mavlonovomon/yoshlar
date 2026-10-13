@@ -194,6 +194,7 @@ python manage.py fetch_mutolaa_stats
 python manage.py fetch_ustoz_ai_stats
 python manage.py fetch_uzchess_stats
 python manage.py fetch_qizlar_stats
+python manage.py fetch_ibrat_stats
 ```
 
 Alias mapping seed commandlari:
@@ -201,6 +202,7 @@ Alias mapping seed commandlari:
 ```bash
 python manage.py seed_uzchess_aliases
 python manage.py seed_qizlar_aliases
+python manage.py seed_ibrat_aliases
 ```
 
 KPI hisoblash:

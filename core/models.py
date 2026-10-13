@@ -537,6 +537,52 @@ class QizlarAkademiyasiMahallaAlias(models.Model):
         return f"{self.api_name} -> {self.mahalla or '-'}"
 
 
+class IbratFarzandlariStatSnapshot(models.Model):
+    """Ibrat Farzandlari API dan olingan kunlik snapshot."""
+    snapshot_date = models.DateField(db_index=True)
+    fetched_at = models.DateTimeField(auto_now_add=True)
+    source_url = models.TextField()
+    raw_payload = models.JSONField(default=dict)
+
+    class Meta:
+        ordering = ['-snapshot_date', '-fetched_at']
+        verbose_name = "Ibrat Farzandlari snapshot"
+        verbose_name_plural = "Ibrat Farzandlari snapshotlar"
+
+    def __str__(self):
+        return f"Ibrat Farzandlari {self.snapshot_date}"
+
+
+class IbratFarzandlariMahallaStat(models.Model):
+    """Har bir mahalla bo'yicha Ibrat Farzandlari ko'rsatkichlari."""
+    snapshot = models.ForeignKey(IbratFarzandlariStatSnapshot, on_delete=models.CASCADE, related_name='area_stats')
+    mahalla = models.ForeignKey(Mahalla, on_delete=models.SET_NULL, null=True, blank=True, related_name='ibrat_stats')
+    area_external_id = models.CharField(max_length=64, blank=True, null=True, db_index=True)
+    area_name = models.CharField(max_length=255, db_index=True)
+    metrics = models.JSONField(default=dict)
+
+    class Meta:
+        ordering = ['area_name']
+        verbose_name = "Ibrat Farzandlari mahalla statistikasi"
+        verbose_name_plural = "Ibrat Farzandlari mahalla statistikasi"
+
+
+class IbratFarzandlariMahallaAlias(models.Model):
+    """Ibrat Farzandlari API dan kelgan mahalla nomini core.Mahalla bilan qo'lda moslash."""
+    api_name = models.CharField(max_length=255)
+    api_norm = models.CharField(max_length=255, unique=True, db_index=True)
+    mahalla = models.ForeignKey(Mahalla, on_delete=models.SET_NULL, null=True, blank=True, related_name='ibrat_aliases')
+    last_seen = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['api_name']
+        verbose_name = "Ibrat Farzandlari mahalla moslash"
+        verbose_name_plural = "Ibrat Farzandlari mahalla moslash"
+
+    def __str__(self):
+        return f"{self.api_name} -> {self.mahalla or '-'}"
+
+
 # ============ CHAT MODELS ============
 
 class Chat(models.Model):

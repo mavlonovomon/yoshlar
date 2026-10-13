@@ -18,6 +18,9 @@ from .models import (
     QizlarAkademiyasiStatSnapshot,
     QizlarAkademiyasiMahallaStat,
     QizlarAkademiyasiMahallaAlias,
+    IbratFarzandlariStatSnapshot,
+    IbratFarzandlariMahallaStat,
+    IbratFarzandlariMahallaAlias,
     Chat,
     ChatMessage,
     ChatSession,
@@ -203,6 +206,30 @@ class QizlarAkademiyasiMahallaStatAdmin(admin.ModelAdmin):
     search_fields = ('area_name',)
 
 
+@admin.register(IbratFarzandlariMahallaAlias)
+class IbratFarzandlariMahallaAliasAdmin(admin.ModelAdmin):
+    list_display = ('api_name', 'mahalla', 'last_seen')
+    list_display_links = ('api_name',)
+    list_editable = ('mahalla',)
+    list_filter = ('mahalla',)
+    search_fields = ('api_name', 'api_norm', 'mahalla__name')
+    list_select_related = ('mahalla',)
+    ordering = ('api_name',)
+
+
+@admin.register(IbratFarzandlariStatSnapshot)
+class IbratFarzandlariStatSnapshotAdmin(admin.ModelAdmin):
+    list_display = ('snapshot_date', 'fetched_at', 'source_url')
+    readonly_fields = ('snapshot_date', 'fetched_at', 'source_url', 'raw_payload')
+
+
+@admin.register(IbratFarzandlariMahallaStat)
+class IbratFarzandlariMahallaStatAdmin(admin.ModelAdmin):
+    list_display = ('snapshot', 'mahalla', 'area_name')
+    list_filter = ('snapshot', 'mahalla')
+    search_fields = ('area_name',)
+
+
 # Admin menyusida "Mega loyihalar" bo'limiga guruhlash
 _original_get_app_list = admin.site.get_app_list
 
@@ -223,6 +250,9 @@ def _mega_get_app_list(request, app_label=None):
         "QizlarAkademiyasiStatSnapshot",
         "QizlarAkademiyasiMahallaStat",
         "QizlarAkademiyasiMahallaAlias",
+        "IbratFarzandlariStatSnapshot",
+        "IbratFarzandlariMahallaStat",
+        "IbratFarzandlariMahallaAlias",
     }
     task_models = {
         "TaskGroup",

@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .models import KpiColumnPref, User
-from .services.kpi_service import build_module_rows, MODULE_COLUMNS, traffic_color
+from .services.kpi_service import build_module_rows, MODULE_COLUMNS, traffic_color, traffic_color_solid
 from .kpi_exports import build_excel, build_pdf
 
 
@@ -94,6 +94,7 @@ def kpi_dashboard(request):
             prev_scores[r["leader"].id] = r["total_score"]
     for r in rows:
         r["traffic_color"] = traffic_color(r["total_score"])
+        r["traffic_color_solid"] = traffic_color_solid(r["total_score"])
         prev = prev_scores.get(r["leader"].id)
         if prev is None:
             r["trend"] = None

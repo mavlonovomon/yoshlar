@@ -163,6 +163,11 @@ QIZLAR_STATS_URL = os.environ.get(
     "https://api.qizlarakademiyasi.uz/api/statistics/count-by-neighborhood?page=1&region=Xorazm+viloyati&district=Xazorasp+tumani&sortBy=profiles"
 )
 
+IBRAT_STATS_URL = os.environ.get(
+    'IBRAT_STATS_URL',
+    "https://api.ibrat.dev/v1/statistics/by-locality/public?region_id=16&district_id=1733220&page=1&limit=47"
+)
+
 REPORT_AI_MODEL = os.environ.get('REPORT_AI_MODEL', 'gpt-4.1-mini')
 REPORT_AI_BASE_URL = os.environ.get('REPORT_AI_BASE_URL', os.environ.get('OPENAI_BASE_URL', 'http://127.0.0.1:8045/v1'))
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', 'sk-edbf9aa2b8314de280144423658a15bd')

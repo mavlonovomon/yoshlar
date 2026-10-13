@@ -38,4 +38,6 @@ urlpatterns = [
     path('mega-loyihalar/uzchess/refresh/', views_mega.mega_uzchess_refresh, name='mega_uzchess_refresh'),
     path('mega-loyihalar/qizlar-akademiyasi/', views_mega.mega_girls_academy, name='mega_girls_academy'),
     path('mega-loyihalar/qizlar-akademiyasi/refresh/', views_mega.mega_girls_academy_refresh, name='mega_girls_academy_refresh'),
+    path('mega-loyihalar/ibrat-farzandlari/', views_mega.mega_ibrat, name='mega_ibrat'),
+    path('mega-loyihalar/ibrat-farzandlari/refresh/', views_mega.mega_ibrat_refresh, name='mega_ibrat_refresh'),
 ]

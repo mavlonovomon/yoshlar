@@ -19,6 +19,7 @@ from core.models import (
     LeaderKpiSnapshot, User, Yosh,
     MutolaaMahallaStat, UstozAiMahallaStat,
     UzchessMahallaStat, QizlarAkademiyasiMahallaStat,
+    IbratFarzandlariMahallaStat,
 )
 
 
@@ -463,6 +464,7 @@ MODULE_COLUMNS = [
     {"key": "ustoz_ai", "label": "Ustoz AI"},
     {"key": "uzchess", "label": "UzChess"},
     {"key": "qizlar", "label": "Qizlar Akademiyasi"},
+    {"key": "ibrat", "label": "Ibrat Farzandlari"},
     {"key": "arizalar", "label": "Arizalar", "display": "count_pct"},
 ]
 MODULE_KEYS = [c["key"] for c in MODULE_COLUMNS]
@@ -480,25 +482,54 @@ def traffic_color(score):
         return int(lo + (hi - lo) * t)
 
     if score >= 80:
-        # yashil: och yashil (60) -> to'q yashil (95 da to'liq to'yingan)
         t = min(1.0, (score - 80) / 15.0)
         r = _lerp(60, 25, t)
         g = _lerp(183, 135, t)
         b = _lerp(120, 84, t)
-        return f"rgba({r}, {g}, {b}, 0.30)"
-    if score >= 60:
-        # sariq
+    elif score >= 60:
         t = (score - 60) / 20.0
         r = _lerp(255, 230, t)
         g = _lerp(214, 160, t)
         b = _lerp(84, 32, t)
-        return f"rgba({r}, {g}, {b}, 0.30)"
-    # qizil: och qizil (255,200,200) 10 gacha saqlanadi, keyin to'q qizilga
-    t = max(0.0, (score - 10) / 50.0)
-    r = _lerp(255, 220, t)
-    g = _lerp(200, 53, t)
-    b = _lerp(200, 69, t)
+    else:
+        t = max(0.0, (score - 10) / 50.0)
+        r = _lerp(255, 220, t)
+        g = _lerp(200, 53, t)
+        b = _lerp(200, 69, t)
     return f"rgba({r}, {g}, {b}, 0.30)"
+
+
+def traffic_color_solid(score):
+    """Sticky katakchalar uchun opaque rang (oq fon + 30% alpha aralashmasi)."""
+    try:
+        score = float(score)
+    except (TypeError, ValueError):
+        score = 0.0
+    score = max(0.0, min(100.0, score))
+
+    def _lerp(lo, hi, t):
+        return int(lo + (hi - lo) * t)
+
+    if score >= 80:
+        t = min(1.0, (score - 80) / 15.0)
+        r = _lerp(60, 25, t)
+        g = _lerp(183, 135, t)
+        b = _lerp(120, 84, t)
+    elif score >= 60:
+        t = (score - 60) / 20.0
+        r = _lerp(255, 230, t)
+        g = _lerp(214, 160, t)
+        b = _lerp(84, 32, t)
+    else:
+        t = max(0.0, (score - 10) / 50.0)
+        r = _lerp(255, 220, t)
+        g = _lerp(200, 53, t)
+        b = _lerp(200, 69, t)
+    # oq (#fff) ustiga 30% alpha aralashmasi
+    sr = int(255 + (r - 255) * 0.30)
+    sg = int(255 + (g - 255) * 0.30)
+    sb = int(255 + (b - 255) * 0.30)
+    return f"rgb({sr}, {sg}, {sb})"
 
 
 def _months_in_period(from_date, to_date):
@@ -627,6 +658,7 @@ def build_module_rows(
             ('ustoz_ai', UstozAiMahallaStat, ['users', 'user_count', 'users_total', 'active_users']),
             ('uzchess', UzchessMahallaStat, ['profiles', 'users_total', 'users']),
             ('qizlar', QizlarAkademiyasiMahallaStat, ['profiles', 'users_total', 'users']),
+            ('ibrat', IbratFarzandlariMahallaStat, ['user_count', 'users_total', 'users']),
         ]
         mega_by_key = {}
         for key, model, metric_keys in mega_models:
@@ -782,7 +814,7 @@ def build_module_rows(
             'pct': eco_pct, 'count': eco_count, 'total': 10,
         }
 
-        for key in ['mutolaa', 'ustoz_ai', 'uzchess', 'qizlar']:
+        for key in ['mutolaa', 'ustoz_ai', 'uzchess', 'qizlar', 'ibrat']:
             users = mega_by_key.get(key, {}).get(mid, 0)
             ty = total_yosh_by_mahalla.get(mid, 0)
             mega_pct = round(min(users / ty * 100, 100), 1) if ty else 0.0
