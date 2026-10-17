@@ -1,10 +1,9 @@
-import gzip
-import json
 import logging
 import re
+import socket
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
-from urllib.request import Request, urlopen
 
+import requests
 from django.conf import settings
 
 from .models import (
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_IBRAT_URL = (
     "https://api.ibrat.dev/v1/statistics/by-locality/public"
-    "?region_id=16&district_id=1733220&page=1&limit=47"
+    "?region_id=16&district_id=1733220&page=1&limit=100"
 )
 
 # Core Mahalla nomlari bilan API nomlarining dastlabki xaritasi
@@ -44,30 +43,54 @@ def get_ibrat_url():
     return getattr(settings, "IBRAT_STATS_URL", DEFAULT_IBRAT_URL)
 
 
-def _read_response(resp) -> str:
-    raw = resp.read()
-    encoding = (resp.headers.get("Content-Encoding") or "").lower()
-    if "gzip" in encoding:
-        raw = gzip.decompress(raw)
-    charset = resp.headers.get_content_charset() or "utf-8"
-    return raw.decode(charset, errors="replace").lstrip("\ufeff")
+_session = None
 
 
-def _fetch_json(url: str) -> dict:
-    req = Request(
-        url,
-        headers={
-            "User-Agent": "YoshlarTizimi/1.0",
-            "Accept": "application/json",
-        },
-    )
-    with urlopen(req, timeout=30) as resp:
-        raw = _read_response(resp)
+def _get_session() -> requests.Session:
+    global _session
+    if _session is None:
         try:
-            return json.loads(raw)
-        except json.JSONDecodeError:
-            logger.error("Ibrat Farzandlari JSON parse failed. Raw head: %s", raw[:200])
-            raise
+            import urllib3.util.connection
+            urllib3.util.connection.allowed_gai_family = lambda: socket.AF_INET
+        except Exception:
+            pass
+
+        _session = requests.Session()
+        _session.headers.update({
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            ),
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "uz,ru,en;q=0.9",
+        })
+    return _session
+
+
+def _fetch_json(url: str, session: requests.Session | None = None) -> dict:
+    s = session or _get_session()
+    resp = s.get(url, timeout=(5, 20))
+    resp.raise_for_status()
+    try:
+        return resp.json()
+    except Exception as e:
+        logger.error("Ibrat Farzandlari JSON parse failed. Status: %s, Head: %s", resp.status_code, resp.text[:200])
+        raise
+
+
+def _ensure_optimal_limit(url: str, min_limit: int = 100) -> str:
+    """Agar limit kichik bo'lsa (masalan 47), 1 ta so'rovda barchasini olish uchun limit=100 qiladi."""
+    parts = urlsplit(url)
+    query = dict(parse_qsl(parts.query, keep_blank_values=True))
+    try:
+        cur_limit = int(query.get("limit") or 0)
+    except Exception:
+        cur_limit = 0
+    if cur_limit < min_limit:
+        query["limit"] = str(min_limit)
+        return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query, doseq=True), parts.fragment))
+    return url
 
 
 def _with_page(url: str, page: int) -> str:
@@ -193,16 +216,18 @@ class IbratStatsAdapter(BaseStatsAdapter):
         return get_ibrat_url()
 
     def fetch_payload(self, url):
+        optimal_url = _ensure_optimal_limit(url, min_limit=100)
+        session = _get_session()
         all_items: list[dict] = []
         raw_pages: list[dict] = []
-        start_page = _get_start_page(url)
+        start_page = _get_start_page(optimal_url)
         page = start_page
         total_count = None
         last_updated_at = None
 
         for _ in range(1, 25):
-            page_url = _with_page(url, page)
-            raw = _fetch_json(page_url)
+            page_url = _with_page(optimal_url, page)
+            raw = _fetch_json(page_url, session=session)
             raw_pages.append(raw)
 
             if isinstance(raw, dict):

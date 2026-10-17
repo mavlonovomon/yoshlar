@@ -478,58 +478,34 @@ def traffic_color(score):
         score = 0.0
     score = max(0.0, min(100.0, score))
 
-    def _lerp(lo, hi, t):
-        return int(lo + (hi - lo) * t)
-
-    if score >= 80:
-        t = min(1.0, (score - 80) / 15.0)
-        r = _lerp(60, 25, t)
-        g = _lerp(183, 135, t)
-        b = _lerp(120, 84, t)
-    elif score >= 60:
-        t = (score - 60) / 20.0
-        r = _lerp(255, 230, t)
-        g = _lerp(214, 160, t)
-        b = _lerp(84, 32, t)
-    else:
-        t = max(0.0, (score - 10) / 50.0)
-        r = _lerp(255, 220, t)
-        g = _lerp(200, 53, t)
-        b = _lerp(200, 69, t)
-    return f"rgba({r}, {g}, {b}, 0.30)"
+    hue = round(score * 1.3)
+    return f"hsla({hue}, 70%, 50%, 0.15)"
 
 
 def traffic_color_solid(score):
-    """Sticky katakchalar uchun opaque rang (oq fon + 30% alpha aralashmasi)."""
+    """Sticky katakchalar va fon uchun och pastel svetofor rangi (0% och qizil -> 50% och sariq -> 100% och yashil)."""
     try:
         score = float(score)
     except (TypeError, ValueError):
         score = 0.0
     score = max(0.0, min(100.0, score))
 
-    def _lerp(lo, hi, t):
-        return int(lo + (hi - lo) * t)
+    # hue: 0% = 0 (qizil), 50% = 55 (sariq), 100% = 130 (yashil)
+    hue = round(score * 1.3)
+    # Och, to'liq opaque pastel fon (92% yorug'lik, 65% to'yinganlik)
+    return f"hsl({hue}, 65%, 93%)"
 
-    if score >= 80:
-        t = min(1.0, (score - 80) / 15.0)
-        r = _lerp(60, 25, t)
-        g = _lerp(183, 135, t)
-        b = _lerp(120, 84, t)
-    elif score >= 60:
-        t = (score - 60) / 20.0
-        r = _lerp(255, 230, t)
-        g = _lerp(214, 160, t)
-        b = _lerp(84, 32, t)
-    else:
-        t = max(0.0, (score - 10) / 50.0)
-        r = _lerp(255, 220, t)
-        g = _lerp(200, 53, t)
-        b = _lerp(200, 69, t)
-    # oq (#fff) ustiga 30% alpha aralashmasi
-    sr = int(255 + (r - 255) * 0.30)
-    sg = int(255 + (g - 255) * 0.30)
-    sb = int(255 + (b - 255) * 0.30)
-    return f"rgb({sr}, {sg}, {sb})"
+
+def kpi_progress_color(score):
+    """0% qizil -> 50% sariq -> 100% yashil to'liq aniq svetofor progress rangi."""
+    try:
+        score = float(score)
+    except (TypeError, ValueError):
+        score = 0.0
+    score = max(0.0, min(100.0, score))
+    # 0% = 0 (qizil), 50% = 55 (sariq), 100% = 130 (yashil)
+    hue = round(score * 1.3)
+    return f"hsl({hue}, 82%, 62%)"
 
 
 def _months_in_period(from_date, to_date):

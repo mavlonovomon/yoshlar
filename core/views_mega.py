@@ -2,6 +2,7 @@ import re
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseBadRequest
 from django.db.models import Count
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
@@ -17,6 +18,7 @@ from .models import (
 )
 from .ibrat import build_table as build_ibrat_table
 from .ibrat import fetch_and_store_ibrat_snapshot
+from .mega_exports import MEGA_EXPORTS, mega_excel_export as build_mega_excel_response
 from .mutolaa import build_table, fetch_and_store_mutolaa_snapshot
 from .qizlar_akademiyasi import build_table as build_qizlar_table
 from .qizlar_akademiyasi import fetch_and_store_qizlar_snapshot
@@ -53,10 +55,7 @@ def _format_number(value):
     return round(value, 2)
 
 
-def _build_mega_view_context(request, snapshot_model, table_builder, compare_fields, *, gender_filter=None, age_min=None, age_max=None):
-    snapshot_history = list(snapshot_model.objects.order_by("-snapshot_date", "-fetched_at")[:50])
-    latest_snapshot = snapshot_history[0] if snapshot_history else None
-
+def _get_youth_counts(*, gender_filter=None, age_min=None, age_max=None):
     mahallas = list(Mahalla.objects.all().order_by("name"))
     yosh_qs = Yosh.objects.values("mahalla").annotate(count=Count("id"))
     if gender_filter:
@@ -74,6 +73,18 @@ def _build_mega_view_context(request, snapshot_model, table_builder, compare_fie
         item["mahalla"]: item["count"]
         for item in yosh_qs
     }
+    return mahallas, youth_counts
+
+
+def _build_mega_view_context(request, snapshot_model, table_builder, compare_fields, *, gender_filter=None, age_min=None, age_max=None):
+    snapshot_history = list(snapshot_model.objects.order_by("-snapshot_date", "-fetched_at")[:50])
+    latest_snapshot = snapshot_history[0] if snapshot_history else None
+
+    mahallas, youth_counts = _get_youth_counts(
+        gender_filter=gender_filter,
+        age_min=age_min,
+        age_max=age_max,
+    )
 
     columns, rows, total_row = table_builder(latest_snapshot, mahallas=mahallas, youth_counts=youth_counts)
 
@@ -283,6 +294,7 @@ def _render_mega_stats_page(
     page_title,
     refresh_url_name,
     column_labels,
+    export_key,
     gender_filter=None,
     age_min=None,
     age_max=None,
@@ -306,11 +318,19 @@ def _render_mega_stats_page(
     prev_index = (current_index - 1) % len(mega_projects)
     next_index = (current_index + 1) % len(mega_projects)
 
+    extra_export_columns = [
+        {"key": col, "label": column_labels.get(col, col)}
+        for col in context.get("table_columns", [])
+        if col not in {"mahalla_name", "total_youth", "users_total"}
+    ]
+
     context.update(
         {
             "mega_title": page_title,
             "mega_refresh_url_name": refresh_url_name,
+            "mega_export_key": export_key,
             "mega_column_labels": column_labels,
+            "mega_extra_columns": extra_export_columns,
             "prev_url": mega_projects[prev_index]["url"],
             "prev_name": mega_projects[prev_index]["name"],
             "next_url": mega_projects[next_index]["url"],
@@ -332,6 +352,7 @@ def mega_mutolaa(request):
         ],
         page_title="Mutolaa",
         refresh_url_name="mega_mutolaa_refresh",
+        export_key="mutolaa",
         column_labels={
             "mahalla_name": "Mahalla",
             "total_youth": "14-30 yoshlar",
@@ -357,6 +378,7 @@ def mega_ustoz_ai(request):
         ],
         page_title="Ustoz AI",
         refresh_url_name="mega_ustoz_ai_refresh",
+        export_key="ustoz-ai",
         column_labels={
             "mahalla_name": "Mahalla",
             "total_youth": "14-30 yoshlar",
@@ -395,6 +417,7 @@ def mega_uzchess(request):
         ],
         page_title="UzChess",
         refresh_url_name="mega_uzchess_refresh",
+        export_key="uzchess",
         column_labels={
             "mahalla_name": "Mahalla",
             "total_youth": "14-30 yoshlar",
@@ -434,6 +457,7 @@ def mega_girls_academy(request):
         ],
         page_title="Qizlar akademiyasi",
         refresh_url_name="mega_girls_academy_refresh",
+        export_key="qizlar-akademiyasi",
         column_labels={
             "mahalla_name": "Mahalla",
             "total_youth": "14+ ayol-qizlar",
@@ -486,6 +510,7 @@ def mega_ibrat(request):
         ],
         page_title="Ibrat Farzandlari",
         refresh_url_name="mega_ibrat_refresh",
+        export_key="ibrat-farzandlari",
         column_labels={
             "mahalla_name": "Mahalla",
             "total_youth": "14-30 yoshlar",
@@ -511,3 +536,22 @@ def mega_ibrat_refresh(request):
         messages.success(request, "Ibrat Farzandlari statistikasi yangilandi.")
     return redirect("mega_ibrat")
 
+
+@login_required
+@require_POST
+def mega_excel_export(request, project_key):
+    config = MEGA_EXPORTS.get(project_key)
+    if config is None:
+        return HttpResponseBadRequest("Mega loyiha topilmadi.")
+
+    mahallas, youth_counts = _get_youth_counts(
+        gender_filter=config.get("gender_filter"),
+        age_min=config.get("age_min"),
+        age_max=config.get("age_max"),
+    )
+    return build_mega_excel_response(
+        request,
+        project_key,
+        mahallas=mahallas,
+        youth_counts=youth_counts,
+    )

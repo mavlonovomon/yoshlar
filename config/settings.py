@@ -173,7 +173,7 @@ QIZLAR_STATS_URL = os.environ.get(
 
 IBRAT_STATS_URL = os.environ.get(
     'IBRAT_STATS_URL',
-    "https://api.ibrat.dev/v1/statistics/by-locality/public?region_id=16&district_id=1733220&page=1&limit=47"
+    "https://api.ibrat.dev/v1/statistics/by-locality/public?region_id=16&district_id=1733220&page=1&limit=100"
 )
 
 REPORT_AI_MODEL = os.environ.get('REPORT_AI_MODEL', 'gpt-4.1-mini')

@@ -63,9 +63,7 @@ class BuildModuleRowsTest(TestCase):
         self.assertEqual(row["traffic"], "red")
 
     def test_traffic_color_bounds(self):
-        self.assertEqual(traffic_color(85).startswith("rgba("), True)
-        self.assertEqual(traffic_color(100), traffic_color(95))  # saturated green
-        self.assertEqual(traffic_color(0), traffic_color(10))    # saturated red
+        self.assertEqual(traffic_color(85).startswith("hsla("), True)
 
 
 class ModuleFormulasTest(TestCase):

@@ -53,15 +53,140 @@
                     Hali ma'lumot yo'q
                     {% endif %}
                 </div>
-                {% if can_refresh %}
-                <form method="post" action="{% url mega_refresh_url_name %}">
-                    {% csrf_token %}
-                    <button class="mega-refresh" type="submit">
-                        <i class="bi bi-arrow-repeat"></i> Yangilash
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-outline-success" type="button" data-bs-toggle="modal"
+                        data-bs-target="#megaExcelModal" {% if not snapshot_history %}disabled{% endif %}>
+                        <i class="bi bi-file-earmark-excel"></i> Excel yuklab olish
                     </button>
-                </form>
-                {% endif %}
+                    {% if can_refresh %}
+                    <form method="post" action="{% url mega_refresh_url_name %}">
+                        {% csrf_token %}
+                        <button class="mega-refresh" type="submit">
+                            <i class="bi bi-arrow-repeat"></i> Yangilash
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
             </div>
+
+            {% if snapshot_history %}
+            <div class="modal fade" id="megaExcelModal" tabindex="-1" aria-labelledby="megaExcelModalLabel"
+                aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                    <form class="modal-content" method="post" action="{% url 'mega_excel_export' mega_export_key %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="megaExcelModalLabel">Excel jadvalini sozlash</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Yopish"></button>
+                        </div>
+                        <div class="modal-body">
+                            <fieldset class="mb-4">
+                                <legend class="fs-6 fw-semibold">Jadvalga kiritiladigan snapshotlar</legend>
+                                <div class="small text-muted mb-2">Kamida bittasini tanlang. Tanlanganlar bo'yicha jadval eski snapshotdan yangisiga tuziladi.</div>
+                                <div class="border rounded p-2">
+                                    {% for snapshot_item in snapshot_history %}
+                                    <div class="form-check">
+                                        <input class="form-check-input mega-export-snapshot" type="checkbox"
+                                            name="snapshot_ids" value="{{ snapshot_item.id }}"
+                                            id="mega-export-snapshot-{{ snapshot_item.id }}"
+                                            {% if forloop.first %}checked{% endif %}>
+                                        <label class="form-check-label" for="mega-export-snapshot-{{ snapshot_item.id }}">
+                                            {{ snapshot_item.fetched_at|date:"d.m.Y H:i" }}
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </fieldset>
+
+                            {% if mega_extra_columns %}
+                            <fieldset class="mb-4">
+                                <legend class="fs-6 fw-semibold">Snapshot ustunlari</legend>
+                                <div class="small text-muted mb-2">
+                                    «14-30 yoshlar» jadval boshida bir marta ko'rsatiladi. Snapshotlarda odatiy holda faqat <strong>foydalanuvchilar soni</strong> chiqadi. Qo'shimcha ustunlarni ham kiritish uchun belgilang:
+                                </div>
+                                <div class="border rounded p-2 bg-light">
+                                    {% for col in mega_extra_columns %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox"
+                                            name="extra_columns" value="{{ col.key }}"
+                                            id="mega-extra-col-{{ col.key }}">
+                                        <label class="form-check-label" for="mega-extra-col-{{ col.key }}">
+                                            {{ col.label }}
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </fieldset>
+                            {% endif %}
+
+                            <fieldset class="mb-4">
+                                <legend class="fs-6 fw-semibold">Farq ustunlari</legend>
+                                <div class="form-check">
+                                    <input class="form-check-input mega-export-compare" type="checkbox"
+                                        name="compare_latest" id="mega-export-compare-latest" value="on">
+                                    <label class="form-check-label" for="mega-export-compare-latest">
+                                        Tanlangan eng so'nggi ikkita snapshot farqini ko'rsatish
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input mega-export-compare" type="checkbox"
+                                        name="compare_first_last" id="mega-export-compare-first-last" value="on">
+                                    <label class="form-check-label" for="mega-export-compare-first-last">
+                                        Tanlangan eng birinchi va eng oxirgi snapshot farqini ko'rsatish
+                                    </label>
+                                </div>
+                                <div class="form-text">Farq barcha sonli ko'rsatkichlar uchun hisoblanadi; foiz farqi foiz punktida ko'rsatiladi.</div>
+                            </fieldset>
+
+                            <fieldset class="mb-3">
+                                <legend class="fs-6 fw-semibold">Qator ranglari va tartibi</legend>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="color_mode" id="mega-color-traffic"
+                                        value="traffic" checked>
+                                    <label class="form-check-label" for="mega-color-traffic">
+                                        0-100% svetofor gradienti: qizildan sariq, sariqdan yashilga
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="color_mode" id="mega-color-relative"
+                                        value="relative">
+                                    <label class="form-check-label" for="mega-color-relative">
+                                        Natijalar oralig'i: eng pasti qizil, eng yuqorisi yashil
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="color_mode" id="mega-color-custom"
+                                        value="custom">
+                                    <label class="form-check-label" for="mega-color-custom">
+                                        Foiz chegaralarini qo'lda belgilash
+                                    </label>
+                                </div>
+                                <div class="row g-2 mt-1" id="mega-custom-color-limits" hidden>
+                                    <div class="col-sm-6">
+                                        <label class="form-label small" for="mega-red-limit">Shu foizgacha qizil</label>
+                                        <input class="form-control form-control-sm" type="number" min="0" max="99.9"
+                                            step="0.1" name="red_limit" id="mega-red-limit" value="50">
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label small" for="mega-yellow-limit">Shu foizgacha sariq; undan yuqorisi yashil</label>
+                                        <input class="form-control form-control-sm" type="number" min="0.1" max="100"
+                                            step="0.1" name="yellow_limit" id="mega-yellow-limit" value="80">
+                                    </div>
+                                </div>
+                                <div class="form-text">Qatorlar so'nggi tanlangan snapshotdagi foiz bo'yicha yuqoridan pastga saralanadi. Yakunida tuman bo'yicha jami va jami foiz beriladi.</div>
+                            </fieldset>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Bekor qilish</button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-download"></i> Excelni yuklab olish
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
 
             {% if snapshot_history|length > 1 %}
             <form method="get" class="row g-2 align-items-end mb-3">
@@ -255,4 +380,29 @@
 <!-- Scripts -->
 <script src="{% static 'js/data/mahalla_polygons.js' %}"></script>
 <script src="{% static 'js/pages/mega_map.js' %}"></script>
+<script>
+    (() => {
+        const colorOptions = document.querySelectorAll('input[name="color_mode"]');
+        const customLimits = document.getElementById("mega-custom-color-limits");
+        const snapshotOptions = document.querySelectorAll(".mega-export-snapshot");
+        const compareOptions = document.querySelectorAll(".mega-export-compare");
+
+        const updateColorOptions = () => {
+            const customSelected = document.getElementById("mega-color-custom")?.checked;
+            if (customLimits) customLimits.hidden = !customSelected;
+        };
+        const updateCompareOptions = () => {
+            const selectedCount = [...snapshotOptions].filter((item) => item.checked).length;
+            compareOptions.forEach((item) => {
+                item.disabled = selectedCount < 2;
+                if (item.disabled) item.checked = false;
+            });
+        };
+
+        colorOptions.forEach((item) => item.addEventListener("change", updateColorOptions));
+        snapshotOptions.forEach((item) => item.addEventListener("change", updateCompareOptions));
+        updateColorOptions();
+        updateCompareOptions();
+    })();
+</script>
 {% endblock %}
