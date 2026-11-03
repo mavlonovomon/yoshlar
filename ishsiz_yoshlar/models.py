@@ -100,6 +100,7 @@ class YouthMeeting(models.Model):
 class AssistanceInfo(models.Model):
     ASSISTANCE_TYPES = [
         ('ISH', 'Doimiy ishga joylashgan'),
+        ('OZINI_OZI', "O'zini o'zi band qilish"),
         ('KREDIT', 'Tadbirkorlik uchun kredit ajratilgan'),
         ('MIGRATSIYA', 'Tartibli migratsiyaga yuborilgan'),
         ('YER', 'Ekin yer maydoni ajratilgan'),

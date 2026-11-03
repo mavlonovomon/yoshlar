@@ -64,6 +64,7 @@ def _build_unemployed_totals(queryset):
         with_meeting=Count('meetings', distinct=True),
         total_assisted=Count('id', filter=Q(assistance__provided=True)),
         ish=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='ISH')),
+        ozini_ozi=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='OZINI_OZI')),
         kredit=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='KREDIT')),
         migratsiya=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='MIGRATSIYA')),
         yer=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='YER')),
@@ -82,6 +83,7 @@ def _build_mahalla_statistics(year=None):
             with_meeting=Count('yoshlar__unemployed_profile__meetings', filter=year_filter, distinct=True),
             total_assisted=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True)),
             ish=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='ISH')),
+            ozini_ozi=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='OZINI_OZI')),
             kredit=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='KREDIT')),
             migratsiya=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='MIGRATSIYA')),
             yer=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='YER')),
@@ -102,6 +104,7 @@ def _build_leader_statistics(year=None):
             with_meeting=Count('assigned_youths__meetings', filter=year_filter, distinct=True),
             total_assisted=Count('assigned_youths', filter=year_filter & Q(assigned_youths__assistance__provided=True)),
             ish=Count('assigned_youths', filter=year_filter & Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='ISH')),
+            ozini_ozi=Count('assigned_youths', filter=year_filter & Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='OZINI_OZI')),
             kredit=Count('assigned_youths', filter=year_filter & Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='KREDIT')),
             migratsiya=Count('assigned_youths', filter=year_filter & Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='MIGRATSIYA')),
             yer=Count('assigned_youths', filter=year_filter & Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='YER')),
@@ -126,6 +129,7 @@ def _build_professional_statistics(year=None):
         with_meeting=Count('meetings', distinct=True),
         total_assisted=Count('id', filter=Q(assistance__provided=True)),
         ish=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='ISH')),
+        ozini_ozi=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='OZINI_OZI')),
         kredit=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='KREDIT')),
         migratsiya=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='MIGRATSIYA')),
         yer=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='YER')),
@@ -204,6 +208,7 @@ class LeaderSvodView(LoginRequiredMixin, ListView):
             with_meeting=Count('meetings', distinct=True),
             total_assisted=Count('id', filter=Q(assistance__provided=True)),
             ish=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='ISH')),
+            ozini_ozi=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='OZINI_OZI')),
             kredit=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='KREDIT')),
             migratsiya=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='MIGRATSIYA')),
             yer=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='YER')),
@@ -226,6 +231,7 @@ class SvodView(LoginRequiredMixin, ListView):
             with_meeting=Count('yoshlar__unemployed_profile__meetings', distinct=True),
             total_assisted=Count('yoshlar__unemployed_profile', filter=Q(yoshlar__unemployed_profile__assistance__provided=True)),
             ish=Count('yoshlar__unemployed_profile', filter=Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='ISH')),
+            ozini_ozi=Count('yoshlar__unemployed_profile', filter=Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='OZINI_OZI')),
             kredit=Count('yoshlar__unemployed_profile', filter=Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='KREDIT')),
             migratsiya=Count('yoshlar__unemployed_profile', filter=Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='MIGRATSIYA')),
             yer=Count('yoshlar__unemployed_profile', filter=Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='YER')),
@@ -248,6 +254,7 @@ class SvodView(LoginRequiredMixin, ListView):
             with_meeting=Count('meetings', distinct=True),
             total_assisted=Count('id', filter=Q(assistance__provided=True)),
             ish=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='ISH')),
+            ozini_ozi=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='OZINI_OZI')),
             kredit=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='KREDIT')),
             migratsiya=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='MIGRATSIYA')),
             yer=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='YER')),
@@ -277,6 +284,7 @@ class DetailedSvodView(LoginRequiredMixin, TemplateView):
             with_meeting=Count('meetings', distinct=True),
             total_assisted=Count('id', filter=Q(assistance__provided=True)),
             ish=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='ISH')),
+            ozini_ozi=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='OZINI_OZI')),
             kredit=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='KREDIT')),
             migratsiya=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='MIGRATSIYA')),
             yer=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='YER')),
@@ -303,6 +311,7 @@ class DetailedSvodView(LoginRequiredMixin, TemplateView):
             with_meeting=Count('meetings', distinct=True),
             total_assisted=Count('id', filter=Q(assistance__provided=True)),
             ish=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='ISH')),
+            ozini_ozi=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='OZINI_OZI')),
             kredit=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='KREDIT')),
             migratsiya=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='MIGRATSIYA')),
             yer=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='YER')),
@@ -730,6 +739,7 @@ class ExportProfessionalSvodView(LoginRequiredMixin, View):
             with_meeting=Count('meetings', distinct=True),
             total_assisted=Count('id', filter=Q(assistance__provided=True)),
             ish=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='ISH')),
+            ozini_ozi=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='OZINI_OZI')),
             kredit=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='KREDIT')),
             migratsiya=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='MIGRATSIYA')),
             yer=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='YER')),
@@ -747,7 +757,7 @@ class ExportProfessionalSvodView(LoginRequiredMixin, View):
         header_fill = PatternFill(start_color="D9EAD3", end_color="D9EAD3", fill_type="solid")
 
         # Header Title
-        ws.merge_cells('A1:O1')
+        ws.merge_cells('A1:P1')
         ws['A1'] = "Хоразм вилояти Ҳазорасп туманида Ишсиз ёшлар бандлиги таъминлаш юзасидан амалга оширилган ишлар тўғрисида МАЪЛУМОТ"
         ws['A1'].font = Font(bold=True, size=14)
         ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
@@ -757,7 +767,7 @@ class ExportProfessionalSvodView(LoginRequiredMixin, View):
         headers = [
             "№", "Туман (шаҳар) номи", "Бириктирилган маҳалла", "Масъул раҳбар (Ф.И.Ш, Лавозими)", "Соҳалар",
             "Ишсиз бириктирилган ёшлар сони", "Учрашув ўтказилган ёшлар сони", 
-            "Жами бандлиги таъминланган ёшлар сони", "Доимий ишга жойлашган", "Тадбиркорлик ва кредит", 
+            "Жами бандлиги таъминланган ёшлар сони", "Доимий ишга жойлашган", "Ўзини ўзи банд қилиш", "Тадбиркорлик ва кредит", 
             "Тартибли миграция", "Экин ер майдони", "Асбоб-ускуна ажратилган", "Бандлиги таъминланмаган", "Ижро ҳолати (%)"
         ]
 
@@ -777,6 +787,7 @@ class ExportProfessionalSvodView(LoginRequiredMixin, View):
             with_meeting=Count('meetings', distinct=True),
             total_assisted=Count('id', filter=Q(assistance__provided=True)),
             ish=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='ISH')),
+            ozini_ozi=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='OZINI_OZI')),
             kredit=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='KREDIT')),
             migratsiya=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='MIGRATSIYA')),
             yer=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='YER')),
@@ -792,7 +803,7 @@ class ExportProfessionalSvodView(LoginRequiredMixin, View):
         total_data = [
             "", "Ҳазорасп тумани жами", "", "", "",
             total_youth_val, totals['with_meeting'], total_assisted_val,
-            totals['ish'], totals['kredit'], totals['migratsiya'], totals['yer'], totals['subsidiya'],
+            totals['ish'], totals['ozini_ozi'], totals['kredit'], totals['migratsiya'], totals['yer'], totals['subsidiya'],
             total_not_assisted, f"{total_percent}%"
         ]
         ws.merge_cells('B4:E4')
@@ -822,7 +833,7 @@ class ExportProfessionalSvodView(LoginRequiredMixin, View):
                 idx, "Ҳазорасп тумани", s['yosh__mahalla__name'], 
                 f"{s['leader__full_name']}\n{s['leader__position']}", s['leader__sector'],
                 total, s['with_meeting'], assisted,
-                s['ish'], s['kredit'], s['migratsiya'], s['yer'], s['subsidiya'],
+                s['ish'], s['ozini_ozi'], s['kredit'], s['migratsiya'], s['yer'], s['subsidiya'],
                 not_assisted, f"{percent}%"
             ]
 
@@ -840,7 +851,7 @@ class ExportProfessionalSvodView(LoginRequiredMixin, View):
         ws.column_dimensions['C'].width = 15
         ws.column_dimensions['D'].width = 40
         ws.column_dimensions['E'].width = 15
-        for col in 'FGHIJKLMNO':
+        for col in 'FGHIJKLMNOP':
             ws.column_dimensions[col].width = 12
 
         response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -864,6 +875,7 @@ class ExportMahallaSvodView(LoginRequiredMixin, View):
             with_meeting=Count('yoshlar__unemployed_profile__meetings', filter=year_filter, distinct=True),
             total_assisted=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True)),
             ish=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='ISH')),
+            ozini_ozi=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='OZINI_OZI')),
             kredit=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='KREDIT')),
             migratsiya=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='MIGRATSIYA')),
             yer=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='YER')),
@@ -879,12 +891,12 @@ class ExportMahallaSvodView(LoginRequiredMixin, View):
         center_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
         header_fill = PatternFill(start_color="D9EAD3", end_color="D9EAD3", fill_type="solid")
 
-        ws.merge_cells('A1:L1')
+        ws.merge_cells('A1:M1')
         ws['A1'] = "Ҳазорасп туманидаги маҳаллалар кесимида ишисиз ёшлар бандлиги таҳлили"
         ws['A1'].font = Font(bold=True, size=14)
         ws['A1'].alignment = center_alignment
 
-        headers = ["№", "Маҳалла номи", "Ишсиз ёшлар сони", "Учрашув ўтказилганлар", "Жами бандлиги таъминланганлар", "Доимий ишга жойлашган", "Тадбиркорлик учун кредит ажратилган", "Тартибли миграцияга юборилган", "Экин ер майдони ажратилган", "Асбоб-ускуна ажратилган", "Бандлиги таъминланмаганлар", "Ижро ҳолати (%)"]
+        headers = ["№", "Маҳалла номи", "Ишсиз ёшлар сони", "Учрашув ўтказилганлар", "Жами бандлиги таъминланганлар", "Доимий ишга жойлашган", "Ўзини ўзи банд қилиш", "Тадбиркорлик учун кредит ажратилган", "Тартибли миграцияга юборилган", "Экин ер майдони ажратилган", "Асбоб-ускуна ажратилган", "Бандлиги таъминланмаганлар", "Ижро ҳолати (%)"]
         for col, h in enumerate(headers, 1):
             cell = ws.cell(row=3, column=col)
             cell.value = h
@@ -898,6 +910,7 @@ class ExportMahallaSvodView(LoginRequiredMixin, View):
             with_meeting=Count('meetings', distinct=True),
             total_assisted=Count('id', filter=Q(assistance__provided=True)),
             ish=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='ISH')),
+            ozini_ozi=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='OZINI_OZI')),
             kredit=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='KREDIT')),
             migratsiya=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='MIGRATSIYA')),
             yer=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='YER')),
@@ -906,7 +919,7 @@ class ExportMahallaSvodView(LoginRequiredMixin, View):
         total_youth_val = totals['total_youth']
         total_percent = round((totals['total_assisted'] / total_youth_val * 100), 1) if total_youth_val > 0 else 0
         
-        totals_row = ["", "Ҳазорасп тумани жами", total_youth_val, totals['with_meeting'], totals['total_assisted'], totals['ish'], totals['kredit'], totals['migratsiya'], totals['yer'], totals['subsidiya'], total_youth_val-totals['total_assisted'], f"{total_percent}%"]
+        totals_row = ["", "Ҳазорасп тумани жами", total_youth_val, totals['with_meeting'], totals['total_assisted'], totals['ish'], totals['ozini_ozi'], totals['kredit'], totals['migratsiya'], totals['yer'], totals['subsidiya'], total_youth_val-totals['total_assisted'], f"{total_percent}%"]
         for col, val in enumerate(totals_row, 1):
             cell = ws.cell(row=4, column=col)
             cell.value = val
@@ -918,7 +931,7 @@ class ExportMahallaSvodView(LoginRequiredMixin, View):
         for idx, s in enumerate(stats, 1):
             assisted = s.total_assisted
             percent = round((assisted / s.total_youth * 100), 1) if s.total_youth > 0 else 0
-            row = [idx, s.name, s.total_youth, s.with_meeting, assisted, s.ish, s.kredit, s.migratsiya, s.yer, s.subsidiya, s.total_youth-assisted, f"{percent}%"]
+            row = [idx, s.name, s.total_youth, s.with_meeting, assisted, s.ish, s.ozini_ozi, s.kredit, s.migratsiya, s.yer, s.subsidiya, s.total_youth-assisted, f"{percent}%"]
             for col, v in enumerate(row, 1):
                 cell = ws.cell(row=idx+4, column=col)
                 cell.value = v
@@ -946,6 +959,7 @@ class ExportLeaderSvodView(LoginRequiredMixin, View):
             with_meeting=Count('assigned_youths__meetings', filter=filter_q, distinct=True),
             total_assisted=Count('assigned_youths', filter=filter_q & Q(assigned_youths__assistance__provided=True)),
             ish=Count('assigned_youths', filter=filter_q & Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='ISH')),
+            ozini_ozi=Count('assigned_youths', filter=filter_q & Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='OZINI_OZI')),
             kredit=Count('assigned_youths', filter=filter_q & Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='KREDIT')),
             migratsiya=Count('assigned_youths', filter=filter_q & Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='MIGRATSIYA')),
             yer=Count('assigned_youths', filter=filter_q & Q(assigned_youths__assistance__provided=True, assigned_youths__assistance__assistance_type='YER')),
@@ -961,12 +975,12 @@ class ExportLeaderSvodView(LoginRequiredMixin, View):
         center_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
         header_fill = PatternFill(start_color="D9EAD3", end_color="D9EAD3", fill_type="solid")
 
-        ws.merge_cells('A1:M1')
+        ws.merge_cells('A1:N1')
         ws['A1'] = "Ҳазорасп туманидаги масъул раҳбарлар кесимида ишисиз ёшлар бандлиги таҳлили"
         ws['A1'].font = Font(bold=True, size=14)
         ws['A1'].alignment = center_alignment
 
-        headers = ["№", "Масъул раҳбар", "Соҳаси", "Ишсиз ёшлар сони", "Учрашув", "Жами бандлиги таъминланганлар", "Доимий ишга жойлашган", "Тадбиркорлик учун кредит ажратилган", "Тартибли миграцияга юборилган", "Экин ер майдони ажратилган", "Асбоб-ускуна ажратилган", "Бандлиги таъминланмаганлар", "Ижро ҳолати (%)"]
+        headers = ["№", "Масъул раҳбар", "Соҳаси", "Ишсиз ёшлар сони", "Учрашув", "Жами бандлиги таъминланганлар", "Доимий ишга жойлашган", "Ўзини ўзи банд қилиш", "Тадбиркорлик учун кредит ажратилган", "Тартибли миграцияга юборилган", "Экин ер майдони ажратилган", "Асбоб-ускуна ажратилган", "Бандлиги таъминланмаганлар", "Ижро ҳолати (%)"]
         for col, h in enumerate(headers, 1):
             cell = ws.cell(row=3, column=col)
             cell.value = h
@@ -980,6 +994,7 @@ class ExportLeaderSvodView(LoginRequiredMixin, View):
             with_meeting=Count('meetings', distinct=True),
             total_assisted=Count('id', filter=Q(assistance__provided=True)),
             ish=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='ISH')),
+            ozini_ozi=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='OZINI_OZI')),
             kredit=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='KREDIT')),
             migratsiya=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='MIGRATSIYA')),
             yer=Count('id', filter=Q(assistance__provided=True, assistance__assistance_type='YER')),
@@ -988,7 +1003,7 @@ class ExportLeaderSvodView(LoginRequiredMixin, View):
         total_youth_val = totals['total_youth']
         total_percent = round((totals['total_assisted'] / total_youth_val * 100), 1) if total_youth_val > 0 else 0
 
-        totals_row = ["", "Ҳазорасп тумани жами", "", totals['total_youth'], totals['with_meeting'], totals['total_assisted'], totals['ish'], totals['kredit'], totals['migratsiya'], totals['yer'], totals['subsidiya'], total_youth_val-totals['total_assisted'], f"{total_percent}%"]
+        totals_row = ["", "Ҳазорасп тумани жами", "", totals['total_youth'], totals['with_meeting'], totals['total_assisted'], totals['ish'], totals['ozini_ozi'], totals['kredit'], totals['migratsiya'], totals['yer'], totals['subsidiya'], total_youth_val-totals['total_assisted'], f"{total_percent}%"]
         for col, val in enumerate(totals_row, 1):
             cell = ws.cell(row=4, column=col)
             cell.value = val
@@ -1000,7 +1015,7 @@ class ExportLeaderSvodView(LoginRequiredMixin, View):
         for idx, s in enumerate(stats, 1):
             assisted = s.total_assisted
             percent = round((assisted / s.total_youth * 100), 1) if s.total_youth > 0 else 0
-            row = [idx, f"{s.full_name}\n({s.position or ''})", s.sector or '', s.total_youth, s.with_meeting, assisted, s.ish, s.kredit, s.migratsiya, s.yer, s.subsidiya, s.total_youth-assisted, f"{percent}%"]
+            row = [idx, f"{s.full_name}\n({s.position or ''})", s.sector or '', s.total_youth, s.with_meeting, assisted, s.ish, s.ozini_ozi, s.kredit, s.migratsiya, s.yer, s.subsidiya, s.total_youth-assisted, f"{percent}%"]
             for col, v in enumerate(row, 1):
                 cell = ws.cell(row=idx+4, column=col)
                 cell.value = v

@@ -68,6 +68,7 @@
                                     <th class="text-center">Uchrashuv bo'lgan</th>
                                     <th class="text-center">Jami bandlik</th>
                                     <th class="text-center">Ish</th>
+                                    <th class="text-center">O'zini o'zi band</th>
                                     <th class="text-center">Kredit</th>
                                     <th class="text-center">Migratsiya</th>
                                     <th class="text-center">Yer</th>
@@ -84,6 +85,7 @@
                                     <td class="text-center fw-semibold">{{ totals.with_meeting }}</td>
                                     <td class="text-center fw-semibold">{{ totals.total_assisted }}</td>
                                     <td class="text-center fw-semibold">{{ totals.ish }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.ozini_ozi }}</td>
                                     <td class="text-center fw-semibold">{{ totals.kredit }}</td>
                                     <td class="text-center fw-semibold">{{ totals.migratsiya }}</td>
                                     <td class="text-center fw-semibold">{{ totals.yer }}</td>
@@ -99,6 +101,7 @@
                                     <td class="text-center">{{ row.with_meeting }}</td>
                                     <td class="text-center">{{ row.total_assisted }}</td>
                                     <td class="text-center">{{ row.ish|default:0 }}</td>
+                                    <td class="text-center">{{ row.ozini_ozi|default:0 }}</td>
                                     <td class="text-center">{{ row.kredit|default:0 }}</td>
                                     <td class="text-center">{{ row.migratsiya|default:0 }}</td>
                                     <td class="text-center">{{ row.yer|default:0 }}</td>
@@ -108,7 +111,7 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="12" class="text-center text-muted py-4">Ma'lumot topilmadi.</td>
+                                    <td colspan="13" class="text-center text-muted py-4">Ma'lumot topilmadi.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -129,6 +132,7 @@
                                     <th class="text-center">Uchrashuv bo'lgan</th>
                                     <th class="text-center">Jami bandlik</th>
                                     <th class="text-center">Ish</th>
+                                    <th class="text-center">O'zini o'zi band</th>
                                     <th class="text-center">Kredit</th>
                                     <th class="text-center">Migratsiya</th>
                                     <th class="text-center">Yer</th>
@@ -145,6 +149,7 @@
                                     <td class="text-center fw-semibold">{{ totals.with_meeting }}</td>
                                     <td class="text-center fw-semibold">{{ totals.total_assisted }}</td>
                                     <td class="text-center fw-semibold">{{ totals.ish }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.ozini_ozi }}</td>
                                     <td class="text-center fw-semibold">{{ totals.kredit }}</td>
                                     <td class="text-center fw-semibold">{{ totals.migratsiya }}</td>
                                     <td class="text-center fw-semibold">{{ totals.yer }}</td>
@@ -164,6 +169,7 @@
                                     <td class="text-center">{{ row.with_meeting }}</td>
                                     <td class="text-center">{{ row.total_assisted }}</td>
                                     <td class="text-center">{{ row.ish|default:0 }}</td>
+                                    <td class="text-center">{{ row.ozini_ozi|default:0 }}</td>
                                     <td class="text-center">{{ row.kredit|default:0 }}</td>
                                     <td class="text-center">{{ row.migratsiya|default:0 }}</td>
                                     <td class="text-center">{{ row.yer|default:0 }}</td>
@@ -173,7 +179,7 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="13" class="text-center text-muted py-4">Ma'lumot topilmadi.</td>
+                                    <td colspan="14" class="text-center text-muted py-4">Ma'lumot topilmadi.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -196,6 +202,7 @@
                                     <th class="text-center">Uchrashuv bo'lgan</th>
                                     <th class="text-center">Jami bandlik</th>
                                     <th class="text-center">Ish</th>
+                                    <th class="text-center">O'zini o'zi band</th>
                                     <th class="text-center">Kredit</th>
                                     <th class="text-center">Migratsiya</th>
                                     <th class="text-center">Yer</th>
@@ -212,6 +219,7 @@
                                     <td class="text-center fw-semibold">{{ totals.with_meeting }}</td>
                                     <td class="text-center fw-semibold">{{ totals.total_assisted }}</td>
                                     <td class="text-center fw-semibold">{{ totals.ish }}</td>
+                                    <td class="text-center fw-semibold">{{ totals.ozini_ozi }}</td>
                                     <td class="text-center fw-semibold">{{ totals.kredit }}</td>
                                     <td class="text-center fw-semibold">{{ totals.migratsiya }}</td>
                                     <td class="text-center fw-semibold">{{ totals.yer }}</td>
@@ -233,6 +241,7 @@
                                     <td class="text-center">{{ row.with_meeting }}</td>
                                     <td class="text-center">{{ row.total_assisted }}</td>
                                     <td class="text-center">{{ row.ish|default:0 }}</td>
+                                    <td class="text-center">{{ row.ozini_ozi|default:0 }}</td>
                                     <td class="text-center">{{ row.kredit|default:0 }}</td>
                                     <td class="text-center">{{ row.migratsiya|default:0 }}</td>
                                     <td class="text-center">{{ row.yer|default:0 }}</td>
@@ -242,7 +251,7 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="15" class="text-center text-muted py-4">Ma'lumot topilmadi.</td>
+                                    <td colspan="16" class="text-center text-muted py-4">Ma'lumot topilmadi.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

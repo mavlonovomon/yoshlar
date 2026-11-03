@@ -142,20 +142,36 @@ class SvodTabsViewTests(TestCase):
         UnemployedYouth.objects.create(yosh=yosh, category='QOLGAN')
         self.client.login(username='leader_user', password='secret123')
 
+    def test_accepts_ozini_ozi_band_assistance_type(self):
+        document = SimpleUploadedFile(
+            name='tasdiq.pdf',
+            content=b'%PDF-1.4 assistance doc',
+            content_type='application/pdf',
+        )
+        form = AssistanceForm(
+            data={
+                'provided': 'on',
+                'assistance_type': 'OZINI_OZI',
+            },
+            files={'document': document},
+        )
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data['assistance_type'], 'OZINI_OZI')
+
     def test_svod_route_opens_tabs_template_with_mahalla_tab(self):
-        response = self.client.get(reverse('ishsiz_yoshlar:svod'))
+        response = self.client.get(reverse('ishsiz_yoshlar:svod'), follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'ishsiz_yoshlar/svod_tabs.html')
         self.assertEqual(response.context['active_tab'], 'mahalla')
 
     def test_leader_svod_route_opens_same_template_with_leader_tab(self):
-        response = self.client.get(reverse('ishsiz_yoshlar:leader_svod'))
+        response = self.client.get(reverse('ishsiz_yoshlar:year_svod', kwargs={'year': 2026}) + '?tab=leader')
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'ishsiz_yoshlar/svod_tabs.html')
         self.assertEqual(response.context['active_tab'], 'leader')
 
     def test_professional_svod_route_opens_same_template_with_professional_tab(self):
-        response = self.client.get(reverse('ishsiz_yoshlar:professional_svod'))
+        response = self.client.get(reverse('ishsiz_yoshlar:year_svod', kwargs={'year': 2026}) + '?tab=professional')
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'ishsiz_yoshlar/svod_tabs.html')
         self.assertEqual(response.context['active_tab'], 'professional')

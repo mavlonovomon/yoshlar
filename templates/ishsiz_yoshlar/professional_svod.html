@@ -42,12 +42,13 @@
                         <th rowspan="2" class="v-text">Ishsiz biriktirilgan yoshlar soni</th>
                         <th rowspan="2" class="v-text">Uchrashuv o'tkazilgan yoshlar soni</th>
                         <th rowspan="2" class="v-text">Jami bandligi ta'minlanganlar</th>
-                        <th colspan="5" class="bg-primary text-white">Yoshlarni bandligini ta'minlash bo'yicha asosiy yo'nalishlar</th>
+                        <th colspan="6" class="bg-primary text-white">Yoshlarni bandligini ta'minlash bo'yicha asosiy yo'nalishlar</th>
                         <th rowspan="2" class="v-text">Bandligi ta'minlanmaganlar</th>
                         <th rowspan="2" class="v-text col-min-w-80">Ijro holati (foiz)</th>
                     </tr>
                     <tr class="header-lvl-2">
                         <th class="small-header">Doimiy ishga joylashgan</th>
+                        <th class="small-header">O'zini o'zi band qilish</th>
                         <th class="small-header">Tadbirkorlik uchun kredit ajratilgan</th>
                         <th class="small-header">Tartibli migratsiyaga yuborilgan</th>
                         <th class="small-header">Ekin yer maydoni ajratilgan</th>
@@ -55,6 +56,7 @@
                     </tr>
                     <tr class="header-lvl-filter">
                         <th class="filter-placeholder">-</th>
+                        <th class="filter-placeholder">x</th>
                         <th class="filter-placeholder">x</th>
                         <th class="filter-placeholder">x</th>
                         <th class="filter-placeholder">x</th>
@@ -79,6 +81,7 @@
                         <td class="text-center fw-bold text-dark">{{ totals.with_meeting }}</td>
                         <td class="text-center fw-bold text-dark">{{ totals.total_assisted }}</td>
                         <td class="text-center fw-bold text-dark">{{ totals.ish }}</td>
+                        <td class="text-center fw-bold text-dark">{{ totals.ozini_ozi }}</td>
                         <td class="text-center fw-bold text-dark">{{ totals.kredit }}</td>
                         <td class="text-center fw-bold text-dark">{{ totals.migratsiya }}</td>
                         <td class="text-center fw-bold text-dark">{{ totals.yer }}</td>
@@ -101,6 +104,7 @@
                         <td class="text-center bg-light-subtle">{{ s.with_meeting }}</td>
                         <td class="text-center fw-bold text-primary bg-light-subtle">{{ s.total_assisted }}</td>
                         <td class="text-center">{{ s.ish|default:0 }}</td>
+                        <td class="text-center">{{ s.ozini_ozi|default:0 }}</td>
                         <td class="text-center">{{ s.kredit|default:0 }}</td>
                         <td class="text-center">{{ s.migratsiya|default:0 }}</td>
                         <td class="text-center">{{ s.yer|default:0 }}</td>
@@ -110,7 +114,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="15" class="text-center py-5 text-muted">
+                        <td colspan="16" class="text-center py-5 text-muted">
                             <i class="bi bi-inbox display-4 d-block mb-3"></i>
                             Ma'lumotlar mavjud emas
                         </td>
