@@ -159,8 +159,12 @@ def generate_youth_pdf(youth_obj):
     else:
         elements.append(Paragraph("ISHSIZ YOSHLAR ANKETASI", title_style))
 
+    year_label = youth_obj.get_year_display() if hasattr(youth_obj, 'get_year_display') else str(youth_obj.year)
+    if str(year_label) in ("20262", "2026 II"):
+        year_label = "2026 II mavsum"
+
     elements.append(Paragraph(
-        f"Yil: {youth_obj.year} | Toifa: {youth_obj.get_category_display()}",
+        f"Yil: {year_label} | Toifa: {youth_obj.get_category_display()}",
         ParagraphStyle('SubTitle', parent=styles['Normal'], fontName=DEFAULT_FONT, fontSize=10,
                        alignment=TA_CENTER, textColor=colors.HexColor('#424242'))
     ))

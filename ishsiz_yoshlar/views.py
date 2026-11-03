@@ -1037,6 +1037,7 @@ class UnemployedYouthPDFView(LoginRequiredMixin, View):
         pdf_buffer = generate_youth_pdf(youth)
 
         response = HttpResponse(pdf_buffer, content_type='application/pdf')
-        filename = f"anketa_{youth.yosh.fullname.replace(' ', '_')}_{youth.year}.pdf"
+        year_suffix = str(youth.get_year_display()).replace(' ', '_')
+        filename = f"anketa_{youth.yosh.fullname.replace(' ', '_')}_{year_suffix}.pdf"
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response

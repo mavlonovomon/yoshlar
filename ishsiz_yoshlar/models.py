@@ -42,7 +42,7 @@ class UnemployedYouth(models.Model):
     YEAR_CHOICES = [
         (2025, '2025'),
         (2026, '2026'),
-        (20262, '2026 II'),
+        (20262, '2026 II mavsum'),
     ]
 
     CATEGORY_CHOICES = [
