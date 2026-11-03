@@ -716,8 +716,11 @@ class ProfessionalSvodView(LoginRequiredMixin, TemplateView):
         return context
 
 class ExportProfessionalSvodView(LoginRequiredMixin, View):
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
+        year = kwargs.get('year')
         queryset = UnemployedYouth.objects.select_related('leader', 'yosh__mahalla', 'assistance')
+        if year:
+            queryset = queryset.filter(year=year)
 
         raw_stats = queryset.values(
             'leader_id', 'leader__full_name', 'leader__position', 'leader__sector',
@@ -846,19 +849,25 @@ class ExportProfessionalSvodView(LoginRequiredMixin, View):
         return response
 
 class ExportMahallaSvodView(LoginRequiredMixin, View):
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
+        year = kwargs.get('year')
         queryset = UnemployedYouth.objects.all()
+        if year:
+            queryset = queryset.filter(year=year)
+            year_filter = Q(yoshlar__unemployed_profile__year=year)
+        else:
+            year_filter = Q()
         mahallas = Mahalla.objects.all()
 
         stats = mahallas.annotate(
-            total_youth=Count('yoshlar__unemployed_profile'),
-            with_meeting=Count('yoshlar__unemployed_profile__meetings', distinct=True),
-            total_assisted=Count('yoshlar__unemployed_profile', filter=Q(yoshlar__unemployed_profile__assistance__provided=True)),
-            ish=Count('yoshlar__unemployed_profile', filter=Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='ISH')),
-            kredit=Count('yoshlar__unemployed_profile', filter=Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='KREDIT')),
-            migratsiya=Count('yoshlar__unemployed_profile', filter=Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='MIGRATSIYA')),
-            yer=Count('yoshlar__unemployed_profile', filter=Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='YER')),
-            subsidiya=Count('yoshlar__unemployed_profile', filter=Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='SUBSIDIYA')),
+            total_youth=Count('yoshlar__unemployed_profile', filter=year_filter),
+            with_meeting=Count('yoshlar__unemployed_profile__meetings', filter=year_filter, distinct=True),
+            total_assisted=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True)),
+            ish=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='ISH')),
+            kredit=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='KREDIT')),
+            migratsiya=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='MIGRATSIYA')),
+            yer=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='YER')),
+            subsidiya=Count('yoshlar__unemployed_profile', filter=year_filter & Q(yoshlar__unemployed_profile__assistance__provided=True, yoshlar__unemployed_profile__assistance__assistance_type='SUBSIDIYA')),
         ).order_by('name')
 
         wb = openpyxl.Workbook()
@@ -922,11 +931,15 @@ class ExportMahallaSvodView(LoginRequiredMixin, View):
         return response
 
 class ExportLeaderSvodView(LoginRequiredMixin, View):
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
+        year = kwargs.get('year')
         leaders = ResponsibleLeader.objects.all()
         queryset = UnemployedYouth.objects.all()
-        
-        filter_q = Q()
+        if year:
+            queryset = queryset.filter(year=year)
+            filter_q = Q(assigned_youths__year=year)
+        else:
+            filter_q = Q()
 
         stats = leaders.annotate(
             total_youth=Count('assigned_youths', filter=filter_q),

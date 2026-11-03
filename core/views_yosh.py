@@ -952,9 +952,9 @@ def yosh_detail(request, pk=None):
         if form.is_valid():
             new_yosh = form.save(commit=False)
             if not is_management_user(user):
-                new_yosh.mahalla = user.mahalla
+                new_yosh.mahalla = user.mahalla or (yosh.mahalla if yosh else None)
             else:
-                new_yosh.mahalla = form.cleaned_data.get("mahalla")
+                new_yosh.mahalla = form.cleaned_data.get("mahalla") or (yosh.mahalla if yosh else None)
 
             if not new_yosh.mahalla:
                 messages.error(request, "Mahalla tanlanishi shart.")

@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block extra_css %}
+{% include 'components/select2_assets.html' with mode='css' %}
 <link rel="stylesheet" href="{% static 'css/pages/yosh_form.css' %}">
 {% endblock %}
 
@@ -31,6 +32,17 @@
                     <label>F.I.Sh (To'liq ismi)</label>
                     {{ form.fullname }}
                 </div>
+                {% if form.mahalla %}
+                <div class="form-group">
+                    <label>Mahalla</label>
+                    {{ form.mahalla }}
+                </div>
+                {% elif yosh and yosh.mahalla %}
+                <div class="form-group">
+                    <label>Mahalla</label>
+                    <input type="text" class="form-control" value="{{ yosh.mahalla.name }}" readonly disabled>
+                </div>
+                {% endif %}
                 <div class="form-group">
                     <label>Tug'ilgan sana</label>
                     {{ form.birth_date }}
@@ -158,6 +170,7 @@
 {% endblock %}
 
 {% block extra_js %}
+{% include 'components/select2_assets.html' with mode='js' %}
 {% if yosh and yosh.pk %}
 <script>
 (function () {

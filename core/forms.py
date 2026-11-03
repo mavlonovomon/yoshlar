@@ -32,12 +32,13 @@ class YoshForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        if user and getattr(user, 'is_site_admin', False):
+        if user and (getattr(user, 'is_site_admin', False) or getattr(user, 'is_superuser', False) or getattr(user, 'is_staff', False)):
+            is_edit_with_mahalla = bool(self.instance and self.instance.pk and self.instance.mahalla_id)
             self.fields['mahalla'] = forms.ModelChoiceField(
                 queryset=Mahalla.objects.all(),
                 widget=forms.Select(attrs={'class': 'form-control select2'}),
                 label="Mahalla",
-                required=True
+                required=not is_edit_with_mahalla
             )
             # Reorder fields to put mahalla after fullname
             keys = list(self.fields.keys())
@@ -50,6 +51,12 @@ class YoshForm(forms.ModelForm):
         # If edit mode, mahalla might already be on the instance
         if self.instance and self.instance.pk and 'mahalla' in self.fields:
             self.initial['mahalla'] = self.instance.mahalla
+
+    def clean_mahalla(self):
+        mahalla = self.cleaned_data.get('mahalla')
+        if not mahalla and self.instance and self.instance.pk and self.instance.mahalla_id:
+            return self.instance.mahalla
+        return mahalla
 
     class Meta:
         model = Yosh
