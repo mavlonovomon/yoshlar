@@ -86,7 +86,7 @@ class UnemployedYouth(models.Model):
 
 class YouthMeeting(models.Model):
     unemployed_youth = models.ForeignKey(UnemployedYouth, on_delete=models.CASCADE, related_name='meetings', verbose_name="Ishsiz yosh")
-    meeting_date = models.DateTimeField(verbose_name="Uchrashuv vaqti")
+    meeting_date = models.DateField(verbose_name="Uchrashuv sanasi")
     photo = models.ImageField(upload_to='meetings/', verbose_name="Uchrashuv rasmi", validators=[FileExtensionValidator(['jpg', 'jpeg', 'png'])])
     description = models.TextField(verbose_name="Uchrashuv mazmuni/izoh")
     
@@ -95,7 +95,7 @@ class YouthMeeting(models.Model):
     class Meta:
         verbose_name = "Uchrashuv"
         verbose_name_plural = "Uchrashuvlar"
-        ordering = ['-meeting_date']
+        ordering = ['-meeting_date', '-id']
 
 class AssistanceInfo(models.Model):
     ASSISTANCE_TYPES = [

@@ -22,7 +22,8 @@
                     {% include 'components/form_group.html' with label=field.label field=field required=field.field.required help_text=field.help_text errors=field.errors col_class="col-12" %}
                     {% endfor %}
 
-                    {% with cancel_url="/ishsiz_yoshlar/" show_delete=false %}
+                    {% url 'ishsiz_yoshlar:detail' youth.pk as cancel_link %}
+                    {% with cancel_url=cancel_link show_delete=false %}
                     {% include 'components/form_actions.html' %}
                     {% endwith %}
                 </form>

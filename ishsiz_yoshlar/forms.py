@@ -40,11 +40,15 @@ class UnemployedYouthForm(forms.ModelForm):
         }
 
 class MeetingForm(forms.ModelForm):
+    meeting_date = forms.DateField(
+        label="Uchrashuv sanasi",
+        widget=forms.DateInput(format='%Y-%m-%d', attrs={'class': 'form-control', 'type': 'date'})
+    )
+
     class Meta:
         model = YouthMeeting
         fields = ['meeting_date', 'photo', 'description']
         widgets = {
-            'meeting_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
             'photo': forms.FileInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }

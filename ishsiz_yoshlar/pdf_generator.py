@@ -92,9 +92,9 @@ def _get_photo_image(photo_field, max_width=120, max_height=150):
 def _format_date(dt):
     if not dt:
         return "-"
-    if isinstance(dt, datetime):
-        return dt.strftime("%d.%m.%Y %H:%M")
-    return dt.strftime("%d.%m.%Y") if hasattr(dt, 'strftime') else str(dt)
+    if hasattr(dt, 'strftime'):
+        return dt.strftime("%d.%m.%Y")
+    return str(dt)
 
 
 def generate_youth_pdf(youth_obj):
